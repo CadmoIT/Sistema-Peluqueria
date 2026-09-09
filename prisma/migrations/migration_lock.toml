@@ -1,0 +1,2 @@
+# Define el proveedor usado por todas las migraciones de Prisma.
+provider = "postgresql"

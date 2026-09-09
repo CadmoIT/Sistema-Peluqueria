@@ -1,0 +1,291 @@
+/** Define una pantalla de registro clara basada en la identidad azul de la marca. */
+.acceso {
+  min-height: 100vh;
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 130px 24px 70px;
+  background: #f3f8fb;
+}
+
+.acceso__logo {
+  position: absolute;
+  z-index: 2;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.acceso .logo-turnos {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.acceso .logo-turnos__imagen {
+  width: 62px;
+  height: 62px;
+  border-radius: 15px;
+  object-fit: contain;
+}
+
+.acceso .logo-turnos__nombre {
+  color: var(--tinta);
+  font-family: var(--fuente-marca);
+  font-size: 23px;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+
+.acceso .logo-turnos__nombre span {
+  color: var(--celeste-marca);
+}
+
+.acceso__formulario {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.formulario-caja {
+  width: min(570px, 100%);
+  padding: 42px 48px 38px;
+  border: 1px solid #d9e6eb;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 22px 60px rgba(16, 67, 91, 0.1);
+  font-family: var(--fuente-marca);
+}
+
+.formulario-caja h1 {
+  margin: 0 0 10px;
+  color: var(--tinta);
+  font: 400 35px/1.12 var(--fuente-marca);
+  letter-spacing: -0.035em;
+  text-align: center;
+}
+
+.formulario-caja > p {
+  margin: 0 auto 30px;
+  max-width: 390px;
+  font-size: 16px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.google {
+  width: 100%;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: #eef1f3;
+  color: #36323b;
+  font-size: 15px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.google:hover {
+  background: #e4eaed;
+}
+
+.google svg {
+  width: 25px;
+  height: 25px;
+}
+
+.separador {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 24px 0;
+  color: #928b8f;
+  font-size: 13px;
+}
+
+.separador span {
+  height: 1px;
+  flex: 1;
+  background: #dfe9ed;
+}
+
+.formulario-caja form {
+  display: grid;
+  gap: 18px;
+}
+
+.formulario-caja label {
+  display: grid;
+  gap: 8px;
+  color: #27495e;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.formulario-caja input,
+.formulario-caja select {
+  width: 100%;
+  height: 56px;
+  padding: 0 16px;
+  border: 1px solid #bfd1da;
+  border-radius: 10px;
+  outline: 0;
+  background: #fff;
+  color: var(--tinta);
+  font-size: 15px;
+}
+
+.formulario-caja select {
+  cursor: pointer;
+}
+
+.formulario-caja input:focus,
+.formulario-caja select:focus {
+  border-color: var(--naranja);
+  box-shadow: 0 0 0 3px rgba(42, 159, 186, 0.14);
+}
+
+.password {
+  position: relative;
+}
+
+.password input {
+  padding-right: 88px;
+}
+
+.password button {
+  position: absolute;
+  z-index: 2;
+  top: 2px;
+  right: 8px;
+  height: 52px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: #766f73;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.olvido {
+  margin-top: -8px;
+  color: var(--naranja-oscuro);
+  font-size: 13px;
+  text-align: right;
+}
+
+.enviar-acceso {
+  width: 100%;
+  min-height: 56px;
+  margin-top: 4px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.mensaje-acceso {
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid #bcdde7;
+  border-radius: 10px;
+  background: #eefafd;
+  color: #0b5975;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.cambiar-modo {
+  margin: 25px 0 0 !important;
+  font-size: 14px !important;
+  text-align: center;
+}
+
+.cambiar-modo button {
+  border: 0;
+  background: none;
+  color: var(--naranja-oscuro);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.terminos {
+  display: block;
+  margin-top: 23px;
+  color: #9a9296;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.acceso__pie {
+  position: absolute;
+  bottom: 24px;
+  color: #9a9296;
+  font-family: var(--fuente-marca);
+  font-size: 12px;
+}
+
+.recuperar {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f3f8fb;
+}
+
+.recuperar__caja {
+  width: min(460px, 100%);
+  padding: 38px;
+  border: 1px solid var(--borde);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: var(--sombra);
+}
+
+.recuperar__sobrelinea {
+  display: block;
+  margin-top: 24px;
+  color: var(--celeste-marca);
+  font-family: var(--fuente-marca);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.recuperar__caja h1 {
+  margin: 12px 0;
+  font: 700 42px/1 var(--fuente-editorial);
+}
+
+.volver-acceso {
+  display: block;
+  margin-top: 24px;
+  color: var(--naranja-oscuro);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .acceso {
+    align-items: start;
+    padding: 112px 12px 70px;
+  }
+
+  .acceso__logo {
+    top: 22px;
+    left: 50%;
+  }
+
+  .formulario-caja {
+    padding: 30px 20px;
+    border-radius: 18px;
+  }
+
+  .formulario-caja h1 {
+    font-size: 29px;
+  }
+}

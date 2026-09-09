@@ -1,0 +1,486 @@
+/** Define la identidad blanca, azul y celeste de la landing comercial. */
+.logo-turnos {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-turnos__imagen {
+  width: 68px;
+  height: 68px;
+  border-radius: 16px;
+  object-fit: contain;
+}
+
+.logo-turnos__nombre {
+  color: var(--tinta);
+  font-family: var(--fuente-marca);
+  font-size: 29px;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.logo-turnos__nombre span {
+  color: var(--celeste-marca);
+}
+
+.cabecera-publica__interior {
+  height: 104px;
+}
+
+.cabecera-publica nav {
+  gap: 38px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #000;
+}
+
+.cabecera-publica__acciones {
+  gap: 22px;
+  font-size: 18px;
+}
+
+.cabecera-publica__acciones .enlace-suave {
+  font-size: 18px;
+}
+
+.cabecera-publica__acciones .boton {
+  min-height: 54px;
+  padding-inline: 32px;
+  border-radius: 999px;
+  font-size: 18px;
+}
+
+.cabecera-publica__acciones .boton--primario {
+  border: 0;
+  background: #fff;
+  box-shadow: none;
+}
+
+.cabecera-publica__acciones .boton--primario span {
+  background: linear-gradient(90deg, var(--azul-marca), #39bcd1);
+  background-clip: text;
+  color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cabecera-publica__acciones .boton--primario:hover {
+  background: #f8fdfe;
+}
+
+.cabecera-publica nav,
+.cabecera-publica__acciones,
+.rubros,
+.beneficio,
+.pasos-nuevos,
+.cierre-landing .boton {
+  font-family: var(--fuente-marca);
+}
+
+.inicio-hero {
+  padding: 0;
+  background: #fff;
+}
+
+.inicio-hero__lienzo {
+  position: relative;
+  width: 100%;
+  max-width: 1915px;
+  aspect-ratio: 1915 / 853;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #fff;
+}
+
+.inicio-hero__imagen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.inicio-hero__cta {
+  position: absolute;
+  z-index: 2;
+  top: 43%;
+  left: clamp(30px, 3.2vw, 62px);
+  min-width: 220px;
+  min-height: 58px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 30px;
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--azul-marca), #2a9fba, #55c9d8);
+  color: #fff;
+  font-family: var(--fuente-marca);
+  font-size: 17px;
+  box-shadow: 0 12px 28px rgba(12, 70, 96, 0.22);
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.landing-titulo > span {
+  color: var(--naranja);
+  font-family: var(--fuente-marca);
+  font-size: clamp(21px, 2vw, 27px);
+  line-height: 1.25;
+}
+
+.cierre-landing__interior > div > span {
+  color: var(--naranja);
+  font-family: var(--fuente-marca);
+  font-size: 15px;
+}
+
+.inicio-hero__cta:hover {
+  background: linear-gradient(100deg, #0a4865, var(--azul-marca), #2a9fba);
+  transform: translateY(-2px);
+}
+
+.rubros {
+  overflow: hidden;
+  padding-top: clamp(64px, 7vw, 108px);
+  background: #fff;
+}
+
+.rubros__marquesina {
+  overflow: hidden;
+  background: #fff;
+}
+
+.rubros__pista {
+  width: max-content;
+  display: flex;
+  align-items: center;
+  will-change: transform;
+  animation: desplazar-rubros-derecha 20s linear infinite;
+}
+
+.rubros__grupo {
+  min-height: 116px;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: clamp(42px, 5vw, 78px);
+  padding-right: clamp(42px, 5vw, 78px);
+}
+
+.rubros__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #000;
+  font-family: var(--fuente-editorial);
+  font-size: clamp(19px, 1.5vw, 24px);
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.rubros__icono {
+  width: clamp(25px, 2vw, 31px);
+  height: clamp(25px, 2vw, 31px);
+  flex: 0 0 auto;
+  color: #000;
+}
+
+.rubros__imagen-contenedor {
+  width: clamp(34px, 2.7vw, 43px);
+  height: clamp(34px, 2.7vw, 43px);
+  overflow: hidden;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  background: #fff;
+}
+
+.rubros__imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+.rubros__imagen--unas {
+  transform: scale(1.5);
+}
+
+@keyframes desplazar-rubros-derecha {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.landing-seccion {
+  padding-top: 105px;
+  padding-bottom: 105px;
+}
+
+.landing-titulo {
+  max-width: 760px;
+  margin: 0 auto 54px;
+  text-align: center;
+}
+
+.landing-titulo h2,
+.cierre-landing h2 {
+  margin: 14px 0;
+  color: var(--tinta);
+  font: 700 clamp(39px, 5vw, 62px)/1.04 var(--fuente-editorial);
+  letter-spacing: -0.035em;
+}
+
+.landing-titulo p {
+  max-width: 620px;
+  margin: 0 auto;
+  font-size: 19px;
+}
+
+.beneficios-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border-top: 1px solid #d4e5eb;
+}
+
+.beneficio {
+  min-height: 245px;
+  padding: 34px 32px;
+  border-bottom: 1px solid #d4e5eb;
+}
+
+.beneficio:not(:nth-child(3n + 1)) {
+  border-left: 1px solid #d4e5eb;
+}
+
+.beneficio__icono {
+  display: inline-flex;
+  color: var(--naranja);
+}
+
+.beneficio__icono svg {
+  width: 30px;
+  height: 30px;
+}
+
+.beneficio h3 {
+  margin: 24px 0 8px;
+  color: var(--tinta);
+  font-size: 21px;
+}
+
+.beneficio p {
+  margin: 0;
+  font-size: 16px;
+}
+
+.como-funciona {
+  padding: 100px 0;
+  background: #eaf7fa;
+}
+
+.como-funciona__interior {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  align-items: start;
+  gap: 80px;
+}
+
+.landing-titulo--izquierda {
+  margin: 0;
+  text-align: left;
+}
+
+.landing-titulo--izquierda h2 {
+  font-size: clamp(40px, 5vw, 58px);
+}
+
+.pasos-nuevos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid #bfdae4;
+}
+
+.pasos-nuevos li {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 18px;
+  padding: 25px 0;
+  border-bottom: 1px solid #bfdae4;
+}
+
+.pasos-nuevos b {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--naranja);
+  color: #fff;
+}
+
+.pasos-nuevos h3 {
+  margin: 1px 0 5px;
+  color: var(--tinta);
+  font-size: 20px;
+}
+
+.pasos-nuevos p {
+  margin: 0;
+  font-size: 16px;
+}
+
+.cierre-landing {
+  background: var(--naranja);
+  color: #fff;
+}
+
+.cierre-landing__interior {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 60px;
+  padding-top: 68px;
+  padding-bottom: 68px;
+}
+
+.cierre-landing__interior > div > span,
+.cierre-landing h2,
+.cierre-landing p {
+  color: #fff;
+}
+
+.cierre-landing h2 {
+  margin-bottom: 0;
+}
+
+.cierre-landing p {
+  max-width: 340px;
+}
+
+.pie {
+  background: #fff;
+}
+
+@media (max-width: 1080px) {
+  .cabecera-publica nav {
+    display: none;
+  }
+
+  .logo-turnos__imagen {
+    width: 54px;
+    height: 54px;
+  }
+
+  .logo-turnos__nombre {
+    font-size: 23px;
+  }
+
+  .inicio-hero {
+    padding: 12px 0 0;
+  }
+
+  .inicio-hero__lienzo {
+    display: grid;
+    aspect-ratio: auto;
+    min-height: 0;
+  }
+
+  .inicio-hero__imagen {
+    position: relative;
+    height: 350px;
+    object-position: left center;
+  }
+
+  .inicio-hero__cta {
+    top: 49%;
+    left: 24px;
+    min-width: 190px;
+    min-height: 52px;
+    font-size: 15px;
+  }
+
+  .rubros {
+    padding-top: 56px;
+  }
+
+  .rubros__grupo {
+    min-height: 102px;
+  }
+
+  .landing-seccion,
+  .como-funciona {
+    padding-top: 76px;
+    padding-bottom: 76px;
+  }
+
+  .landing-titulo h2,
+  .cierre-landing h2 {
+    font-size: 38px;
+  }
+
+  .landing-titulo p {
+    font-size: 15px;
+  }
+
+  .beneficios-grid,
+  .como-funciona__interior {
+    grid-template-columns: 1fr;
+  }
+
+  .beneficio:not(:nth-child(3n + 1)) {
+    border-left: 0;
+  }
+
+  .como-funciona__interior {
+    gap: 40px;
+  }
+
+  .cierre-landing__interior {
+    display: block;
+    padding-top: 54px;
+    padding-bottom: 54px;
+  }
+
+  .cierre-landing .boton {
+    width: 100%;
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 430px) {
+  .cabecera-publica__acciones .boton {
+    display: none;
+  }
+
+  .cabecera-publica__acciones .enlace-suave {
+    display: inline-flex;
+  }
+
+  .inicio-hero__imagen {
+    height: 300px;
+  }
+
+  .inicio-hero__cta {
+    top: 51%;
+    left: 18px;
+    min-width: 165px;
+    min-height: 48px;
+    padding-inline: 22px;
+    font-size: 13px;
+  }
+}

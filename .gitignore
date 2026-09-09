@@ -1,0 +1,14 @@
+# Excluye dependencias, salidas compiladas, secretos y archivos locales del repositorio.
+node_modules/
+.next/
+dist/
+coverage/
+.turbo/
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+Thumbs.db
+prisma/dev.db

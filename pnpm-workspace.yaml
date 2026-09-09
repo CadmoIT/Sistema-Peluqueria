@@ -1,0 +1,21 @@
+# Define las aplicaciones y paquetes que componen el monorepo de TurnosRapidos.
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Instala las dependencias físicas en la raíz y evita árboles completos por aplicación.
+nodeLinker: hoisted
+
+onlyBuiltDependencies:
+  - "@prisma/client"
+  - "@prisma/engines"
+  - "esbuild"
+  - "prisma"
+  - "unrs-resolver"
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  "@scarf/scarf": false
+  esbuild: true
+  prisma: true
+  unrs-resolver: true

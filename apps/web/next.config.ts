@@ -1,0 +1,8 @@
+/** Configura Next.js para consumir los paquetes compartidos del monorepo. */
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  transpilePackages: ["@turnos/ui", "@turnos/config", "@turnos/contratos"],
+};
+
+export default nextConfig;

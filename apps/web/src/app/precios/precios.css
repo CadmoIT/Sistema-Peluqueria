@@ -1,0 +1,201 @@
+/** Estiliza la comparacion comercial y los paquetes adicionales. */
+.precios {
+  padding-bottom: 100px;
+}
+.precios-hero {
+  text-align: center;
+  padding: 90px 20px 55px;
+}
+.precios-hero h1 {
+  font: 500 clamp(50px, 6vw, 76px)/0.95 var(--fuente-editorial);
+  letter-spacing: -3px;
+  margin: 15px;
+}
+.precios-hero h1 em {
+  color: var(--verde);
+  font-weight: 400;
+}
+.precios-hero p {
+  max-width: 580px;
+  margin: auto;
+}
+.planes-grid {
+  width: min(860px, calc(100% - 30px));
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.planes-grid article {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 23px;
+  padding: 34px;
+  position: relative;
+}
+.planes-grid article.destacado {
+  border: 2px solid var(--verde);
+  box-shadow: var(--sombra);
+}
+.recomendado {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  background: var(--verde-2);
+  color: var(--verde);
+  border-radius: 99px;
+  padding: 6px 9px;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.8px;
+}
+.planes-grid h2 {
+  font: 500 29px var(--fuente-editorial);
+  margin: 0;
+}
+.planes-grid > article > p {
+  font-size: 11px;
+  min-height: 40px;
+}
+.precio {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 26px 0;
+}
+.precio strong {
+  font-size: 29px;
+}
+.precio span {
+  font-size: 8px;
+  color: #7c8782;
+  line-height: 1.4;
+}
+.planes-grid .boton {
+  width: 100%;
+}
+.planes-grid ul {
+  list-style: none;
+  padding: 22px 0 0;
+  border-top: 1px solid var(--borde);
+  margin-top: 24px;
+  display: grid;
+  gap: 12px;
+}
+.planes-grid li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+}
+.planes-grid li svg {
+  width: 14px;
+  color: var(--verde);
+}
+.whatsapp-planes {
+  width: min(1020px, calc(100% - 30px));
+  margin: 80px auto 0;
+  background: #18251f;
+  color: #fff;
+  border-radius: 27px;
+  padding: 50px;
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 50px;
+  align-items: center;
+}
+.icono-whatsapp {
+  display: grid;
+  place-items: center;
+  width: 47px;
+  height: 47px;
+  border-radius: 14px;
+  background: #2f5d49;
+  margin-bottom: 20px;
+}
+.whatsapp-planes h2 {
+  font: 500 42px var(--fuente-editorial);
+  margin: 10px 0;
+}
+.whatsapp-planes p {
+  color: #adbbb4;
+  font-size: 11px;
+}
+.packs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.packs article {
+  background: #26362f;
+  border: 1px solid #3a4b43;
+  border-radius: 15px;
+  padding: 22px 14px;
+}
+.packs span,
+.packs small,
+.packs strong {
+  display: block;
+}
+.packs span {
+  font-size: 24px;
+  font-weight: 800;
+}
+.packs small {
+  font-size: 8px;
+  color: #9baaa3;
+  margin: 3px 0 16px;
+}
+.packs strong {
+  font-size: 13px;
+}
+.faq-precios {
+  width: min(760px, calc(100% - 30px));
+  margin: 80px auto;
+}
+.faq-precios h2 {
+  text-align: center;
+  font: 500 38px var(--fuente-editorial);
+}
+.faq-precios details {
+  border-bottom: 1px solid var(--borde);
+  padding: 18px 0;
+}
+.faq-precios summary {
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.faq-precios p {
+  font-size: 11px;
+}
+@media (max-width: 700px) {
+  .precios-hero {
+    padding-top: 60px;
+  }
+  .precios-hero h1 {
+    font-size: 50px;
+  }
+  .planes-grid {
+    grid-template-columns: 1fr;
+  }
+  .whatsapp-planes {
+    grid-template-columns: 1fr;
+    padding: 35px 22px;
+    gap: 30px;
+  }
+  .packs {
+    grid-template-columns: 1fr;
+  }
+  .packs article {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+  }
+  .packs small {
+    margin: 0;
+  }
+  .whatsapp-planes h2 {
+    font-size: 36px;
+  }
+}

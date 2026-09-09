@@ -1,0 +1,20 @@
+# Levanta PostgreSQL local para desarrollar y ejecutar pruebas de integracion.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: turnos
+      POSTGRES_PASSWORD: turnos
+      POSTGRES_DB: turnos_rapidos
+    ports:
+      - "5432:5432"
+    volumes:
+      - turnos_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U turnos -d turnos_rapidos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  turnos_postgres:

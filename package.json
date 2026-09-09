@@ -1,0 +1,26 @@
+{
+  "name": "turnos-rapidos",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "dependencies": {
+    "@prisma/client": "6.19.3"
+  },
+  "scripts": {
+    "predev": "pnpm --filter @turnos/config build && pnpm --filter @turnos/contratos build && pnpm --filter @turnos/ui build",
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint && pnpm validar:encabezados",
+    "test": "turbo test",
+    "format": "prettier --check .",
+    "validar:encabezados": "node scripts/validar-encabezados.mjs",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "prisma": "6.19.3",
+    "turbo": "^2.5.3",
+    "typescript": "^5.8.3"
+  }
+}
