@@ -17,7 +17,7 @@ export function Hero() {
           priority
           sizes="(max-width: 1080px) 100vw, 1600px"
         />
-        <Link className="inicio-hero__cta" href="/acceder">
+        <Link className="inicio-hero__cta" href="/acceder?modo=registro">
           Probar gratis
         </Link>
       </div>

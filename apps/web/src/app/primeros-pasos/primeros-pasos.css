@@ -1,0 +1,152 @@
+/** Define la bienvenida obligatoria que antecede al panel de administración. */
+.primeros-pasos {
+  min-height: 100vh;
+  padding: 30px clamp(20px, 5vw, 76px) 60px;
+  background: #fff;
+  color: #000;
+}
+
+.primeros-pasos__marca {
+  display: flex;
+  justify-content: center;
+}
+
+.primeros-pasos__marca .logo-turnos__imagen {
+  width: 62px;
+  height: 62px;
+}
+
+.primeros-pasos__marca .logo-turnos__nombre {
+  color: #000;
+  font-size: 24px;
+}
+
+.primeros-pasos__contenido {
+  width: min(1080px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+  gap: clamp(54px, 8vw, 110px);
+  align-items: center;
+  margin: clamp(70px, 10vh, 120px) auto 0;
+}
+
+.primeros-pasos__introduccion > span {
+  color: var(--azul-marca);
+  font-family: var(--fuente-marca);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.primeros-pasos__introduccion h1 {
+  max-width: 520px;
+  margin: 18px 0;
+  color: #000;
+  font: 400 clamp(42px, 5vw, 67px) / 1.04 var(--fuente-marca);
+  letter-spacing: -0.045em;
+}
+
+.primeros-pasos__introduccion p {
+  max-width: 490px;
+  margin: 0;
+  color: #222;
+  font-size: 20px;
+  line-height: 1.6;
+}
+
+.primeros-pasos__formulario {
+  display: grid;
+  gap: 24px;
+  padding: clamp(28px, 4vw, 48px);
+  border-radius: 24px;
+  background: #f5fafc;
+}
+
+.primeros-pasos__formulario label {
+  display: grid;
+  gap: 10px;
+  color: #000;
+  font-family: var(--fuente-marca);
+  font-size: 17px;
+}
+
+.primeros-pasos__formulario .texto-pregunta {
+  font-family: var(--fuente-preguntas);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.primeros-pasos__formulario input,
+.primeros-pasos__formulario select {
+  width: 100%;
+  height: 60px;
+  padding: 0 17px;
+  border: 1px solid #000;
+  border-radius: 11px;
+  outline: 0;
+  background: #fff;
+  color: #000;
+  font-family: var(--fuente-editorial);
+  font-size: 17px;
+}
+
+.primeros-pasos__formulario input:focus,
+.primeros-pasos__formulario select:focus {
+  box-shadow: 0 0 0 3px rgba(42, 159, 186, 0.2);
+}
+
+.primeros-pasos__formulario .boton {
+  min-height: 58px;
+  margin-top: 4px;
+  border-radius: 11px;
+  font-size: 17px;
+}
+
+.primeros-pasos__formulario .boton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.primeros-pasos__mensaje {
+  margin: 0;
+  color: #8f1d1d;
+  font-family: var(--fuente-preguntas);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+@media (max-width: 800px) {
+  .primeros-pasos {
+    padding-inline: 16px;
+  }
+
+  .primeros-pasos__contenido {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    margin-top: 55px;
+  }
+
+  .primeros-pasos__introduccion {
+    text-align: center;
+  }
+
+  .primeros-pasos__introduccion h1,
+  .primeros-pasos__introduccion p {
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .primeros-pasos__introduccion h1 {
+    font-size: 39px;
+  }
+
+  .primeros-pasos__introduccion p {
+    font-size: 17px;
+  }
+
+  .primeros-pasos__formulario {
+    padding: 24px 18px;
+    border-radius: 18px;
+  }
+}

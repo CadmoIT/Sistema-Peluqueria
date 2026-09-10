@@ -18,8 +18,8 @@ export function CabeceraPublica() {
           <Link className="enlace-suave" href="/acceder?modo=ingreso">
             Ingresar
           </Link>
-          <Link className="boton boton--primario" href="/acceder">
-            <span>Probar gratis</span>
+          <Link className="boton boton--primario" href="/acceder?modo=registro">
+            <span>Registrarse</span>
           </Link>
         </div>
       </div>

@@ -1,20 +1,37 @@
-/** Comparte los datos mínimos elegidos al registrarse con el asistente del negocio. */
-export const CLAVE_REGISTRO_NEGOCIO = "turnosrapidos-registro-negocio";
+/** Centraliza los rubros permitidos durante la configuración inicial del negocio. */
+export const RUBROS_NEGOCIO = [
+  { valor: "peluqueria", nombre: "Peluquería" },
+  { valor: "barberia", nombre: "Barbería" },
+  { valor: "unas", nombre: "Uñas y manicuría" },
+  { valor: "estetica", nombre: "Estética" },
+  { valor: "spa", nombre: "Spa y bienestar" },
+  { valor: "masajes", nombre: "Masajes" },
+  { valor: "tatuajes", nombre: "Tatuajes" },
+  { valor: "consultorios", nombre: "Consultorios" },
+  { valor: "veterinarias", nombre: "Veterinarias" },
+  { valor: "entrenamiento", nombre: "Entrenamiento" },
+] as const;
 
-export type RegistroNegocioInicial = {
-  tipoNegocio: string;
-  cantidadLocales: string;
-};
+export const CANTIDADES_LOCALES = [
+  { valor: 1, nombre: "1 local" },
+  { valor: 2, nombre: "2 locales" },
+  { valor: 3, nombre: "3 locales" },
+  { valor: 4, nombre: "4 locales" },
+  { valor: 5, nombre: "5 locales o más" },
+] as const;
 
-const nombresRubros: Record<string, string> = {
-  peluqueria: "Peluquería",
-  barberia: "Barbería",
-  unas: "Uñas y manicuría",
-  estetica: "Estética",
-  spa: "Spa y bienestar",
-  otro: "Otro negocio con turnos",
-};
+const nombresRubros: Record<string, string> = Object.fromEntries(
+  RUBROS_NEGOCIO.map((rubro) => [rubro.valor, rubro.nombre]),
+);
 
 export function obtenerNombreRubro(tipoNegocio: string) {
   return nombresRubros[tipoNegocio] ?? "";
+}
+
+export function esRubroValido(tipoNegocio: string) {
+  return RUBROS_NEGOCIO.some((rubro) => rubro.valor === tipoNegocio);
+}
+
+export function esCantidadLocalesValida(cantidad: number) {
+  return CANTIDADES_LOCALES.some((opcion) => opcion.valor === cantidad);
 }

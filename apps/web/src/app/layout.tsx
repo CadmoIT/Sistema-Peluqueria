@@ -1,6 +1,6 @@
 /** Define metadatos, fuentes y estilos globales para todas las superficies web. */
 import type { Metadata } from "next";
-import { Doppio_One, PT_Serif } from "next/font/google";
+import { Doppio_One, PT_Serif, PT_Serif_Caption } from "next/font/google";
 import "./globals.css";
 
 const doppioOne = Doppio_One({
@@ -14,6 +14,12 @@ const ptSerif = PT_Serif({
   subsets: ["latin"],
   variable: "--fuente-editorial",
 });
+const ptSerifCaption = PT_Serif_Caption({
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  variable: "--fuente-preguntas",
+});
 
 export const metadata: Metadata = {
   title: { default: "TurnosRapidos", template: "%s · TurnosRapidos" },
@@ -25,7 +31,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es-AR">
-      <body className={`${doppioOne.variable} ${ptSerif.variable}`}>
+      <body
+        className={`${doppioOne.variable} ${ptSerif.variable} ${ptSerifCaption.variable}`}
+      >
         {children}
       </body>
     </html>

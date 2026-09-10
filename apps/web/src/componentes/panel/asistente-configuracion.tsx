@@ -14,11 +14,6 @@ import {
   Save,
 } from "lucide-react";
 import { NavegacionPanel } from "./navegacion-panel";
-import {
-  CLAVE_REGISTRO_NEGOCIO,
-  obtenerNombreRubro,
-  type RegistroNegocioInicial,
-} from "@/lib/registro-inicial";
 
 type Configuracion = {
   nombre: string;
@@ -67,19 +62,6 @@ export function AsistenteConfiguracion() {
     if (existente) {
       setConfiguracion({ ...inicial, ...JSON.parse(existente) });
       return;
-    }
-
-    const registro = window.sessionStorage.getItem(CLAVE_REGISTRO_NEGOCIO);
-    if (!registro) return;
-
-    try {
-      const datos = JSON.parse(registro) as RegistroNegocioInicial;
-      setConfiguracion((actual) => ({
-        ...actual,
-        rubro: obtenerNombreRubro(datos.tipoNegocio),
-      }));
-    } catch {
-      window.sessionStorage.removeItem(CLAVE_REGISTRO_NEGOCIO);
     }
   }, []);
 

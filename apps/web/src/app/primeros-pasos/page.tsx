@@ -1,20 +1,19 @@
-/** Protege el panel con sesión válida y carga sus estilos específicos. */
+/** Protege y presenta la configuración que debe completarse antes de abrir el panel. */
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { FormularioConfiguracionInicial } from "@/componentes/panel/formulario-configuracion-inicial";
 import { autenticacion } from "@/lib/autenticacion";
 import { buscarNegocioDelUsuario } from "@/servicios/configuracion-inicial.service";
-import "./panel.css";
+import "./primeros-pasos.css";
 
-export default async function LayoutPanel({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const metadata = { title: "Configurá tu negocio" };
+
+export default async function PaginaPrimerosPasos() {
   if (process.env.MODO_DEMO === "true") {
     const configuracionDemo = (await cookies()).get(
       "configuracion-inicial-demo",
     );
-    if (!configuracionDemo) redirect("/primeros-pasos");
+    if (configuracionDemo) redirect("/panel");
   } else {
     const sesion = await autenticacion.api.getSession({
       headers: await headers(),
@@ -22,8 +21,8 @@ export default async function LayoutPanel({
     if (!sesion) redirect("/acceder?modo=ingreso");
 
     const membresia = await buscarNegocioDelUsuario(sesion.user.id);
-    if (!membresia) redirect("/primeros-pasos");
+    if (membresia) redirect("/panel");
   }
 
-  return children;
+  return <FormularioConfiguracionInicial />;
 }

@@ -56,12 +56,13 @@
   border-radius: 24px;
   background: #fff;
   box-shadow: 0 22px 60px rgba(16, 67, 91, 0.1);
+  color: #000;
   font-family: var(--fuente-marca);
 }
 
 .formulario-caja h1 {
   margin: 0 0 10px;
-  color: var(--tinta);
+  color: #000;
   font: 400 35px/1.12 var(--fuente-marca);
   letter-spacing: -0.035em;
   text-align: center;
@@ -70,6 +71,7 @@
 .formulario-caja > p {
   margin: 0 auto 30px;
   max-width: 390px;
+  color: #000;
   font-size: 16px;
   line-height: 1.55;
   text-align: center;
@@ -80,7 +82,7 @@
   height: 56px;
   display: grid;
   place-items: center;
-  border: 0;
+  border: 1px solid #000;
   border-radius: 9px;
   background: #eef1f3;
   color: #36323b;
@@ -121,7 +123,7 @@
 .formulario-caja label {
   display: grid;
   gap: 8px;
-  color: #27495e;
+  color: #000;
   font-size: 14px;
   font-weight: 700;
 }
@@ -131,11 +133,11 @@
   width: 100%;
   height: 56px;
   padding: 0 16px;
-  border: 1px solid #bfd1da;
+  border: 1px solid #000;
   border-radius: 10px;
   outline: 0;
   background: #fff;
-  color: var(--tinta);
+  color: #000;
   font-size: 15px;
 }
 
@@ -145,8 +147,12 @@
 
 .formulario-caja input:focus,
 .formulario-caja select:focus {
-  border-color: var(--naranja);
+  border-color: #000;
   box-shadow: 0 0 0 3px rgba(42, 159, 186, 0.14);
+}
+
+.formulario-caja input::placeholder {
+  color: #666;
 }
 
 .password {
@@ -176,6 +182,7 @@
   margin-top: -8px;
   color: var(--naranja-oscuro);
   font-size: 13px;
+  font-family: var(--fuente-preguntas);
   text-align: right;
 }
 
@@ -201,15 +208,14 @@
 .cambiar-modo {
   margin: 25px 0 0 !important;
   font-size: 14px !important;
+  color: #000;
+  font-family: var(--fuente-preguntas);
   text-align: center;
 }
 
-.cambiar-modo button {
-  border: 0;
-  background: none;
+.cambiar-modo a {
   color: var(--naranja-oscuro);
   font-weight: 800;
-  cursor: pointer;
 }
 
 .terminos {

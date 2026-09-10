@@ -1,68 +1,58 @@
-/** Gestiona un acceso sencillo por email o Google y recupera los datos iniciados en la landing. */
+/** Gestiona el registro y el inicio de sesión con email o Google. */
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
-import {
-  CLAVE_REGISTRO_NEGOCIO,
-  type RegistroNegocioInicial,
-} from "@/lib/registro-inicial";
 import { LogoTurnosRapidos } from "@/componentes/layout/logo-turnos-rapidos";
 import { clienteAutenticacion } from "@/lib/cliente-autenticacion";
 
 export function FormularioAcceso() {
   const parametros = useSearchParams();
   const router = useRouter();
-  const [registro, setRegistro] = useState(
-    parametros.get("modo") !== "ingreso",
-  );
+  const registro = parametros.get("modo") !== "ingreso";
   const [verContrasena, setVerContrasena] = useState(false);
-  const [tipoNegocio, setTipoNegocio] = useState("");
-  const [cantidadLocales, setCantidadLocales] = useState("");
+  const [verRepeticion, setVerRepeticion] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const googleHabilitado =
     process.env.NEXT_PUBLIC_GOOGLE_AUTH_HABILITADO === "true";
 
-  useEffect(() => setMensaje(""), [registro]);
-
-  function guardarDatosNegocio() {
-    if (!registro) return true;
-
-    if (!tipoNegocio || !cantidadLocales) {
-      setMensaje("Elegí el tipo de negocio y la cantidad de locales.");
-      return false;
-    }
-
-    const datosNegocio: RegistroNegocioInicial = {
-      tipoNegocio,
-      cantidadLocales,
-    };
-    sessionStorage.setItem(
-      CLAVE_REGISTRO_NEGOCIO,
-      JSON.stringify(datosNegocio),
-    );
-    return true;
-  }
+  useEffect(() => {
+    setMensaje("");
+    setVerContrasena(false);
+    setVerRepeticion(false);
+  }, [registro]);
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     setMensaje("");
-    if (!guardarDatosNegocio()) return;
-    setCargando(true);
 
     const datos = new FormData(evento.currentTarget);
+    const nombre = String(datos.get("nombre") ?? "").trim();
     const email = String(datos.get("email"));
     const password = String(datos.get("password"));
+    const repetirPassword = String(datos.get("repetirPassword") ?? "");
+
+    if (registro && nombre.length < 2) {
+      setMensaje("Ingresá tu nombre para crear la cuenta.");
+      return;
+    }
+
+    if (registro && password !== repetirPassword) {
+      setMensaje("Las contraseñas no coinciden.");
+      return;
+    }
+
+    setCargando(true);
 
     const resultado = registro
       ? await clienteAutenticacion.signUp.email({
-          name: email.split("@")[0] || "Propietario",
+          name: nombre,
           email,
           password,
-          callbackURL: "/panel/configuracion",
+          callbackURL: "/primeros-pasos",
         })
       : await clienteAutenticacion.signIn.email({
           email,
@@ -92,7 +82,6 @@ export function FormularioAcceso() {
 
   async function ingresarConGoogle() {
     setMensaje("");
-    if (!guardarDatosNegocio()) return;
 
     if (!googleHabilitado) {
       setMensaje(
@@ -103,7 +92,7 @@ export function FormularioAcceso() {
 
     await clienteAutenticacion.signIn.social({
       provider: "google",
-      callbackURL: registro ? "/panel/configuracion" : "/panel",
+      callbackURL: registro ? "/primeros-pasos" : "/panel",
     });
   }
 
@@ -125,51 +114,6 @@ export function FormularioAcceso() {
           </p>
 
           <form onSubmit={enviar}>
-            {registro && (
-              <>
-                <label>
-                  ¿Qué tipo de negocio tenés?
-                  <select
-                    name="tipoNegocio"
-                    required
-                    value={tipoNegocio}
-                    onChange={(evento) => setTipoNegocio(evento.target.value)}
-                  >
-                    <option value="" disabled>
-                      Elegí una opción
-                    </option>
-                    <option value="peluqueria">Peluquería</option>
-                    <option value="barberia">Barbería</option>
-                    <option value="unas">Uñas y manicuría</option>
-                    <option value="estetica">Estética</option>
-                    <option value="spa">Spa y bienestar</option>
-                    <option value="otro">Otro negocio con turnos</option>
-                  </select>
-                </label>
-
-                <label>
-                  ¿Cuántos locales tenés?
-                  <select
-                    name="cantidadLocales"
-                    required
-                    value={cantidadLocales}
-                    onChange={(evento) =>
-                      setCantidadLocales(evento.target.value)
-                    }
-                  >
-                    <option value="" disabled>
-                      Seleccioná una cantidad
-                    </option>
-                    <option value="1">1 local</option>
-                    <option value="2">2 locales</option>
-                    <option value="3">3 locales</option>
-                    <option value="4-5">Entre 4 y 5 locales</option>
-                    <option value="6+">6 locales o más</option>
-                  </select>
-                </label>
-              </>
-            )}
-
             <button
               className="google"
               type="button"
@@ -184,6 +128,21 @@ export function FormularioAcceso() {
               <span />o con tu email
               <span />
             </div>
+
+            {registro && (
+              <label>
+                Nombre
+                <input
+                  required
+                  minLength={2}
+                  maxLength={60}
+                  name="nombre"
+                  type="text"
+                  autoComplete="given-name"
+                  placeholder="Tu nombre"
+                />
+              </label>
+            )}
 
             <label>
               Email
@@ -219,6 +178,33 @@ export function FormularioAcceso() {
               </div>
             </label>
 
+            {registro && (
+              <label>
+                Repetir contraseña
+                <div className="password">
+                  <input
+                    required
+                    minLength={8}
+                    name="repetirPassword"
+                    type={verRepeticion ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="Escribila nuevamente"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setVerRepeticion(!verRepeticion)}
+                    aria-label={
+                      verRepeticion
+                        ? "Ocultar contraseña repetida"
+                        : "Mostrar contraseña repetida"
+                    }
+                  >
+                    {verRepeticion ? "Ocultar" : "Mostrar"}
+                  </button>
+                </div>
+              </label>
+            )}
+
             {!registro && (
               <Link href="/recuperar" className="olvido">
                 ¿Olvidaste tu contraseña?
@@ -245,15 +231,9 @@ export function FormularioAcceso() {
 
           <p className="cambiar-modo">
             {registro ? "¿Ya tenés una cuenta?" : "¿Es tu primera vez?"}{" "}
-            <button
-              type="button"
-              onClick={() => {
-                setRegistro(!registro);
-                setMensaje("");
-              }}
-            >
+            <Link href={registro ? "/acceder?modo=ingreso" : "/acceder"}>
               {registro ? "Ingresar" : "Crear una cuenta"}
-            </button>
+            </Link>
           </p>
 
           <small className="terminos">

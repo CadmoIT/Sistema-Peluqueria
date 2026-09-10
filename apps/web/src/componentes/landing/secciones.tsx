@@ -1,19 +1,23 @@
 /** Presenta beneficios y pasos de adopción con una identidad clara y cercana. */
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CalendarCheck2,
-  ChartNoAxesCombined,
-  CreditCard,
-  Globe2,
-  MessageCircleMore,
-  UsersRound,
-} from "lucide-react";
+import { ArrowRight, SquareMenu } from "lucide-react";
+import { BiMessageRoundedDots } from "react-icons/bi";
+import { BsCreditCard2Front } from "react-icons/bs";
+import { FaChartLine } from "react-icons/fa6";
+import { FiGlobe } from "react-icons/fi";
 import { GiLipstick } from "react-icons/gi";
-import { MdSpa } from "react-icons/md";
+import { HiOutlineUserGroup } from "react-icons/hi2";
+import { MdEventAvailable, MdSpa } from "react-icons/md";
 import type { IconType } from "react-icons";
-import { TbDumbbell, TbMassage, TbPaw, TbStethoscope } from "react-icons/tb";
+import {
+  TbDumbbell,
+  TbMassage,
+  TbPalette,
+  TbPaw,
+  TbStethoscope,
+  TbWorldShare,
+} from "react-icons/tb";
 
 type Rubro = {
   nombre: string;
@@ -67,35 +71,57 @@ function GrupoRubros({ repetido = false }: { repetido?: boolean }) {
 
 const beneficios = [
   {
-    icono: CalendarCheck2,
-    titulo: "Una agenda que respeta tus tiempos",
-    texto:
-      "Horarios, descansos y profesionales organizados sin superposiciones.",
+    icono: MdEventAvailable,
+    titulo: "Una agenda personalizada",
+    texto: "Fechas, horarios y profesionales organizados en una misma agenda.",
   },
   {
-    icono: Globe2,
+    icono: FiGlobe,
     titulo: "Tu negocio abierto las 24 horas",
-    texto: "Una página propia para que tus clientes reserven cuando quieran.",
+    texto: "Una página para que tus clientes reserven en cualquier momento.",
   },
   {
-    icono: MessageCircleMore,
-    titulo: "Menos mensajes repetidos",
-    texto: "Confirmaciones y recordatorios que mantienen a todos al día.",
+    icono: BiMessageRoundedDots,
+    titulo: "Mensajes automáticos",
+    texto:
+      "Confirmaciones y recordatorios automáticos para no perder ningún turno.",
   },
   {
-    icono: CreditCard,
+    icono: BsCreditCard2Front,
     titulo: "Cobros simples y seguros",
-    texto: "Recibí señas y ventas directamente mediante Mercado Pago.",
+    texto: "Recibí reservas y ventas mediante Mercado Pago o en efectivo.",
   },
   {
-    icono: UsersRound,
-    titulo: "Cada cliente, más cerca",
-    texto: "Historial, preferencias y visitas para brindar una mejor atención.",
+    icono: HiOutlineUserGroup,
+    titulo: "Información de tus clientes",
+    texto: "Consultá el historial de cada cliente y todos sus turnos.",
   },
   {
-    icono: ChartNoAxesCombined,
-    titulo: "Números que se entienden",
-    texto: "Ocupación, ventas y servicios destacados en una vista sencilla.",
+    icono: FaChartLine,
+    titulo: "Cuentas claras",
+    texto:
+      "Ventas, compras, servicios y ofertas organizados de manera sencilla.",
+  },
+];
+
+const pasos = [
+  {
+    numero: "1",
+    icono: SquareMenu,
+    titulo: "Completá los datos de tu negocio",
+    texto: "Cargá la información, los horarios y el equipo de tu negocio.",
+  },
+  {
+    numero: "2",
+    icono: TbPalette,
+    titulo: "Personalizá tu página web",
+    texto: "Elegí tus colores, imágenes y el estilo que mejor te representa.",
+  },
+  {
+    numero: "3",
+    icono: TbWorldShare,
+    titulo: "Compartila con tus clientes",
+    texto: "Enviá tu enlace y empezá a recibir reservas online.",
   },
 ];
 
@@ -126,8 +152,11 @@ export function SeccionesLanding() {
         </div>
 
         <div className="beneficios-grid">
-          {beneficios.map(({ icono: Icono, titulo, texto }) => (
-            <article className="beneficio" key={titulo}>
+          {beneficios.map(({ icono: Icono, titulo, texto }, indice) => (
+            <article
+              className={`beneficio beneficio--${indice + 1}`}
+              key={titulo}
+            >
               <span className="beneficio__icono">
                 <Icono aria-hidden="true" />
               </span>
@@ -146,27 +175,20 @@ export function SeccionesLanding() {
           </div>
 
           <ol className="pasos-nuevos">
-            <li>
-              <b>1</b>
-              <div>
-                <h3>Contanos sobre tu negocio</h3>
-                <p>Completá tus datos y creá una contraseña segura.</p>
-              </div>
-            </li>
-            <li>
-              <b>2</b>
-              <div>
-                <h3>Personalizá tu espacio</h3>
-                <p>Sumá servicios, equipo, horarios, fotos y colores.</p>
-              </div>
-            </li>
-            <li>
-              <b>3</b>
-              <div>
-                <h3>Compartí tu enlace</h3>
-                <p>Probalo durante siete días y recibí tus primeros turnos.</p>
-              </div>
-            </li>
+            {pasos.map(({ numero, icono: Icono, titulo, texto }) => (
+              <li key={numero}>
+                <span className="pasos-nuevos__numero" aria-hidden="true">
+                  {numero}
+                </span>
+                <span className="pasos-nuevos__icono">
+                  <Icono aria-hidden="true" />
+                </span>
+                <div>
+                  <h3>{titulo}</h3>
+                  <p>{texto}</p>
+                </div>
+              </li>
+            ))}
           </ol>
         </div>
       </section>
