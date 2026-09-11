@@ -7,8 +7,9 @@
     "@prisma/client": "6.19.3"
   },
   "scripts": {
-    "predev": "pnpm --filter @turnos/config build && pnpm --filter @turnos/contratos build && pnpm --filter @turnos/ui build",
+    "predev": "pnpm dev:infraestructura && pnpm --filter @turnos/config build && pnpm --filter @turnos/contratos build && pnpm --filter @turnos/ui build",
     "dev": "turbo dev",
+    "dev:infraestructura": "node scripts/preparar-entorno-local.mjs",
     "build": "turbo build",
     "lint": "turbo lint && pnpm validar:encabezados",
     "test": "turbo test",

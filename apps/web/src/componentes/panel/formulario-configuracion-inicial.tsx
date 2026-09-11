@@ -5,11 +5,7 @@ import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { LogoTurnosRapidos } from "@/componentes/layout/logo-turnos-rapidos";
-import {
-  CANTIDADES_LOCALES,
-  obtenerNombreRubro,
-  RUBROS_NEGOCIO,
-} from "@/lib/registro-inicial";
+import { CANTIDADES_LOCALES, RUBROS_NEGOCIO } from "@/lib/registro-inicial";
 
 export function FormularioConfiguracionInicial() {
   const router = useRouter();
@@ -39,7 +35,6 @@ export function FormularioConfiguracionInicial() {
         return;
       }
 
-      guardarBorradorDelSitio(nombreNegocio, tipoNegocio);
       router.push("/panel");
       router.refresh();
     } catch {
@@ -120,25 +115,5 @@ export function FormularioConfiguracionInicial() {
         </form>
       </section>
     </main>
-  );
-}
-
-function guardarBorradorDelSitio(nombreNegocio: string, tipoNegocio: string) {
-  const clave = "turnosrapidos-configuracion";
-  let configuracionAnterior = {};
-
-  try {
-    configuracionAnterior = JSON.parse(localStorage.getItem(clave) ?? "{}");
-  } catch {
-    configuracionAnterior = {};
-  }
-
-  localStorage.setItem(
-    clave,
-    JSON.stringify({
-      ...configuracionAnterior,
-      nombre: nombreNegocio,
-      rubro: obtenerNombreRubro(tipoNegocio),
-    }),
   );
 }

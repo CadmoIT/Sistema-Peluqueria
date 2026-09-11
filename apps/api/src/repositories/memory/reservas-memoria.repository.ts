@@ -1,4 +1,4 @@
-/** Implementa reservas en memoria para desarrollar sin depender de PostgreSQL. */
+/** Implementa reservas en memoria exclusivamente como doble rápido para pruebas unitarias. */
 import { Injectable } from "@nestjs/common";
 import type { Reserva } from "../../domain/entities/reserva.entity";
 import type { ReservasRepository } from "../contracts/reservas.repository";

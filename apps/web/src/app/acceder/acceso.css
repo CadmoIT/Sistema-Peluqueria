@@ -205,6 +205,23 @@
   line-height: 1.45;
 }
 
+.reenviar-verificacion {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--naranja-oscuro);
+  font-family: var(--fuente-preguntas);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.reenviar-verificacion:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .cambiar-modo {
   margin: 25px 0 0 !important;
   font-size: 14px !important;

@@ -1,5 +1,8 @@
-/** Muestra la navegacion adaptable del panel de gestion. */
+/** Renderiza la navegación real del panel y marca la ruta activa. */
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BarChart3,
   CalendarDays,
@@ -14,47 +17,68 @@ import {
 } from "lucide-react";
 import { LogoTurnosRapidos } from "@/componentes/layout/logo-turnos-rapidos";
 
-const items = [
-  ["Resumen", LayoutDashboard],
-  ["Agenda", CalendarDays],
-  ["Clientes", ContactRound],
-  ["Servicios", Scissors],
-  ["Equipo", UsersRound],
-  ["Inventario", Package],
-  ["Caja", WalletCards],
-  ["Reportes", BarChart3],
-  ["Mi sitio", Store],
+export const enlacesPanel = [
+  { texto: "Resumen", href: "/panel", icono: LayoutDashboard },
+  { texto: "Agenda", href: "/panel/agenda", icono: CalendarDays },
+  { texto: "Clientes", href: "/panel/clientes", icono: ContactRound },
+  { texto: "Servicios", href: "/panel/servicios", icono: Scissors },
+  { texto: "Equipo", href: "/panel/equipo", icono: UsersRound },
+  { texto: "Inventario", href: "/panel/inventario", icono: Package },
+  { texto: "Caja", href: "/panel/caja", icono: WalletCards },
+  { texto: "Reportes", href: "/panel/reportes", icono: BarChart3 },
+  { texto: "Mi sitio", href: "/panel/mi-sitio", icono: Store },
 ] as const;
 
-export function NavegacionPanel() {
+export function NavegacionPanel({
+  nombreUsuario = "Mi cuenta",
+}: {
+  nombreUsuario?: string;
+}) {
+  const ruta = usePathname();
   return (
     <aside className="nav-panel">
-      <div className="nav-panel__marca">
+      <Link
+        className="nav-panel__marca"
+        href="/panel"
+        aria-label="Ir al resumen"
+      >
         <LogoTurnosRapidos />
-      </div>
-      <nav aria-label="Panel de gestion">
-        {items.map(([texto, Icono], indice) => (
-          <Link
-            key={texto}
-            href={texto === "Mi sitio" ? "/sitio/manly-barber" : "/panel"}
-            className={indice === 0 ? "activo" : ""}
-          >
-            <Icono size={19} />
-            <span>{texto}</span>
-          </Link>
-        ))}
+      </Link>
+      <nav aria-label="Panel de gestión">
+        {enlacesPanel.map(({ texto, href, icono: Icono }) => {
+          const activo =
+            href === "/panel" ? ruta === href : ruta.startsWith(href);
+          return (
+            <Link key={href} href={href} className={activo ? "activo" : ""}>
+              <Icono size={20} />
+              <span>{texto}</span>
+            </Link>
+          );
+        })}
       </nav>
-      <Link className="nav-panel__ajustes" href="/panel">
-        <Settings size={19} />
-        <span>Configuracion</span>
+      <Link className="nav-panel__ajustes" href="/panel/configuracion">
+        <Settings size={20} />
+        <span>Configuración</span>
       </Link>
       <div className="nav-panel__usuario">
-        <span>LC</span>
+        <span>{iniciales(nombreUsuario)}</span>
         <div>
-          <strong>Lucia Costa</strong>
-          <small>Propietaria</small>
+          <strong>{nombreUsuario}</strong>
+          <small>Mi cuenta</small>
         </div>
       </div>
     </aside>
+  );
+}
+
+function iniciales(nombre: string) {
+  return (
+    nombre
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((parte) => parte[0])
+      .join("")
+      .toUpperCase() || "TR"
   );
 }

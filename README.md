@@ -2,7 +2,7 @@
 
 # TurnosRapidos
 
-Base funcional y extensible de un SaaS multiempresa para peluquerías, barberías y centros de estética de Argentina. Incluye landing comercial, precios, autenticación, onboarding con autoguardado, panel de gestión, micrositio público, carrito y flujo de reserva.
+SaaS multiempresa para negocios que trabajan con turnos. Incluye autenticación, configuración inicial, panel operativo, agenda, clientes, catálogo, equipo, inventario, caja, reportes, editor del micrositio y reservas públicas.
 
 ## Estructura
 
@@ -33,30 +33,33 @@ Requisitos: Node.js 22, pnpm y PostgreSQL 17. Docker es opcional.
 
 La web queda en `http://localhost:3000`, la API en `http://localhost:3001/api/v1` y OpenAPI en `http://localhost:3001/documentacion`.
 
-Para recorrer solamente la interfaz sin iniciar sesión, establecer `MODO_DEMO=true`. Esa variable nunca debe usarse en producción.
-
 ## Recorridos disponibles
 
 - `/`: landing comercial responsive.
 - `/precios`: planes base, combos y paquetes de WhatsApp.
 - `/acceder`: registro e ingreso con Better Auth.
 - `/recuperar`: solicitud y cambio de contraseña.
-- `/panel`: panel privado o demostrativo.
-- `/panel/configuracion`: asistente para crear el negocio, catálogo, diseño y publicación.
-- `/sitio/manly-barber`: micrositio público de ejemplo.
-- `/reservar/manly-barber`: selección de fecha, horario y datos del cliente.
+- `/panel`: resumen privado con información real.
+- `/panel/agenda`: calendario diario, semanal y mensual.
+- `/panel/clientes`, `/panel/servicios` y `/panel/equipo`: gestión operativa.
+- `/panel/inventario`, `/panel/caja` y `/panel/reportes`: control administrativo inicial.
+- `/panel/mi-sitio`: editor con borrador, vista previa y publicación.
+- `/panel/configuracion`: negocio, política de contacto, sedes y Google Places.
+- `/sitio/{slug}` y `/reservar/{slug}`: micrositio y reserva pública reales.
 
 ## Qué funciona y qué requiere credenciales
 
-El repositorio implementa el modelo relacional, autenticación, UI completa del recorrido, contratos REST, retenciones de reserva, protección SQL contra turnos superpuestos, catálogo de planes, verificación de webhooks y workers. El asistente guarda su borrador localmente para probar el recorrido; la persistencia multiusuario del onboarding se conectará a los módulos de negocio en la siguiente entrega. Google OAuth, Resend, Mercado Pago, Meta y R2 quedan listos para conectar mediante variables de entorno, pero no pueden completar operaciones reales sin cuentas y secretos del titular.
+El panel y el sitio leen PostgreSQL. Las reservas públicas calculan horarios disponibles, validan la política de contacto y evitan superposiciones también desde la base. Clientes acepta importación CSV/Excel con vista previa; Inventario registra ajustes; Caja crea ventas y descuenta stock en una transacción; Reportes resume día, semana o mes.
 
-El flujo visual de pago confirma una reserva de prueba. La confirmación productiva deberá crearse exclusivamente después del webhook aprobado de Mercado Pago.
+Google Calendar cuenta con consentimiento separado, tokens cifrados, sincronización incremental de ocupaciones y exportación de turnos sin correo ni teléfono. Google Places actualiza puntaje y cantidad de valoraciones. Mercado Pago crea la suscripción y sólo activa el sitio después de validar el webhook y consultar el recurso al proveedor. R2 recibe logo, portadas, servicios y fotos mediante una carga autenticada que valida y optimiza cada imagen en el servidor. Estas integraciones requieren las credenciales documentadas en `.env.example`.
+
+Las imágenes se decodifican en el servidor, corrigen su orientación, se reducen a un máximo de 2400 × 1800, pierden sus metadatos y se convierten a WebP antes de llegar a R2. Si R2 no está configurado, el editor mantiene la alternativa de pegar una URL y explica el motivo sin romper el formulario.
 
 ## Dominios: etapa final
 
 Durante la validación se usan rutas locales:
 
-- Micrositio sin dominio: `http://localhost:3000/sitio/manly-barber`.
+- Micrositio sin dominio: `http://localhost:3000/sitio/{slug}`.
 - Panel: `http://localhost:3000/panel`.
 
 En producción, la misma experiencia resolverá:

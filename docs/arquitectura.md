@@ -12,10 +12,10 @@ En desarrollo no hace falta comprar un dominio:
 
 - Landing: `http://localhost:3000`
 - Panel: `http://localhost:3000/panel`
-- Sitio demo: `http://localhost:3000/sitio/manly-barber`
+- Sitio público local: `http://localhost:3000/sitio/{slug}`
 - API: `http://localhost:3001/api/v1`
 
-La activación de `turnosrapidos.com.ar`, el wildcard `*.site.turnosrapidos.com.ar` y los dominios de clientes se deja para la última etapa. El modelo `Dominio` ya conserva host, verificación y modalidad; la resolución por hostname se implementará junto con el despliegue del wildcard, sin cambiar las páginas públicas.
+El middleware ya resuelve `*.site.turnosrapidos.com.ar` hacia el negocio correspondiente. En desarrollo también existe `/sitio/{slug}` para probar sin DNS. La compra del dominio principal, el registro wildcard en Vercel y los dominios personalizados de clientes siguen pospuestos hasta el despliegue final.
 
 ## Capas de la API
 
@@ -26,10 +26,18 @@ La API usa una estructura horizontal explícita, elegida para que una persona nu
 3. `services`: ejecuta cada caso de uso.
 4. `domain`: modela estados y comportamiento empresarial.
 5. `repositories/contracts`: declara qué persistencia necesita cada servicio.
-6. `repositories/memory`: implementación temporal para la demostración.
-7. `modules`: conecta clases mediante la inyección de dependencias de NestJS.
+6. `repositories/prisma`: persistencia PostgreSQL del flujo productivo.
+7. `repositories/memory`: dobles rápidos usados únicamente por pruebas unitarias.
+8. `modules`: conecta clases mediante la inyección de dependencias de NestJS.
 
-Cuando se conecte PostgreSQL, se agregarán repositorios Prisma que implementen los mismos contratos. El resto del recorrido no debe cambiar.
+Los casos del panel resuelven la sesión y la membresía antes de consultar Prisma. Las rutas del mismo origen actúan como una capa de entrada segura para cookies, importaciones, archivos y proveedores externos. La API pública de negocios usa `NegociosPrismaRepository` y la API Nest de reservas usa `ReservasPrismaRepository`; el almacenamiento en memoria no participa del entorno productivo.
+
+## Integraciones y procesos diferidos
+
+- Google Calendar usa un consentimiento distinto al inicio de sesión, cifra tokens e importa cambios mediante `syncToken`. Los turnos propios llevan una propiedad privada para no reimportarse como bloqueos.
+- Mercado Pago separa el inicio del checkout de la activación. El retorno del navegador no cambia el estado; el webhook HMAC se guarda con una clave única y se contrasta con la API del proveedor.
+- R2 recibe únicamente imágenes que el servidor pudo decodificar y convertir a WebP sin metadatos; luego las sirve con `nosniff` y caché inmutable.
+- pg-boss crea colas explícitas y ejecuta cada minuto el vencimiento de retenciones sobre PostgreSQL.
 
 ## Convenciones
 

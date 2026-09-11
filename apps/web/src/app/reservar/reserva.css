@@ -195,6 +195,45 @@
   font-size: 10px;
   font-weight: 750;
 }
+.selector-horarios {
+  display: grid;
+  gap: 9px;
+}
+.selector-horarios > span {
+  color: #111;
+  font-family: var(--fuente-marca);
+  font-size: 13px;
+}
+.selector-horarios > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.selector-horarios button {
+  min-height: 42px;
+  border: 1px solid #aebbc1;
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+  font-family: var(--fuente-preguntas);
+  cursor: pointer;
+}
+.selector-horarios button:hover,
+.selector-horarios button.activo {
+  border-color: #126783;
+  background: #126783;
+  color: #fff;
+}
+.selector-horarios p {
+  margin: 0;
+  color: #66747c;
+  font-family: var(--fuente-preguntas);
+}
+@media (max-width: 520px) {
+  .selector-horarios > div {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 .datos-cliente input:not([type="checkbox"]) {
   height: 48px;
   border: 1px solid var(--borde);

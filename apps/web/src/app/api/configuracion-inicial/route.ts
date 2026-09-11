@@ -34,20 +34,6 @@ export async function POST(solicitud: Request) {
     );
   }
 
-  if (process.env.MODO_DEMO === "true") {
-    const respuesta = NextResponse.json({
-      nombre: nombreNegocio,
-      slug: crearSlugDemostracion(nombreNegocio),
-    });
-    respuesta.cookies.set("configuracion-inicial-demo", "completa", {
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-    });
-    return respuesta;
-  }
-
   const sesion = await autenticacion.api.getSession({
     headers: solicitud.headers,
   });
@@ -64,16 +50,4 @@ export async function POST(solicitud: Request) {
     cantidadLocales,
   });
   return NextResponse.json(negocio);
-}
-
-function crearSlugDemostracion(nombre: string) {
-  return (
-    nombre
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "") || "mi-negocio"
-  );
 }

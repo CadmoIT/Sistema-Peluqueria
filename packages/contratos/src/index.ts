@@ -22,14 +22,14 @@ export interface SedeResumen {
   id: string;
   nombre: string;
   direccion: string;
-  telefono: string;
+  telefono?: string;
 }
 
 export interface ServicioPublico {
   id: string;
   nombre: string;
   categoria: string;
-  descripcion: string;
+  descripcion?: string;
   duracionMinutos: number;
   precio: number;
   imagen?: string;
@@ -40,6 +40,8 @@ export interface ProfesionalPublico {
   nombre: string;
   especialidad: string;
   iniciales: string;
+  apellido?: string;
+  foto?: string;
 }
 
 export interface NegocioPublico {
@@ -62,7 +64,27 @@ export interface CrearReservaEntrada {
   profesionalId: string;
   servicioIds: string[];
   inicio: string;
-  cliente: { nombre: string; email: string; telefono: string };
+  cliente: {
+    nombre?: string;
+    apellido?: string;
+    email?: string;
+    telefono?: string;
+  };
+}
+
+export type PoliticaContacto = "EMAIL" | "TELEFONO" | "CUALQUIERA" | "NINGUNO";
+
+export interface ConfiguracionSitioPublicada {
+  titulo: string;
+  descripcion: string;
+  colorPrincipal: string;
+  colorFondo: string;
+  colorTexto: string;
+  logoUrl?: string;
+  whatsapp?: string;
+  instagram?: string;
+  hero: string[];
+  carruselAutomatico: boolean;
 }
 
 export interface ReservaCreada {

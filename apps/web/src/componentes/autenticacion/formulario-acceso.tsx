@@ -15,12 +15,14 @@ export function FormularioAcceso() {
   const [verContrasena, setVerContrasena] = useState(false);
   const [verRepeticion, setVerRepeticion] = useState(false);
   const [cargando, setCargando] = useState(false);
+  const [emailVerificacion, setEmailVerificacion] = useState("");
   const [mensaje, setMensaje] = useState("");
   const googleHabilitado =
     process.env.NEXT_PUBLIC_GOOGLE_AUTH_HABILITADO === "true";
 
   useEffect(() => {
     setMensaje("");
+    setEmailVerificacion("");
     setVerContrasena(false);
     setVerRepeticion(false);
   }, [registro]);
@@ -63,6 +65,9 @@ export function FormularioAcceso() {
 
     setCargando(false);
     if (resultado.error) {
+      if (resultado.error.code === "EMAIL_NOT_VERIFIED") {
+        setEmailVerificacion(email);
+      }
       setMensaje(
         resultado.error.message ?? "No pudimos completar la operación.",
       );
@@ -70,6 +75,7 @@ export function FormularioAcceso() {
     }
 
     if (registro) {
+      setEmailVerificacion(email);
       setMensaje(
         "Te enviamos un enlace para verificar tu email. Revisá tu bandeja de entrada para continuar.",
       );
@@ -94,6 +100,28 @@ export function FormularioAcceso() {
       provider: "google",
       callbackURL: registro ? "/primeros-pasos" : "/panel",
     });
+  }
+
+  async function reenviarVerificacion() {
+    setCargando(true);
+    const resultado = await clienteAutenticacion.sendVerificationEmail({
+      email: emailVerificacion,
+      callbackURL: "/primeros-pasos",
+    });
+    setCargando(false);
+
+    if (resultado.error) {
+      setMensaje(
+        resultado.error.message ?? "No pudimos generar un enlace nuevo.",
+      );
+      return;
+    }
+
+    setMensaje(
+      process.env.NODE_ENV === "development"
+        ? "Generamos un enlace nuevo. Buscalo en la terminal debajo de [correo local]."
+        : "Te enviamos un nuevo enlace de verificación.",
+    );
   }
 
   return (
@@ -215,6 +243,17 @@ export function FormularioAcceso() {
               <p className="mensaje-acceso" role="status">
                 {mensaje}
               </p>
+            )}
+
+            {emailVerificacion && (
+              <button
+                className="reenviar-verificacion"
+                type="button"
+                disabled={cargando}
+                onClick={reenviarVerificacion}
+              >
+                Generar otro enlace de verificación
+              </button>
             )}
 
             <button

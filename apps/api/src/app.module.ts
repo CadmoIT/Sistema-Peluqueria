@@ -6,9 +6,11 @@ import { IntegracionesModule } from "./modules/integraciones.module";
 import { NegociosModule } from "./modules/negocios.module";
 import { ReservasModule } from "./modules/reservas.module";
 import { SaludModule } from "./modules/salud.module";
+import { DatosModule } from "./modules/datos.module";
 
 @Module({
   imports: [
+    DatosModule,
     SaludModule,
     NegociosModule,
     ReservasModule,

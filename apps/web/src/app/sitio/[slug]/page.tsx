@@ -1,16 +1,163 @@
-/** Resuelve y muestra el micrositio publico solicitado por slug. */
+/** Resuelve el negocio solicitado y presenta su versión publicada o su suspensión. */
 import { notFound } from "next/navigation";
-import { negocioDemo } from "../../../datos/demo";
-import { SitioNegocio } from "../../../componentes/sitio/sitio-negocio";
-export function generateMetadata() {
-  return { title: negocioDemo.nombre, description: negocioDemo.descripcion };
+import { PLANES } from "@turnos/config";
+import {
+  SitioPublico,
+  SitioSuspendido,
+  type DatosSitioPublico,
+} from "@/componentes/sitio/sitio-publico";
+import { obtenerSitioPublico } from "@/servicios/panel-datos.service";
+
+const planPublicacionInicial =
+  PLANES.find((plan) => plan.id === "autogestionado") ?? PLANES[0];
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const negocio = await obtenerSitioPublico(slug);
+  return negocio
+    ? {
+        title: negocio.nombre,
+        description:
+          negocio.descripcion ?? `Reservá tu turno en ${negocio.nombre}`,
+      }
+    : {};
 }
+
 export default async function PaginaSitio({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  if (![negocioDemo.slug, "manlybarbercompany"].includes(slug)) notFound();
-  return <SitioNegocio negocio={negocioDemo} />;
+  const negocio = await obtenerSitioPublico(slug);
+  if (!negocio) notFound();
+  const pruebaVencida =
+    negocio.suscripcion?.estado === "CONFIGURACION_GRATUITA" &&
+    negocio.suscripcion.pruebaFinalizaEn &&
+    negocio.suscripcion.pruebaFinalizaEn.getTime() < Date.now();
+  const graciaVencida =
+    negocio.suscripcion?.estado === "EN_GRACIA" &&
+    negocio.suscripcion.graciaHasta &&
+    negocio.suscripcion.graciaHasta.getTime() < Date.now();
+  if (
+    !negocio.publicado ||
+    pruebaVencida ||
+    graciaVencida ||
+    ["PAUSADA", "CANCELADA"].includes(negocio.suscripcion?.estado ?? "")
+  ) {
+    return (
+      <SitioSuspendido
+        nombre={negocio.nombre}
+        precio={planPublicacionInicial.precioMensual}
+      />
+    );
+  }
+
+  const publicada = (negocio.configuracionSitio?.publicada ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const cadena = (campo: string, alternativa = "") =>
+    typeof publicada[campo] === "string"
+      ? String(publicada[campo])
+      : alternativa;
+  const hero = normalizarHero(publicada.hero);
+  const secciones = normalizarSecciones(publicada.secciones);
+  const serviciosDestacados = Array.isArray(publicada.serviciosDestacados)
+    ? publicada.serviciosDestacados.filter(
+        (valor): valor is string => typeof valor === "string",
+      )
+    : [];
+  const datos: DatosSitioPublico = {
+    slug: negocio.slug,
+    nombre: negocio.nombre,
+    descripcion:
+      negocio.descripcion ??
+      "Reservá tu próximo turno de forma simple y rápida.",
+    configuracion: {
+      titulo: cadena("titulo", negocio.nombre),
+      descripcion: cadena("descripcion", negocio.descripcion ?? ""),
+      colorPrincipal: cadena("colorPrincipal", "#126783"),
+      colorFondo: cadena("colorFondo", "#ffffff"),
+      colorTexto: cadena("colorTexto", "#111111"),
+      logoUrl: cadena("logoUrl"),
+      whatsapp: cadena("whatsapp", negocio.telefono ?? ""),
+      instagram: cadena("instagram"),
+      hero,
+      carruselAutomatico: publicada.carruselAutomatico !== false,
+      secciones,
+      serviciosDestacados,
+    },
+    sedes: negocio.sedes.map((sede) => ({
+      id: sede.id,
+      nombre: sede.nombre,
+      direccion: sede.direccion,
+      telefono: sede.telefono,
+      latitud: sede.latitud ? Number(sede.latitud) : null,
+      longitud: sede.longitud ? Number(sede.longitud) : null,
+      googlePuntaje: sede.googlePuntaje ? Number(sede.googlePuntaje) : null,
+      googleResenas: sede.googleResenas,
+      googleMapsUrl: sede.googleMapsUrl,
+    })),
+    servicios: negocio.servicios.map((servicio) => ({
+      id: servicio.id,
+      nombre: servicio.nombre,
+      descripcion: servicio.descripcion,
+      categoria: servicio.categoria?.nombre ?? "General",
+      duracionMinutos: servicio.duracionMinutos,
+      precio: Number(servicio.precio),
+      imagen: servicio.imagen,
+    })),
+    profesionales: negocio.profesionales.map((profesional) => ({
+      id: profesional.id,
+      nombre: profesional.nombre,
+      apellido: profesional.apellido,
+      especialidad: profesional.especialidad,
+      biografia: profesional.biografia,
+      foto: profesional.foto,
+    })),
+  };
+  return <SitioPublico datos={datos} />;
+}
+
+function normalizarHero(
+  valor: unknown,
+): DatosSitioPublico["configuracion"]["hero"] {
+  if (!Array.isArray(valor)) return [];
+  return valor.flatMap((imagen) => {
+    if (typeof imagen === "string") {
+      return imagen ? [{ url: imagen, alt: "", focoX: 50, focoY: 50 }] : [];
+    }
+    if (!imagen || typeof imagen !== "object") return [];
+    const candidata = imagen as Record<string, unknown>;
+    if (typeof candidata.url !== "string" || !candidata.url) return [];
+    return [
+      {
+        url: candidata.url,
+        alt: typeof candidata.alt === "string" ? candidata.alt : "",
+        focoX: typeof candidata.focoX === "number" ? candidata.focoX : 50,
+        focoY: typeof candidata.focoY === "number" ? candidata.focoY : 50,
+      },
+    ];
+  });
+}
+
+function normalizarSecciones(
+  valor: unknown,
+): DatosSitioPublico["configuracion"]["secciones"] {
+  const permitidas: DatosSitioPublico["configuracion"]["secciones"] = [
+    "servicios",
+    "equipo",
+    "ubicacion",
+  ];
+  if (!Array.isArray(valor)) return permitidas;
+  return valor.filter(
+    (seccion): seccion is (typeof permitidas)[number] =>
+      typeof seccion === "string" &&
+      permitidas.includes(seccion as (typeof permitidas)[number]),
+  );
 }

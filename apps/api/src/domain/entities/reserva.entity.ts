@@ -2,9 +2,9 @@
 export type EstadoReserva = "RETENIDA" | "CONFIRMADA";
 
 export type DatosClienteReserva = {
-  nombre: string;
-  email: string;
-  telefono: string;
+  nombre?: string;
+  email?: string;
+  telefono?: string;
 };
 
 export type DatosReserva = {
@@ -22,6 +22,7 @@ type CrearReservaRetenida = {
   claveHorario: string;
   venceEn: string;
   datos: DatosReserva;
+  estado?: EstadoReserva;
 };
 
 export class Reserva {
@@ -36,13 +37,15 @@ export class Reserva {
   ) {}
 
   static retenida(entrada: CrearReservaRetenida) {
-    return new Reserva(
+    const reserva = new Reserva(
       entrada.id,
       entrada.codigo,
       entrada.claveHorario,
       entrada.venceEn,
       entrada.datos,
     );
+    reserva.estado = entrada.estado ?? "RETENIDA";
+    return reserva;
   }
 
   confirmar() {

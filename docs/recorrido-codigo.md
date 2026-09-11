@@ -1,4 +1,4 @@
-<!-- Explica cómo leer el repositorio, qué genera cada herramienta y qué piezas aún son de demostración. -->
+<!-- Explica cómo leer el repositorio, qué genera cada herramienta y qué piezas siguen en transición. -->
 
 # Recorrido del código
 
@@ -6,13 +6,13 @@
 
 El código que se mantiene está en `src`, `prisma`, `scripts` y `docs`. Estas carpetas son generadas y se pueden borrar cuando los procesos están detenidos:
 
-| Carpeta o archivo | Quién lo crea | Para qué sirve | ¿Se versiona? |
-|---|---|---|---|
-| `.turbo` | Turborepo | Caché, hashes y logs internos de tareas | No |
-| `.next` | Next.js | Compilación y caché del frontend | No |
-| `dist` | TypeScript/NestJS | JavaScript ejecutable y declaraciones `.d.ts` | No |
-| `*.tsbuildinfo` | TypeScript | Caché de compilación incremental | No |
-| `node_modules` | pnpm | Dependencias instaladas | No |
+| Carpeta o archivo | Quién lo crea     | Para qué sirve                                | ¿Se versiona? |
+| ----------------- | ----------------- | --------------------------------------------- | ------------- |
+| `.turbo`          | Turborepo         | Caché, hashes y logs internos de tareas       | No            |
+| `.next`           | Next.js           | Compilación y caché del frontend              | No            |
+| `dist`            | TypeScript/NestJS | JavaScript ejecutable y declaraciones `.d.ts` | No            |
+| `*.tsbuildinfo`   | TypeScript        | Caché de compilación incremental              | No            |
+| `node_modules`    | pnpm              | Dependencias instaladas                       | No            |
 
 El bloque `__decorate` que aparece en JavaScript es un helper generado por TypeScript para ejecutar decoradores como `@Controller` y `@Injectable`. No se edita. El archivo legible correspondiente siempre es el `.ts` dentro de `src`.
 
@@ -31,9 +31,9 @@ Ejemplo: `POST /api/v1/publico/reservas`.
 7. `validators/reserva.validator.ts` aplica reglas específicas de entrada.
 8. `domain/entities/reserva.entity.ts` crea la reserva y controla su estado.
 9. `repositories/contracts/reservas.repository.ts` define la persistencia que se necesita.
-10. `repositories/memory/reservas-memoria.repository.ts` la guarda temporalmente.
+10. `repositories/prisma/reservas-prisma.repository.ts` valida recursos del negocio y persiste la retención dentro de una transacción.
 
-`modules/reservas.module.ts` conecta esas clases. No contiene lógica. En producción, el repositorio en memoria se reemplazará por uno de Prisma/PostgreSQL; la interfaz permite hacerlo sin modificar el controlador ni el servicio.
+`modules/reservas.module.ts` conecta esas clases. No contiene lógica. `repositories/memory/reservas-memoria.repository.ts` sólo se instancia directamente en pruebas y nunca es el proveedor del módulo productivo.
 
 ## Cómo ver la API
 
@@ -64,7 +64,7 @@ El worker es otro proceso, sin interfaz web. Atiende trabajos que no deben demor
 - `main.ts`: punto de entrada corto.
 - `config/worker.config.ts`: lee la conexión.
 - `worker.ts`: inicia pg-boss y registra las colas.
-- `jobs/*.job.ts`: contiene una tarea por archivo.
+- `jobs/*.job.ts`: contiene una tarea por archivo; el vencimiento de retenciones actualiza reservas realmente y libera el horario.
 
 pg-boss usa PostgreSQL como cola. Si no existe `DATABASE_URL`, el proceso informa que está preparado y termina sin fallar.
 
@@ -82,7 +82,7 @@ Sus carpetas `dist` se generan porque Node ejecuta JavaScript, no TypeScript dir
 
 `pnpm db:generate` genera el cliente TypeScript. `pnpm db:migrate` crea y aplica migraciones durante desarrollo.
 
-El esquema existe, pero los servicios demo todavía usan repositorios en memoria. Conectar los repositorios Prisma es trabajo pendiente antes de considerar persistentes las reservas, negocios y eventos.
+La configuración inicial, el panel, el micrositio y las reservas públicas persisten en PostgreSQL mediante Prisma. Las consultas públicas de negocios y reservas de Nest también usan repositorios Prisma. Las migraciones nuevas vinculan servicios con sedes y reservas con eventos de Google Calendar para evitar duplicados.
 
 ## Scripts y comandos
 
@@ -94,7 +94,7 @@ El esquema existe, pero los servicios demo todavía usan repositorios en memoria
 
 ## Dominio propio
 
-Durante la prueba se usa `/sitio/{slug}` en localhost. La resolución por subdominio, wildcard, certificados y dominios personalizados queda deliberadamente para la etapa final. En ese momento se documentarán y probarán ambos recorridos:
+Durante la prueba se usa `/sitio/{slug}` en localhost. El middleware ya reconoce el hostname `{slug}.site.turnosrapidos.com.ar`; falta configurar el DNS wildcard y sus certificados al desplegar. Los dominios personalizados continúan deliberadamente para la etapa final:
 
 - Sin dominio propio: `{negocio}.site.turnosrapidos.com.ar`.
 - Con dominio propio: un host del cliente que resuelva al mismo negocio.

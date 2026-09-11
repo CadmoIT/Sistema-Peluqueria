@@ -2,7 +2,7 @@
 import { Module } from "@nestjs/common";
 import { NegociosController } from "../controllers/negocios.controller";
 import { NEGOCIOS_REPOSITORY } from "../repositories/contracts/negocios.repository";
-import { NegociosMemoriaRepository } from "../repositories/memory/negocios-memoria.repository";
+import { NegociosPrismaRepository } from "../repositories/prisma/negocios-prisma.repository";
 import { NegociosService } from "../services/negocios.service";
 
 @Module({
@@ -11,7 +11,7 @@ import { NegociosService } from "../services/negocios.service";
     NegociosService,
     {
       provide: NEGOCIOS_REPOSITORY,
-      useClass: NegociosMemoriaRepository,
+      useClass: NegociosPrismaRepository,
     },
   ],
   exports: [NegociosService],

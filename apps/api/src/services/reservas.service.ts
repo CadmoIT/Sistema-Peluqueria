@@ -62,12 +62,12 @@ export class ReservasService {
   }
 
   private crearClaveHorario(datos: CrearReservaDto) {
-    return [
-      datos.negocioSlug,
-      datos.sedeId,
-      datos.profesionalId,
-      datos.inicio,
-    ].join(":");
+    return JSON.stringify({
+      negocioSlug: datos.negocioSlug,
+      sedeId: datos.sedeId,
+      profesionalId: datos.profesionalId,
+      inicio: datos.inicio,
+    });
   }
 
   private calcularVencimiento() {

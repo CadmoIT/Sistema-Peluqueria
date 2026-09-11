@@ -1,29 +1,30 @@
 /** Define y valida los datos públicos necesarios para retener un turno. */
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
   IsArray,
   IsEmail,
   IsISO8601,
-  IsNotEmpty,
+  IsOptional,
   IsString,
   ValidateNested,
 } from "class-validator";
 
 export class ClienteReservaDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  nombre!: string;
+  @IsOptional()
+  nombre?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsEmail()
-  email!: string;
+  @IsOptional()
+  email?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  telefono!: string;
+  @IsOptional()
+  telefono?: string;
 }
 
 export class CrearReservaDto {

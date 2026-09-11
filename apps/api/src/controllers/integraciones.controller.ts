@@ -1,11 +1,5 @@
 /** Recibe callbacks de proveedores y los entrega al servicio de integraciones. */
-import {
-  Body,
-  Controller,
-  Headers,
-  HttpCode,
-  Post,
-} from "@nestjs/common";
+import { Body, Controller, Headers, HttpCode, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { RUTAS_API } from "../routes/api.routes";
 import { IntegracionesService } from "../services/integraciones.service";

@@ -17,6 +17,10 @@ export async function iniciarWorker(databaseUrl: string) {
   });
 
   await cola.start();
+  await cola.createQueue(COLA_ENVIAR_RECORDATORIO);
+  await cola.createQueue(COLA_VENCER_RETENCION);
+  await cola.schedule(COLA_VENCER_RETENCION, "* * * * *", {}, { tz: "UTC" });
+  await cola.send(COLA_VENCER_RETENCION, {});
   await cola.work(COLA_ENVIAR_RECORDATORIO, procesarRecordatorios);
   await cola.work(COLA_VENCER_RETENCION, procesarRetencionesVencidas);
 

@@ -59,6 +59,20 @@ enum TipoMovimientoCaja {
   AJUSTE
 }
 
+enum PoliticaContacto {
+  EMAIL
+  TELEFONO
+  CUALQUIERA
+  NINGUNO
+}
+
+enum EstadoConexionGoogle {
+  PENDIENTE
+  ACTIVA
+  ERROR
+  REVOCADA
+}
+
 model Usuario {
   id              String        @id @default(cuid())
   nombre          String
@@ -126,6 +140,7 @@ model Negocio {
   email            String?
   zonaHoraria      String              @default("America/Argentina/Buenos_Aires")
   publicado        Boolean             @default(false)
+  politicaContacto PoliticaContacto    @default(CUALQUIERA)
   configuracion    Json?
   creadoEn         DateTime            @default(now())
   actualizadoEn    DateTime            @updatedAt
@@ -147,6 +162,8 @@ model Negocio {
   consumosWhatsapp ConsumoWhatsapp[]
   eventosExternos  EventoExterno[]
   auditorias       Auditoria[]
+  configuracionSitio ConfiguracionSitio?
+  conexionesGoogle ConexionGoogleCalendar[]
 }
 
 model Membresia {
@@ -171,6 +188,11 @@ model Sede {
   telefono        String?
   latitud         Decimal?          @db.Decimal(10, 7)
   longitud        Decimal?          @db.Decimal(10, 7)
+  googlePlaceId   String?
+  googlePuntaje   Decimal?          @db.Decimal(2, 1)
+  googleResenas   Int?
+  googleMapsUrl   String?
+  googleActualizadoEn DateTime?
   activa          Boolean           @default(true)
   negocio         Negocio           @relation(fields: [negocioId], references: [id], onDelete: Cascade)
   horarios        HorarioSede[]
@@ -179,6 +201,8 @@ model Sede {
   existencias     Existencia[]
   ventas          Venta[]
   movimientosCaja MovimientoCaja[]
+  conexionesGoogle ConexionGoogleCalendar[]
+  servicios        ServicioSede[]
 
   @@unique([negocioId, nombre])
   @@index([negocioId, activa])
@@ -223,6 +247,7 @@ model Servicio {
   negocio         Negocio               @relation(fields: [negocioId], references: [id], onDelete: Cascade)
   categoria       CategoriaServicio?    @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
   profesionales   ProfesionalServicio[]
+  sedes            ServicioSede[]
   combos          ComboServicio[]
   itemsReserva    ReservaServicio[]
 
@@ -257,6 +282,8 @@ model Profesional {
   negocioId   String
   membresiaId String?               @unique
   nombre      String
+  apellido    String?
+  especialidad String?
   biografia   String?
   foto        String?
   activo      Boolean               @default(true)
@@ -268,6 +295,7 @@ model Profesional {
   bloqueos    BloqueoAgenda[]
   reservas    Reserva[]
   comisiones  Comision[]
+  conexionesGoogle ConexionGoogleCalendar[]
 
   @@index([negocioId, activo])
 }
@@ -288,6 +316,16 @@ model ProfesionalServicio {
   servicio      Servicio    @relation(fields: [servicioId], references: [id], onDelete: Cascade)
 
   @@id([profesionalId, servicioId])
+}
+
+model ServicioSede {
+  servicioId String
+  sedeId     String
+  servicio   Servicio @relation(fields: [servicioId], references: [id], onDelete: Cascade)
+  sede       Sede     @relation(fields: [sedeId], references: [id], onDelete: Cascade)
+
+  @@id([servicioId, sedeId])
+  @@index([sedeId])
 }
 
 model HorarioProfesional {
@@ -318,9 +356,10 @@ model BloqueoAgenda {
 model Cliente {
   id             String    @id @default(cuid())
   negocioId      String
-  nombre         String
+  nombre         String?
+  apellido       String?
   email          String?
-  telefono       String
+  telefono       String?
   notas          String?
   aceptaWhatsapp Boolean   @default(false)
   puntos         Int       @default(0)
@@ -329,7 +368,7 @@ model Cliente {
   reservas       Reserva[]
   ventas         Venta[]
 
-  @@unique([negocioId, telefono])
+  @@index([negocioId, telefono])
   @@index([negocioId, email])
 }
 
@@ -354,6 +393,7 @@ model Reserva {
   cliente       Cliente           @relation(fields: [clienteId], references: [id])
   servicios     ReservaServicio[]
   pagos         Pago[]
+  eventosGoogle EventoReservaGoogle[]
 
   @@unique([negocioId, codigo])
   @@index([negocioId, sedeId, inicio])
@@ -502,8 +542,75 @@ model Suscripcion {
   proveedorId     String?           @unique
   proximoCobro    DateTime?
   graciaHasta     DateTime?
+  pruebaIniciaEn  DateTime?
+  pruebaFinalizaEn DateTime?
   cancelarAlFinal Boolean           @default(false)
   negocio         Negocio           @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+}
+
+model ConfiguracionSitio {
+  id            String   @id @default(cuid())
+  negocioId     String   @unique
+  borrador      Json
+  publicada     Json?
+  version       Int      @default(0)
+  publicadaEn   DateTime?
+  actualizadoEn DateTime @updatedAt
+  negocio       Negocio  @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+}
+
+model ConexionGoogleCalendar {
+  id                 String                 @id @default(cuid())
+  negocioId          String
+  profesionalId      String?
+  sedeId              String?
+  nombre              String
+  calendarioId        String?
+  accessTokenCifrado  String?
+  refreshTokenCifrado String?
+  alcance             String?
+  syncToken           String?
+  estado              EstadoConexionGoogle @default(PENDIENTE)
+  ultimoError         String?
+  sincronizadoEn      DateTime?
+  creadoEn            DateTime              @default(now())
+  actualizadoEn       DateTime              @updatedAt
+  negocio             Negocio               @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  profesional         Profesional?           @relation(fields: [profesionalId], references: [id], onDelete: Cascade)
+  sede                Sede?                  @relation(fields: [sedeId], references: [id], onDelete: Cascade)
+  eventos             EventoCalendarioExterno[]
+  turnosExportados     EventoReservaGoogle[]
+
+  @@index([negocioId, estado])
+  @@index([profesionalId])
+}
+
+model EventoCalendarioExterno {
+  id            String                   @id @default(cuid())
+  conexionId    String
+  eventoId      String
+  inicio        DateTime                 @db.Timestamptz
+  fin           DateTime                 @db.Timestamptz
+  cancelado     Boolean                  @default(false)
+  actualizadoEn DateTime                 @updatedAt
+  conexion      ConexionGoogleCalendar   @relation(fields: [conexionId], references: [id], onDelete: Cascade)
+
+  @@unique([conexionId, eventoId])
+  @@index([conexionId, inicio, fin])
+}
+
+model EventoReservaGoogle {
+  id           String                   @id @default(cuid())
+  reservaId    String
+  conexionId   String
+  eventoId     String
+  actualizadoEn DateTime                @updatedAt
+  reserva      Reserva                  @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  conexion     ConexionGoogleCalendar   @relation(fields: [conexionId], references: [id], onDelete: Cascade)
+
+  @@unique([reservaId, conexionId])
+  @@unique([conexionId, eventoId])
+  @@index([reservaId])
 }
 
 model Dominio {

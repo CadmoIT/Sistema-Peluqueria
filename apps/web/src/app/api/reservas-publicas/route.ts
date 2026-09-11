@@ -1,0 +1,216 @@
+/** Valida y crea reservas públicas para el negocio resuelto por slug. */
+import { randomUUID } from "node:crypto";
+import { after, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { sincronizarReservaEnGoogle } from "@/lib/google-calendar";
+import { prisma } from "@/lib/prisma";
+import { estaDentroDelHorario } from "@/servicios/disponibilidad.service";
+
+type Entrada = {
+  slug?: string;
+  servicioId?: string;
+  sedeId?: string;
+  profesionalId?: string;
+  inicio?: string;
+  nombre?: string;
+  apellido?: string;
+  email?: string;
+  telefono?: string;
+};
+
+export async function POST(solicitud: Request) {
+  const entrada = (await solicitud.json().catch(() => null)) as Entrada | null;
+  if (
+    !entrada?.slug ||
+    !entrada.servicioId ||
+    !entrada.sedeId ||
+    !entrada.profesionalId ||
+    !entrada.inicio
+  )
+    return respuesta("Faltan datos para crear el turno.", 400);
+  const negocio = await prisma.negocio.findUnique({
+    where: { slug: entrada.slug },
+    include: { suscripcion: true },
+  });
+  if (!negocio || !negocio.publicado)
+    return respuesta("Este sitio no está disponible.", 404);
+  if (
+    negocio.suscripcion?.estado === "PAUSADA" ||
+    negocio.suscripcion?.estado === "CANCELADA" ||
+    (negocio.suscripcion?.estado === "EN_GRACIA" &&
+      negocio.suscripcion.graciaHasta &&
+      negocio.suscripcion.graciaHasta < new Date()) ||
+    (negocio.suscripcion?.estado === "CONFIGURACION_GRATUITA" &&
+      negocio.suscripcion.pruebaFinalizaEn &&
+      negocio.suscripcion.pruebaFinalizaEn < new Date())
+  )
+    return respuesta("La prueba de este negocio finalizó.", 403);
+  const nombre = limpiar(entrada.nombre);
+  const apellido = limpiar(entrada.apellido);
+  const email = limpiar(entrada.email)?.toLowerCase() ?? null;
+  const telefono = limpiar(entrada.telefono)?.replace(/[^+\d]/g, "") ?? null;
+  if (negocio.politicaContacto === "EMAIL" && !email)
+    return respuesta("Ingresá tu correo para reservar.", 400);
+  if (negocio.politicaContacto === "TELEFONO" && !telefono)
+    return respuesta("Ingresá tu teléfono para reservar.", 400);
+  if (negocio.politicaContacto === "CUALQUIERA" && !email && !telefono)
+    return respuesta("Ingresá un correo o teléfono para reservar.", 400);
+  const servicio = await prisma.servicio.findFirst({
+    where: {
+      id: entrada.servicioId,
+      negocioId: negocio.id,
+      activo: true,
+      sedes: { some: { sedeId: entrada.sedeId } },
+      profesionales: { some: { profesionalId: entrada.profesionalId } },
+    },
+  });
+  const profesional = await prisma.profesional.findFirst({
+    where: {
+      id: entrada.profesionalId,
+      negocioId: negocio.id,
+      activo: true,
+      sedes: { some: { sedeId: entrada.sedeId } },
+      servicios: { some: { servicioId: entrada.servicioId } },
+    },
+    include: {
+      horarios: { where: { sedeId: entrada.sedeId } },
+    },
+  });
+  const sede = await prisma.sede.findFirst({
+    where: { id: entrada.sedeId, negocioId: negocio.id, activa: true },
+  });
+  const inicio = new Date(entrada.inicio);
+  if (
+    !servicio ||
+    !profesional ||
+    !sede ||
+    Number.isNaN(inicio.getTime()) ||
+    inicio < new Date()
+  )
+    return respuesta("La selección ya no está disponible.", 400);
+  const fin = new Date(
+    inicio.getTime() +
+      (servicio.duracionMinutos + servicio.bufferMinutos) * 60_000,
+  );
+  if (
+    !estaDentroDelHorario(
+      inicio,
+      fin,
+      profesional.horarios,
+      negocio.zonaHoraria,
+    )
+  ) {
+    return respuesta(
+      "El horario está fuera de la jornada del profesional.",
+      400,
+    );
+  }
+  try {
+    const reserva = await prisma.$transaction(
+      async (tx) => {
+        const ocupada = await tx.reserva.findFirst({
+          where: {
+            negocioId: negocio.id,
+            profesionalId: profesional.id,
+            estado: { notIn: ["CANCELADA", "VENCIDA"] },
+            inicio: { lt: fin },
+            fin: { gt: inicio },
+          },
+        });
+        const bloqueo = await tx.eventoCalendarioExterno.findFirst({
+          where: {
+            cancelado: false,
+            conexion: {
+              negocioId: negocio.id,
+              OR: [
+                { profesionalId: profesional.id },
+                { profesionalId: null, sedeId: sede.id },
+              ],
+            },
+            inicio: { lt: fin },
+            fin: { gt: inicio },
+          },
+        });
+        const bloqueoInterno = await tx.bloqueoAgenda.findFirst({
+          where: {
+            negocioId: negocio.id,
+            profesionalId: profesional.id,
+            inicio: { lt: fin },
+            fin: { gt: inicio },
+          },
+        });
+        if (ocupada || bloqueo || bloqueoInterno) {
+          throw new Error("HORARIO_OCUPADO");
+        }
+        const existente =
+          email || telefono
+            ? await tx.cliente.findFirst({
+                where: {
+                  negocioId: negocio.id,
+                  OR: [
+                    ...(email ? [{ email }] : []),
+                    ...(telefono ? [{ telefono }] : []),
+                  ],
+                },
+              })
+            : null;
+        const cliente = existente
+          ? await tx.cliente.update({
+              where: { id: existente.id },
+              data: {
+                nombre: nombre ?? existente.nombre,
+                apellido: apellido ?? existente.apellido,
+                email: email ?? existente.email,
+                telefono: telefono ?? existente.telefono,
+              },
+            })
+          : await tx.cliente.create({
+              data: {
+                negocioId: negocio.id,
+                nombre,
+                apellido,
+                email,
+                telefono,
+              },
+            });
+        return tx.reserva.create({
+          data: {
+            negocioId: negocio.id,
+            sedeId: sede.id,
+            profesionalId: profesional.id,
+            clienteId: cliente.id,
+            codigo: randomUUID().slice(0, 8).toUpperCase(),
+            estado: "CONFIRMADA",
+            inicio,
+            fin,
+            total: servicio.precio,
+            sena: new Prisma.Decimal(0),
+            servicios: {
+              create: {
+                servicioId: servicio.id,
+                orden: 1,
+                precio: servicio.precio,
+                duracionMinutos: servicio.duracionMinutos,
+              },
+            },
+          },
+          select: { id: true, codigo: true },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+    after(() => sincronizarReservaEnGoogle(reserva.id));
+    return NextResponse.json({ codigo: reserva.codigo }, { status: 201 });
+  } catch (error) {
+    if (error instanceof Error && error.message === "HORARIO_OCUPADO")
+      return respuesta("Ese horario acaba de ocuparse. Elegí otro.", 409);
+    return respuesta("No pudimos confirmar el turno.", 500);
+  }
+}
+function limpiar(valor?: string) {
+  const resultado = valor?.trim();
+  return resultado || null;
+}
+function respuesta(mensaje: string, estado: number) {
+  return NextResponse.json({ mensaje }, { status: estado });
+}
