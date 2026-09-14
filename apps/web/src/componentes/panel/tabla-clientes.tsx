@@ -3,6 +3,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Edit3, Search, Trash2, X } from "lucide-react";
 import {
   actualizarCliente,
@@ -80,12 +81,33 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
               >
                 <Edit3 />
               </button>
-              <form action={eliminarCliente}>
+              <form
+                action={(datos) =>
+                  iniciarTransicion(async () => {
+                    try {
+                      await eliminarCliente(datos);
+                      toast.success("Cliente eliminado.");
+                      router.refresh();
+                    } catch (error) {
+                      toast.error(
+                        error instanceof Error
+                          ? error.message
+                          : "No pudimos eliminar el cliente.",
+                      );
+                    }
+                  })
+                }
+              >
                 <input type="hidden" name="id" value={cliente.id} />
                 <button
                   className="accion-icono"
                   aria-label="Eliminar cliente"
                   disabled={cliente.visitas > 0}
+                  title={
+                    cliente.visitas > 0
+                      ? "No se puede eliminar un cliente que tiene turnos."
+                      : "Eliminar cliente"
+                  }
                 >
                   <Trash2 />
                 </button>
@@ -121,9 +143,18 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
               className="formulario-dialogo"
               action={(datos) =>
                 iniciarTransicion(async () => {
-                  await actualizarCliente(datos);
-                  setEditando(null);
-                  router.refresh();
+                  try {
+                    await actualizarCliente(datos);
+                    setEditando(null);
+                    toast.success("Los datos del cliente se actualizaron.");
+                    router.refresh();
+                  } catch (error) {
+                    toast.error(
+                      error instanceof Error
+                        ? error.message
+                        : "No pudimos actualizar el cliente.",
+                    );
+                  }
                 })
               }
             >

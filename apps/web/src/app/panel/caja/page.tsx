@@ -2,6 +2,7 @@
 import { ArrowDownLeft, ArrowUpRight, Plus, WalletCards } from "lucide-react";
 import { registrarMovimientoCaja } from "./acciones";
 import { PuntoVenta } from "@/componentes/panel/punto-venta";
+import { BotonEnvio } from "@/componentes/panel/boton-envio";
 import { obtenerCaja } from "@/servicios/panel-datos.service";
 
 export const metadata = { title: "Caja" };
@@ -44,17 +45,21 @@ export default async function PaginaCaja() {
               Monto
               <input name="monto" type="number" min="0" required />
             </label>
-            <label>
-              Sede
-              <select name="sedeId" required>
-                {datos.sedes.map((sede) => (
-                  <option value={sede.id} key={sede.id}>
-                    {sede.nombre}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button className="boton boton--primario">Registrar</button>
+            {datos.sedes.length === 1 ? (
+              <input type="hidden" name="sedeId" value={datos.sedes[0]!.id} />
+            ) : (
+              <label>
+                Local
+                <select name="sedeId" required>
+                  {datos.sedes.map((sede) => (
+                    <option value={sede.id} key={sede.id}>
+                      {sede.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <BotonEnvio pendiente="Registrando…">Registrar</BotonEnvio>
           </form>
         </details>
       </header>

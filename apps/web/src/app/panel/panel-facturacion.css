@@ -1,0 +1,116 @@
+/** Presenta el estado del plan, ofertas e historial de pagos. */
+.estado-plan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 0 26px;
+  border-bottom: 1px solid var(--panel-borde);
+}
+.estado-plan > div {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.estado-plan svg {
+  color: var(--panel-marca);
+}
+.estado-plan small,
+.estado-plan strong {
+  display: block;
+}
+.estado-plan small {
+  color: #6b7174;
+  font: 10px var(--fuente-marca);
+}
+.estado-plan strong {
+  margin-top: 4px;
+  font: 20px var(--fuente-marca);
+}
+.estado-plan p {
+  color: #555c5f;
+}
+.aviso-integracion {
+  margin: 22px 0;
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  border-radius: 10px;
+  background: #fff8e8;
+  color: #614b16;
+}
+.aviso-integracion p {
+  margin: 5px 0 0;
+}
+.planes-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 26px;
+}
+.planes-panel article {
+  padding: 24px;
+  border: 1px solid var(--panel-borde);
+  border-radius: 12px;
+}
+.planes-panel article.actual {
+  border-color: var(--panel-marca);
+}
+.planes-panel article > small {
+  color: var(--panel-marca);
+  font: 10px var(--fuente-marca);
+}
+.planes-panel h2 {
+  margin: 9px 0 6px;
+  font: 22px var(--fuente-marca);
+}
+.planes-panel p {
+  color: #61676a;
+}
+.planes-panel article > strong {
+  display: block;
+  margin: 20px 0;
+  font: 26px var(--fuente-marca);
+}
+.planes-panel article > strong span {
+  font-size: 13px;
+  color: #6b7174;
+}
+.planes-panel ul {
+  min-height: 100px;
+  padding-left: 20px;
+  color: #454b4d;
+  line-height: 1.8;
+}
+.historial-pagos {
+  margin-top: 40px;
+  border-top: 1px solid var(--panel-borde);
+  padding-top: 30px;
+}
+.historial-pagos > header {
+  display: flex;
+  gap: 12px;
+}
+.historial-pagos h2,
+.historial-pagos p {
+  margin: 0;
+}
+.historial-pagos h2 {
+  font: 18px var(--fuente-marca);
+}
+.historial-pagos header p {
+  margin-top: 5px;
+  color: #6b7174;
+}
+.tabla-pagos {
+  margin-top: 18px;
+  border-top: 1px solid var(--panel-borde);
+}
+.tabla-pagos > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 150px;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--panel-borde);
+}

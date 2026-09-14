@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Clock3,
   ContactRound,
+  ExternalLink,
   Package,
   Plus,
   Scissors,
@@ -37,12 +38,38 @@ export default async function PaginaPanel() {
         ),
       )
     : 0;
+  const ahora = Date.now();
+  const suscripcion = datos.negocio.suscripcion;
+  const sitioDisponible =
+    datos.negocio.publicado &&
+    suscripcion?.estado !== "PAUSADA" &&
+    suscripcion?.estado !== "CANCELADA" &&
+    !(
+      suscripcion?.estado === "CONFIGURACION_GRATUITA" &&
+      suscripcion.pruebaFinalizaEn &&
+      suscripcion.pruebaFinalizaEn.getTime() < ahora
+    ) &&
+    !(
+      suscripcion?.estado === "EN_GRACIA" &&
+      suscripcion.graciaHasta &&
+      suscripcion.graciaHasta.getTime() < ahora
+    );
 
   return (
     <div className="panel-contenido">
+      <Link
+        className="enlace-sitio-resumen"
+        href={
+          sitioDisponible ? "/sitio/" + datos.negocio.slug : "/panel/mi-sitio"
+        }
+        target={sitioDisponible ? "_blank" : undefined}
+      >
+        {sitioDisponible ? "Ver mi sitio" : "Vista previa de mi sitio"}{" "}
+        <ExternalLink size={15} />
+      </Link>
       <section className="panel-bienvenida">
         <div>
-          <p>{fechaLarga(new Date())}</p>
+          <p>{fechaLarga(new Date(), datos.negocio.zonaHoraria)}</p>
           <h1>Resumen de {datos.negocio.nombre}</h1>
           <small>Todo lo importante para empezar el día.</small>
         </div>
@@ -60,10 +87,14 @@ export default async function PaginaPanel() {
         <Metrica
           icono={<Clock3 />}
           etiqueta="Próximo turno"
-          valor={datos.proximo ? hora(datos.proximo.inicio) : "—"}
+          valor={
+            datos.proximo
+              ? hora(datos.proximo.inicio, datos.negocio.zonaHoraria)
+              : "—"
+          }
           detalle={
             datos.proximo
-              ? nombreCliente(datos.proximo.cliente)
+              ? `${fechaCorta(datos.proximo.inicio, datos.negocio.zonaHoraria)} · ${nombreCliente(datos.proximo.cliente)}`
               : "Agenda libre"
           }
         />
@@ -103,7 +134,9 @@ export default async function PaginaPanel() {
               </div>
               {datos.reservas.slice(0, 6).map((turno) => (
                 <div className="tabla-turnos__fila" key={turno.id}>
-                  <strong>{hora(turno.inicio)}</strong>
+                  <strong>
+                    {hora(turno.inicio, datos.negocio.zonaHoraria)}
+                  </strong>
                   <span>{nombreCliente(turno.cliente)}</span>
                   <span>
                     {turno.servicios[0]?.servicio.nombre ?? "Sin servicio"}
@@ -140,11 +173,8 @@ export default async function PaginaPanel() {
                 : "Tu sitio está en borrador"}
             </span>
             {datos.negocio.suscripcion?.estado !== "ACTIVA" && (
-              <Link
-                className="prueba-panel__accion"
-                href="/api/v1/facturacion/suscripciones/checkout?plan=autogestionado"
-              >
-                Activar plan
+              <Link className="prueba-panel__accion" href="/panel/facturacion">
+                Ver planes
               </Link>
             )}
           </div>
@@ -217,17 +247,26 @@ function EstadoVacio() {
     </div>
   );
 }
-function hora(fecha: Date) {
+function hora(fecha: Date, zonaHoraria: string) {
   return new Intl.DateTimeFormat("es-AR", {
+    timeZone: zonaHoraria,
     hour: "2-digit",
     minute: "2-digit",
   }).format(fecha);
 }
-function fechaLarga(fecha: Date) {
+function fechaLarga(fecha: Date, zonaHoraria: string) {
   return new Intl.DateTimeFormat("es-AR", {
+    timeZone: zonaHoraria,
     weekday: "long",
     day: "numeric",
     month: "long",
+  }).format(fecha);
+}
+function fechaCorta(fecha: Date, zonaHoraria: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    timeZone: zonaHoraria,
+    day: "numeric",
+    month: "short",
   }).format(fecha);
 }
 function nombreCliente(cliente: {

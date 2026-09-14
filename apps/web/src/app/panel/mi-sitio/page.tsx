@@ -58,6 +58,14 @@ export default async function PaginaMiSitio() {
           foto: p.foto,
           especialidad: p.especialidad,
         }))}
+        locales={datos.sedes.map((sede) => ({
+          id: sede.id,
+          nombre: sede.nombre,
+          direccion: sede.direccion,
+          telefono: sede.telefono,
+          googlePuntaje: sede.googlePuntaje ? Number(sede.googlePuntaje) : null,
+          googleResenas: sede.googleResenas,
+        }))}
       />
     </div>
   );

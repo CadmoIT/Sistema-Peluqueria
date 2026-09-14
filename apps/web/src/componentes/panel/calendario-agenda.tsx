@@ -3,6 +3,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -39,11 +40,19 @@ export function CalendarioAgenda({
 }: {
   eventos: EventoAgenda[];
   profesionales: Array<{ id: string; nombre: string }>;
-  sedes: Array<{ id: string; nombre: string }>;
+  sedes: Array<{
+    id: string;
+    nombre: string;
+    horarios: Array<{
+      diaSemana: number;
+      abre: string;
+      cierra: string;
+      activo: boolean;
+    }>;
+  }>;
 }) {
   const router = useRouter();
   const [procesando, iniciarTransicion] = useTransition();
-  const [mensaje, setMensaje] = useState("");
   const [profesional, setProfesional] = useState("");
   const [sede, setSede] = useState("");
   const [estado, setEstado] = useState("");
@@ -58,6 +67,39 @@ export function CalendarioAgenda({
       ),
     [estado, eventos, profesional, sede],
   );
+  const horarioVisible = useMemo(() => {
+    const elegidas = sede
+      ? sedes.filter((opcion) => opcion.id === sede)
+      : sedes;
+    const horarios = elegidas.flatMap((opcion) =>
+      opcion.horarios.filter((horario) => horario.activo),
+    );
+    if (!horarios.length) {
+      return {
+        minimo: "08:00:00",
+        maximo: "20:00:00",
+        ocultos: [] as number[],
+      };
+    }
+    const minutos = (valor: string) => {
+      const [hora, minuto] = valor.split(":").map(Number);
+      return (hora ?? 0) * 60 + (minuto ?? 0);
+    };
+    const texto = (valor: number) => {
+      const ajustado = Math.max(0, Math.min(24 * 60, valor));
+      return `${String(Math.floor(ajustado / 60)).padStart(2, "0")}:${String(ajustado % 60).padStart(2, "0")}:00`;
+    };
+    const diasAbiertos = new Set(horarios.map((horario) => horario.diaSemana));
+    return {
+      minimo: texto(
+        Math.min(...horarios.map((horario) => minutos(horario.abre))) - 30,
+      ),
+      maximo: texto(
+        Math.max(...horarios.map((horario) => minutos(horario.cierra))) + 30,
+      ),
+      ocultos: [0, 1, 2, 3, 4, 5, 6].filter((dia) => !diasAbiertos.has(dia)),
+    };
+  }, [sede, sedes]);
 
   function actualizarEstado(nuevoEstado: string) {
     if (!seleccionado) return;
@@ -65,10 +107,10 @@ export function CalendarioAgenda({
       try {
         await cambiarEstadoReserva(seleccionado.id, nuevoEstado);
         setSeleccionado(null);
-        setMensaje("El estado del turno fue actualizado.");
+        toast.success("El estado del turno fue actualizado.");
         router.refresh();
       } catch (error) {
-        setMensaje(
+        toast.error(
           error instanceof Error
             ? error.message
             : "No pudimos actualizar el turno.",
@@ -94,17 +136,19 @@ export function CalendarioAgenda({
             ))}
           </select>
         </label>
-        <label>
-          Sede
-          <select value={sede} onChange={(e) => setSede(e.target.value)}>
-            <option value="">Todas</option>
-            {sedes.map((opcion) => (
-              <option value={opcion.id} key={opcion.id}>
-                {opcion.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
+        {sedes.length > 1 && (
+          <label>
+            Local
+            <select value={sede} onChange={(e) => setSede(e.target.value)}>
+              <option value="">Todos</option>
+              {sedes.map((opcion) => (
+                <option value={opcion.id} key={opcion.id}>
+                  {opcion.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           Estado
           <select value={estado} onChange={(e) => setEstado(e.target.value)}>
@@ -118,11 +162,6 @@ export function CalendarioAgenda({
           </select>
         </label>
       </div>
-      {mensaje && (
-        <p className="mensaje-calendario" role="status">
-          {mensaje}
-        </p>
-      )}
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         locale={esLocale}
@@ -137,8 +176,9 @@ export function CalendarioAgenda({
         nowIndicator
         editable
         allDaySlot={false}
-        slotMinTime="07:00:00"
-        slotMaxTime="22:00:00"
+        slotMinTime={horarioVisible.minimo}
+        slotMaxTime={horarioVisible.maximo}
+        hiddenDays={horarioVisible.ocultos}
         height="auto"
         eventClick={(informacion) => {
           const evento = eventos.find(
@@ -154,10 +194,10 @@ export function CalendarioAgenda({
               info.event.start.toISOString(),
               info.event.end.toISOString(),
             );
-            setMensaje("Turno actualizado.");
+            toast.success("Turno actualizado.");
           } catch (error) {
             info.revert();
-            setMensaje(
+            toast.error(
               error instanceof Error
                 ? error.message
                 : "No pudimos mover el turno.",
@@ -172,10 +212,10 @@ export function CalendarioAgenda({
               info.event.start.toISOString(),
               info.event.end.toISOString(),
             );
-            setMensaje("Duración actualizada.");
+            toast.success("Duración actualizada.");
           } catch (error) {
             info.revert();
-            setMensaje(
+            toast.error(
               error instanceof Error
                 ? error.message
                 : "No pudimos modificar el turno.",

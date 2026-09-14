@@ -2,6 +2,7 @@
 import { Package, Plus } from "lucide-react";
 import { crearProducto } from "./acciones";
 import { TablaInventario } from "@/componentes/panel/tabla-inventario";
+import { BotonEnvio } from "@/componentes/panel/boton-envio";
 import { obtenerInventario } from "@/servicios/panel-datos.service";
 
 export const metadata = { title: "Inventario" };
@@ -46,17 +47,23 @@ export default async function PaginaInventario() {
                 <input name="minimo" type="number" min="0" defaultValue="0" />
               </label>
             </div>
-            <label>
-              Sede
-              <select name="sedeId" required>
-                {sedes.map((sede) => (
-                  <option key={sede.id} value={sede.id}>
-                    {sede.nombre}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button className="boton boton--primario">Guardar producto</button>
+            {sedes.length === 1 ? (
+              <input type="hidden" name="sedeId" value={sedes[0]!.id} />
+            ) : (
+              <label>
+                Local
+                <select name="sedeId" required>
+                  {sedes.map((sede) => (
+                    <option key={sede.id} value={sede.id}>
+                      {sede.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <BotonEnvio pendiente="Guardando producto…">
+              Guardar producto
+            </BotonEnvio>
           </form>
         </details>
       </header>

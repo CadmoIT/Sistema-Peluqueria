@@ -1,0 +1,277 @@
+/** Ajusta el panel a una interfaz blanca, sobria y con navegación plegable. */
+:root {
+  --panel-tinta: #111111;
+  --panel-suave: #f7f8f8;
+  --panel-borde: #e5e7e8;
+  --panel-marca: #126783;
+  --panel-marca-suave: #eaf5f7;
+}
+
+.panel-shell {
+  grid-template-columns: 248px minmax(0, 1fr);
+  transition: grid-template-columns 180ms ease;
+}
+.panel-shell--contraido {
+  grid-template-columns: 76px minmax(0, 1fr);
+}
+.nav-panel {
+  padding: 18px 12px 14px;
+  background: #fff;
+  color: var(--panel-tinta);
+  border-right: 1px solid var(--panel-borde);
+  z-index: 30;
+}
+.nav-panel__marca {
+  padding: 0 8px 22px;
+  overflow: hidden;
+}
+.nav-panel__marca .logo-turnos__imagen {
+  width: 42px;
+  height: 42px;
+}
+.nav-panel__marca .logo-turnos__nombre,
+.nav-panel__marca .logo-turnos__nombre span {
+  color: #111;
+  font-size: 16px;
+}
+.nav-panel nav {
+  gap: 3px;
+}
+.nav-panel nav a,
+.nav-panel__configuracion summary,
+.nav-panel__configuracion > div a {
+  position: relative;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 9px;
+  color: #34383a;
+  font: 400 14px var(--fuente-marca);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+.nav-panel nav a:hover,
+.nav-panel nav a.activo,
+.nav-panel__configuracion summary:hover,
+.nav-panel__configuracion > div a:hover,
+.nav-panel__configuracion > div a.activo {
+  background: var(--panel-marca-suave);
+  color: var(--panel-tinta);
+  transform: none;
+}
+.nav-panel nav a.activo::before,
+.nav-panel__configuracion > div a.activo::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 3px;
+  height: 22px;
+  border-radius: 99px;
+  background: var(--panel-marca);
+}
+.nav-panel__configuracion {
+  margin-top: auto;
+}
+.nav-panel__configuracion summary {
+  list-style: none;
+}
+.nav-panel__configuracion summary::-webkit-details-marker {
+  display: none;
+}
+.nav-panel__configuracion > div {
+  display: grid;
+  gap: 3px;
+  padding: 4px 0 0 10px;
+}
+.nav-panel__configuracion > div a {
+  min-height: 40px;
+  font-size: 12px;
+}
+.nav-panel__usuario {
+  margin-top: 12px;
+  padding: 14px 7px 6px;
+  border-top: 1px solid var(--panel-borde);
+  color: var(--panel-tinta);
+  overflow: hidden;
+}
+.nav-panel__usuario > span {
+  background: var(--panel-marca-suave);
+  color: var(--panel-marca);
+}
+.nav-panel__usuario small {
+  color: #6b7174;
+}
+.nav-panel__plegar {
+  position: absolute;
+  right: -13px;
+  top: 78px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--panel-borde);
+  border-radius: 50%;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+}
+.nav-panel__plegar svg {
+  width: 15px;
+}
+.nav-panel--contraido nav a,
+.nav-panel--contraido .nav-panel__configuracion summary {
+  justify-content: center;
+  padding-inline: 0;
+}
+.nav-panel--contraido nav span,
+.nav-panel--contraido .nav-panel__configuracion span,
+.nav-panel--contraido .nav-panel__usuario div {
+  display: none;
+}
+.nav-panel--contraido .nav-panel__configuracion {
+  position: relative;
+}
+.nav-panel--contraido .nav-panel__configuracion > div {
+  position: absolute;
+  left: 54px;
+  bottom: 0;
+  width: 230px;
+  padding: 8px;
+  border: 1px solid var(--panel-borde);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(14, 33, 40, 0.1);
+}
+.nav-panel--contraido .nav-panel__configuracion > div span {
+  display: inline;
+}
+.nav-panel--contraido .nav-panel__usuario {
+  justify-content: center;
+  padding-inline: 0;
+}
+.panel-main {
+  background: #fff;
+}
+.panel-top {
+  display: none;
+}
+.panel-mobile-top {
+  display: none;
+}
+.panel-contenido {
+  padding-top: 38px;
+}
+.enlace-sitio-resumen {
+  width: fit-content;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--panel-marca);
+  font: 13px var(--fuente-marca);
+}
+.boton,
+.prueba-panel__accion {
+  box-shadow: none !important;
+  filter: none !important;
+}
+.boton:hover {
+  box-shadow: none !important;
+}
+.modulo,
+.metricas-panel article {
+  box-shadow: none !important;
+  border-color: var(--panel-borde) !important;
+}
+.giro {
+  animation: giro-panel 800ms linear infinite;
+}
+@keyframes giro-panel {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.skeleton {
+  overflow: hidden;
+  position: relative;
+  border-radius: 9px;
+  background: #eef0f1;
+  animation: skeleton-panel 1.35s ease-in-out infinite alternate;
+}
+@keyframes skeleton-panel {
+  to {
+    background: #e5e8e9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+.skeleton--corto {
+  width: 130px;
+  height: 16px;
+  margin-bottom: 12px;
+}
+.skeleton--titulo {
+  width: min(420px, 75%);
+  height: 42px;
+  margin-bottom: 28px;
+}
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.skeleton--metrica {
+  height: 112px;
+}
+.skeleton--modulo {
+  height: 390px;
+  margin-top: 20px;
+}
+.skeleton--filtros {
+  height: 58px;
+  margin-bottom: 14px;
+}
+.skeleton--calendario {
+  height: 660px;
+}
+.skeleton--tabla {
+  height: 430px;
+}
+.skeleton-editor {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.8fr) minmax(480px, 1.2fr);
+  gap: 22px;
+}
+.integracion-ayuda {
+  position: relative;
+}
+.integracion-ayuda summary {
+  list-style: none;
+}
+.integracion-ayuda summary::-webkit-details-marker {
+  display: none;
+}
+.integracion-ayuda > div {
+  position: absolute;
+  z-index: 15;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 310px;
+  padding: 16px;
+  border: 1px solid var(--panel-borde);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(14, 33, 40, 0.1);
+}
+.integracion-ayuda p {
+  margin: 6px 0 0;
+  color: #5e6467;
+}

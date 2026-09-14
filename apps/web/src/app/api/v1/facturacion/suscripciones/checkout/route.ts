@@ -24,7 +24,19 @@ export async function GET(solicitud: Request) {
   const plan = PLANES.find((candidato) => candidato.id === planId);
   if (!plan) {
     return NextResponse.redirect(
-      new URL("/panel?facturacion=plan-invalido", solicitud.url),
+      new URL("/panel/facturacion?facturacion=plan-invalido", solicitud.url),
+    );
+  }
+  const suscripcionActual = await prisma.suscripcion.findUnique({
+    where: { negocioId: contexto.negocio.id },
+    select: { estado: true, proveedorId: true },
+  });
+  if (
+    suscripcionActual?.estado === "ACTIVA" ||
+    suscripcionActual?.proveedorId
+  ) {
+    return NextResponse.redirect(
+      new URL("/panel/facturacion?facturacion=plan-activo", solicitud.url),
     );
   }
 
@@ -32,7 +44,7 @@ export async function GET(solicitud: Request) {
   const webUrl = process.env.WEB_URL ?? new URL(solicitud.url).origin;
   if (!accessToken) {
     return NextResponse.redirect(
-      new URL("/panel?facturacion=no-configurada", solicitud.url),
+      new URL("/panel/facturacion?facturacion=no-configurada", solicitud.url),
     );
   }
 
@@ -53,7 +65,7 @@ export async function GET(solicitud: Request) {
         transaction_amount: plan.precioMensual,
         currency_id: "ARS",
       },
-      back_url: `${webUrl.replace(/\/$/, "")}/panel?facturacion=retorno`,
+      back_url: `${webUrl.replace(/\/$/, "")}/panel/facturacion?facturacion=retorno`,
       status: "pending",
     }),
     cache: "no-store",
@@ -66,7 +78,7 @@ export async function GET(solicitud: Request) {
       mensaje: resultado.message,
     });
     return NextResponse.redirect(
-      new URL("/panel?facturacion=error", solicitud.url),
+      new URL("/panel/facturacion?facturacion=error", solicitud.url),
     );
   }
 

@@ -116,24 +116,28 @@ export function PuntoVenta({
       </div>
       <form action={registrarVenta} className="punto-venta__confirmar">
         <input type="hidden" name="items" value={JSON.stringify(items)} />
-        <label>
-          Sede
-          <select
-            name="sedeId"
-            required
-            value={sedeId}
-            onChange={(evento) => {
-              setSedeId(evento.target.value);
-              setCantidades({});
-            }}
-          >
-            {sedes.map((sede) => (
-              <option key={sede.id} value={sede.id}>
-                {sede.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
+        {sedes.length === 1 ? (
+          <input type="hidden" name="sedeId" value={sedeId} />
+        ) : (
+          <label>
+            Local
+            <select
+              name="sedeId"
+              required
+              value={sedeId}
+              onChange={(evento) => {
+                setSedeId(evento.target.value);
+                setCantidades({});
+              }}
+            >
+              {sedes.map((sede) => (
+                <option key={sede.id} value={sede.id}>
+                  {sede.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div>
           <span>Total</span>
           <strong>{pesos(total)}</strong>

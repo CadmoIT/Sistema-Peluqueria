@@ -13,10 +13,12 @@
     "build": "turbo build",
     "lint": "turbo lint && pnpm validar:encabezados",
     "test": "turbo test",
+    "test:e2e": "pnpm --filter @turnos/web test:e2e",
     "format": "prettier --check .",
     "validar:encabezados": "node scripts/validar-encabezados.mjs",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev"
+    "db:migrate": "prisma migrate dev",
+    "db:demo": "pnpm --filter @turnos/web demo:crear"
   },
   "devDependencies": {
     "prettier": "^3.5.3",

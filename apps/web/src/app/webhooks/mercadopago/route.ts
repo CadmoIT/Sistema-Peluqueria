@@ -115,17 +115,10 @@ async function procesarPreapproval(
   }
 
   const preapproval = (await respuesta.json()) as PreapprovalMercadoPago;
-  const suscripcion = await prisma.suscripcion.findFirst({
-    where: {
-      OR: [
-        { proveedorId: preapproval.id },
-        ...(preapproval.external_reference
-          ? [{ negocioId: preapproval.external_reference }]
-          : []),
-      ],
-    },
+  const suscripcion = await prisma.suscripcion.findUnique({
+    where: { proveedorId: preapproval.id },
   });
-  if (!suscripcion)
+  if (!suscripcion || preapproval.external_reference !== suscripcion.negocioId)
     throw new Error("La suscripción no pertenece a un negocio conocido.");
 
   const ahora = new Date();

@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { autenticacion } from "@/lib/autenticacion";
 import { prisma } from "@/lib/prisma";
+import { fechaLocalAUtc, sumarDias } from "./disponibilidad.service";
 
 export async function requerirContextoPanel() {
   const sesion = await autenticacion.api.getSession({
@@ -23,50 +24,74 @@ export async function requerirContextoPanel() {
 
 export async function obtenerResumenPanel() {
   const { negocio } = await requerirContextoPanel();
-  const inicio = inicioDelDia(new Date());
-  const fin = new Date(inicio);
-  fin.setDate(fin.getDate() + 1);
+  const fechaLocal = fechaEnZona(new Date(), negocio.zonaHoraria);
+  const inicio = fechaLocalAUtc(fechaLocal, "00:00", negocio.zonaHoraria);
+  const fin = fechaLocalAUtc(
+    sumarDias(fechaLocal, 1),
+    "00:00",
+    negocio.zonaHoraria,
+  );
 
-  const [reservas, clientes, profesionales, servicios, stockBajo, ingresos] =
-    await Promise.all([
-      prisma.reserva.findMany({
-        where: { negocioId: negocio.id, inicio: { gte: inicio, lt: fin } },
-        include: {
-          cliente: true,
-          profesional: true,
-          servicios: { include: { servicio: true }, orderBy: { orden: "asc" } },
-        },
-        orderBy: { inicio: "asc" },
-      }),
-      prisma.cliente.count({ where: { negocioId: negocio.id } }),
-      prisma.profesional.count({
-        where: { negocioId: negocio.id, activo: true },
-      }),
-      prisma.servicio.count({ where: { negocioId: negocio.id, activo: true } }),
-      prisma.existencia
-        .count({
-          where: {
-            negocioId: negocio.id,
-            cantidad: { lte: prisma.existencia.fields.minimo },
+  const [
+    reservas,
+    proximo,
+    clientes,
+    profesionales,
+    servicios,
+    stockBajo,
+    ingresos,
+  ] = await Promise.all([
+    prisma.reserva.findMany({
+      where: { negocioId: negocio.id, inicio: { gte: inicio, lt: fin } },
+      include: {
+        cliente: true,
+        profesional: true,
+        servicios: { include: { servicio: true }, orderBy: { orden: "asc" } },
+      },
+      orderBy: { inicio: "asc" },
+    }),
+    prisma.reserva.findFirst({
+      where: {
+        negocioId: negocio.id,
+        inicio: { gte: new Date() },
+        estado: { notIn: ["CANCELADA", "VENCIDA"] },
+      },
+      select: {
+        inicio: true,
+        cliente: {
+          select: {
+            nombre: true,
+            apellido: true,
+            email: true,
+            telefono: true,
           },
-        })
-        .catch(() => 0),
-      prisma.movimientoCaja.aggregate({
+        },
+      },
+      orderBy: { inicio: "asc" },
+    }),
+    prisma.cliente.count({ where: { negocioId: negocio.id } }),
+    prisma.profesional.count({
+      where: { negocioId: negocio.id, activo: true },
+    }),
+    prisma.servicio.count({ where: { negocioId: negocio.id, activo: true } }),
+    prisma.existencia
+      .count({
         where: {
           negocioId: negocio.id,
-          tipo: "INGRESO",
-          creadoEn: { gte: inicio, lt: fin },
+          cantidad: { lte: prisma.existencia.fields.minimo },
         },
-        _sum: { monto: true },
-      }),
-    ]);
+      })
+      .catch(() => 0),
+    prisma.movimientoCaja.aggregate({
+      where: {
+        negocioId: negocio.id,
+        tipo: "INGRESO",
+        creadoEn: { gte: inicio, lt: fin },
+      },
+      _sum: { monto: true },
+    }),
+  ]);
 
-  const ahora = new Date();
-  const proximo = reservas.find(
-    (reserva) =>
-      reserva.inicio >= ahora &&
-      !["CANCELADA", "VENCIDA"].includes(reserva.estado),
-  );
   return {
     negocio,
     reservas,
@@ -106,10 +131,12 @@ export async function obtenerAgenda() {
       }),
       prisma.sede.findMany({
         where: { negocioId: negocio.id, activa: true },
+        include: { horarios: true },
         orderBy: { nombre: "asc" },
       }),
       prisma.profesional.findMany({
         where: { negocioId: negocio.id, activo: true },
+        include: { horarios: true },
         orderBy: { nombre: "asc" },
       }),
       prisma.servicio.findMany({
@@ -222,11 +249,39 @@ export async function obtenerSitioEditable() {
 
 export async function obtenerConfiguracionNegocio() {
   const contexto = await requerirContextoPanel();
-  const sedes = await prisma.sede.findMany({
-    where: { negocioId: contexto.negocio.id },
-    orderBy: { nombre: "asc" },
+  const [sedes, conexionesGoogle] = await Promise.all([
+    prisma.sede.findMany({
+      where: { negocioId: contexto.negocio.id },
+      include: { horarios: { orderBy: { diaSemana: "asc" } } },
+      orderBy: { nombre: "asc" },
+    }),
+    prisma.conexionGoogleCalendar.findMany({
+      where: { negocioId: contexto.negocio.id },
+      orderBy: { actualizadoEn: "desc" },
+    }),
+  ]);
+  return { ...contexto, sedes, conexionesGoogle };
+}
+
+export async function obtenerFacturacion() {
+  const contexto = await requerirContextoPanel();
+  const pagos = await prisma.pago.findMany({
+    where: {
+      negocioId: contexto.negocio.id,
+      reservaId: null,
+      ventaId: null,
+    },
+    select: {
+      id: true,
+      proveedor: true,
+      estado: true,
+      monto: true,
+      creadoEn: true,
+    },
+    orderBy: { creadoEn: "desc" },
+    take: 30,
   });
-  return { ...contexto, sedes };
+  return { ...contexto, pagos };
 }
 
 export async function obtenerInventario() {
@@ -247,7 +302,7 @@ export async function obtenerInventario() {
 
 export async function obtenerCaja() {
   const { negocio } = await requerirContextoPanel();
-  const inicio = inicioDelDia(new Date());
+  const inicio = inicioDelDia(new Date(), negocio.zonaHoraria);
   const [servicios, productos, movimientos, sedes] = await Promise.all([
     prisma.servicio.findMany({
       where: { negocioId: negocio.id, activo: true },
@@ -269,8 +324,12 @@ export async function obtenerCaja() {
 
 export async function obtenerReportes(desde?: Date) {
   const { negocio } = await requerirContextoPanel();
-  const ahora = new Date();
-  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+  const fechaLocal = fechaEnZona(new Date(), negocio.zonaHoraria);
+  const inicioMes = fechaLocalAUtc(
+    fechaLocal.slice(0, 7) + "-01",
+    "00:00",
+    negocio.zonaHoraria,
+  );
   const movimientos = await prisma.movimientoCaja.findMany({
     where: { negocioId: negocio.id, creadoEn: { gte: desde ?? inicioMes } },
     orderBy: { creadoEn: "asc" },
@@ -304,8 +363,18 @@ export async function obtenerSitioPublico(slug: string) {
   });
 }
 
-function inicioDelDia(fecha: Date) {
-  const resultado = new Date(fecha);
-  resultado.setHours(0, 0, 0, 0);
-  return resultado;
+function inicioDelDia(fecha: Date, zonaHoraria: string) {
+  return fechaLocalAUtc(fechaEnZona(fecha, zonaHoraria), "00:00", zonaHoraria);
+}
+
+function fechaEnZona(fecha: Date, zonaHoraria: string) {
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: zonaHoraria,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(fecha);
+  const valor = (tipo: Intl.DateTimeFormatPartTypes) =>
+    partes.find((parte) => parte.type === tipo)?.value ?? "";
+  return `${valor("year")}-${valor("month")}-${valor("day")}`;
 }

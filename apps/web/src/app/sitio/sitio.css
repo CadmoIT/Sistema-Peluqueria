@@ -318,6 +318,133 @@
   width: 27px;
   height: 27px;
 }
+
+/* Catálogo sobrio sin barra superior, organizado por categorías. */
+.publico-logo-portada {
+  position: absolute;
+  z-index: 3;
+  top: clamp(18px, 4vw, 42px);
+  left: clamp(18px, 5vw, 70px);
+  max-width: 150px;
+  max-height: 88px;
+  padding: 8px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.9);
+}
+.publico-catalogo {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 30px;
+  margin-top: 30px;
+  align-items: start;
+}
+.publico-catalogo > aside {
+  position: sticky;
+  top: 20px;
+  display: grid;
+}
+.publico-catalogo > aside button {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 0;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--sitio-texto) 16%, transparent);
+  background: transparent;
+  color: var(--sitio-texto);
+  text-align: left;
+  font: 14px var(--fuente-marca);
+  cursor: pointer;
+}
+.publico-catalogo > aside button:first-child {
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sitio-principal) 9%, var(--sitio-fondo));
+}
+.publico-categorias {
+  display: grid;
+  gap: 14px;
+}
+.publico-categorias details {
+  scroll-margin-top: 22px;
+  border: 1px solid color-mix(in srgb, var(--sitio-texto) 14%, transparent);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.publico-categorias summary {
+  min-height: 56px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: none;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--sitio-principal) 7%, var(--sitio-fondo));
+  font-family: var(--fuente-marca);
+}
+.publico-categorias summary::-webkit-details-marker {
+  display: none;
+}
+.publico-categorias details > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 14px;
+}
+.publico-categorias article {
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--sitio-texto) 18%, transparent);
+  border-radius: 9px;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease;
+}
+.publico-categorias article:hover {
+  transform: translateY(-2px);
+}
+.publico-categorias article.elegido {
+  border-color: var(--sitio-principal);
+}
+.publico-categorias article small {
+  color: color-mix(in srgb, var(--sitio-texto) 65%, transparent);
+}
+.publico-categorias article h3 {
+  margin: 8px 0;
+  font: 17px var(--fuente-marca);
+}
+.publico-categorias article p {
+  min-height: 44px;
+  margin: 0;
+}
+.publico-categorias article footer {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.publico-seleccionar {
+  border: 0;
+  background: transparent;
+  color: var(--sitio-texto);
+  text-decoration: underline;
+  cursor: pointer;
+  font: 12px var(--fuente-marca);
+}
+.publico-seleccionar:focus-visible {
+  outline: 2px solid var(--sitio-principal);
+  outline-offset: 3px;
+}
+.publico-categorias article footer a {
+  padding: 9px 14px;
+  border-radius: 7px;
+  background: var(--sitio-principal);
+  color: #fff;
+  font: 12px var(--fuente-marca);
+}
+.reserva-movil-persistente {
+  display: none;
+}
 .sitio-suspendido {
   min-height: 100vh;
   display: grid;
@@ -383,6 +510,12 @@
   .publico-ubicacion iframe {
     min-height: 380px;
   }
+  .publico-catalogo {
+    grid-template-columns: 1fr;
+  }
+  .publico-catalogo > aside {
+    display: none;
+  }
 }
 @media (max-width: 580px) {
   .publico-header {
@@ -433,5 +566,33 @@
   }
   .sitio-suspendido section {
     padding: 36px 22px;
+  }
+  .publico-logo-portada {
+    max-width: 104px;
+    max-height: 64px;
+  }
+  .publico-categorias details > div {
+    grid-template-columns: 1fr;
+  }
+  .publico-categorias article p {
+    min-height: 0;
+  }
+  .reserva-movil-persistente {
+    position: fixed;
+    z-index: 40;
+    left: 50%;
+    bottom: 16px;
+    width: calc(100% - 32px);
+    min-height: 50px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 9px;
+    background: var(--sitio-principal);
+    color: #fff;
+    font: 14px var(--fuente-marca);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
   }
 }

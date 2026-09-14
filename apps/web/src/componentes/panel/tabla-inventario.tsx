@@ -145,16 +145,20 @@ export function TablaInventario({
                       name="productoId"
                       value={producto.id}
                     />
-                    <label>
-                      Sede
-                      <select name="sedeId" required>
-                        {sedes.map((sede) => (
-                          <option key={sede.id} value={sede.id}>
-                            {sede.nombre}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    {sedes.length === 1 ? (
+                      <input type="hidden" name="sedeId" value={sedes[0]!.id} />
+                    ) : (
+                      <label>
+                        Local
+                        <select name="sedeId" required>
+                          {sedes.map((sede) => (
+                            <option key={sede.id} value={sede.id}>
+                              {sede.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
                     <label>
                       Cantidad a sumar o quitar
                       <input

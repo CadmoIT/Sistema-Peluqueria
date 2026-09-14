@@ -2,6 +2,7 @@
 import { Download, Plus } from "lucide-react";
 import { crearCliente } from "./acciones";
 import { ImportadorClientes } from "@/componentes/panel/importador-clientes";
+import { BotonEnvio } from "@/componentes/panel/boton-envio";
 import { TablaClientes } from "@/componentes/panel/tabla-clientes";
 import { obtenerClientes } from "@/servicios/panel-datos.service";
 
@@ -14,9 +15,9 @@ export default async function PaginaClientes() {
     nombre: cliente.nombre,
     apellido: cliente.apellido,
     email: cliente.email,
-      telefono: cliente.telefono,
-      notas: cliente.notas,
-      ultimoTurno: cliente.reservas[0]?.inicio.toISOString() ?? null,
+    telefono: cliente.telefono,
+    notas: cliente.notas,
+    ultimoTurno: cliente.reservas[0]?.inicio.toISOString() ?? null,
     visitas: cliente._count.reservas,
   }));
   return (
@@ -90,7 +91,7 @@ function FormularioCliente() {
         Notas
         <textarea name="notas" rows={3} />
       </label>
-      <button className="boton boton--primario">Guardar cliente</button>
+      <BotonEnvio pendiente="Guardando cliente…">Guardar cliente</BotonEnvio>
     </form>
   );
 }

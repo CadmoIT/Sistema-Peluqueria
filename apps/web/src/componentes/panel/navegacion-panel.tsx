@@ -6,7 +6,10 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   ContactRound,
+  CreditCard,
   LayoutDashboard,
   Package,
   Scissors,
@@ -31,35 +34,82 @@ export const enlacesPanel = [
 
 export function NavegacionPanel({
   nombreUsuario = "Mi cuenta",
+  contraido = false,
+  movil = false,
+  onAlternar,
+  onNavegar,
 }: {
   nombreUsuario?: string;
+  contraido?: boolean;
+  movil?: boolean;
+  onAlternar?: () => void;
+  onNavegar?: () => void;
 }) {
   const ruta = usePathname();
   return (
-    <aside className="nav-panel">
+    <aside
+      className={contraido ? "nav-panel nav-panel--contraido" : "nav-panel"}
+    >
       <Link
         className="nav-panel__marca"
         href="/panel"
         aria-label="Ir al resumen"
+        onClick={onNavegar}
       >
-        <LogoTurnosRapidos />
+        <LogoTurnosRapidos compacto={contraido} />
       </Link>
       <nav aria-label="Panel de gestión">
         {enlacesPanel.map(({ texto, href, icono: Icono }) => {
           const activo =
             href === "/panel" ? ruta === href : ruta.startsWith(href);
           return (
-            <Link key={href} href={href} className={activo ? "activo" : ""}>
+            <Link
+              key={href}
+              href={href}
+              className={activo ? "activo" : ""}
+              title={contraido ? texto : undefined}
+              aria-label={contraido ? texto : undefined}
+              onClick={onNavegar}
+            >
               <Icono size={20} />
               <span>{texto}</span>
             </Link>
           );
         })}
       </nav>
-      <Link className="nav-panel__ajustes" href="/panel/configuracion">
-        <Settings size={20} />
-        <span>Configuración</span>
-      </Link>
+      <details
+        className="nav-panel__configuracion"
+        open={
+          ruta.startsWith("/panel/configuracion") ||
+          ruta.startsWith("/panel/facturacion")
+        }
+      >
+        <summary
+          title={contraido ? "Configuración" : undefined}
+          aria-label={contraido ? "Configuración" : undefined}
+        >
+          <Settings size={20} />
+          <span>Configuración</span>
+        </summary>
+        <div>
+          <Link
+            href="/panel/configuracion"
+            className={ruta.startsWith("/panel/configuracion") ? "activo" : ""}
+            onClick={onNavegar}
+          >
+            <Settings size={18} />
+            <span>Configuraciones</span>
+          </Link>
+          <Link
+            href="/panel/facturacion"
+            className={ruta.startsWith("/panel/facturacion") ? "activo" : ""}
+            onClick={onNavegar}
+          >
+            <CreditCard size={18} />
+            <span>Pagos y Facturación</span>
+          </Link>
+        </div>
+      </details>
       <div className="nav-panel__usuario">
         <span>{iniciales(nombreUsuario)}</span>
         <div>
@@ -67,6 +117,15 @@ export function NavegacionPanel({
           <small>Mi cuenta</small>
         </div>
       </div>
+      {!movil && (
+        <button
+          className="nav-panel__plegar"
+          onClick={onAlternar}
+          aria-label={contraido ? "Expandir menú" : "Contraer menú"}
+        >
+          {contraido ? <ChevronRight /> : <ChevronLeft />}
+        </button>
+      )}
     </aside>
   );
 }

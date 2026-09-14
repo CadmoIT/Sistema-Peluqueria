@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- El origen de las imágenes pertenece a cada negocio y luego será R2. */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -68,6 +68,8 @@ export type DatosSitioPublico = {
 export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
   const [imagen, setImagen] = useState(0);
   const [busqueda, setBusqueda] = useState("");
+  const [servicioElegido, setServicioElegido] = useState<string | null>(null);
+  const [categoriasAbiertas, setCategoriasAbiertas] = useState<string[]>([]);
   const hero = datos.configuracion.hero.filter((imagen) => imagen.url);
   useEffect(() => {
     if (!datos.configuracion.carruselAutomatico || hero.length < 2) return;
@@ -77,17 +79,42 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
     );
     return () => window.clearInterval(intervalo);
   }, [datos.configuracion.carruselAutomatico, hero.length]);
-  const servicios = datos.servicios
-    .filter((servicio) =>
-      `${servicio.nombre} ${servicio.categoria}`
-        .toLocaleLowerCase("es")
-        .includes(busqueda.toLocaleLowerCase("es")),
-    )
-    .sort(
-      (a, b) =>
-        posicionDestacado(a.id, datos.configuracion.serviciosDestacados) -
-        posicionDestacado(b.id, datos.configuracion.serviciosDestacados),
+  const servicios = useMemo(
+    () =>
+      datos.servicios
+        .filter((servicio) =>
+          `${servicio.nombre} ${servicio.categoria}`
+            .toLocaleLowerCase("es")
+            .includes(busqueda.toLocaleLowerCase("es")),
+        )
+        .sort(
+          (a, b) =>
+            posicionDestacado(a.id, datos.configuracion.serviciosDestacados) -
+            posicionDestacado(b.id, datos.configuracion.serviciosDestacados),
+        ),
+    [busqueda, datos.configuracion.serviciosDestacados, datos.servicios],
+  );
+  const categorias = useMemo(
+    () =>
+      servicios.reduce<Record<string, typeof servicios>>((grupos, servicio) => {
+        (grupos[servicio.categoria] ??= []).push(servicio);
+        return grupos;
+      }, {}),
+    [servicios],
+  );
+  const nombresCategorias = useMemo(
+    () => Object.keys(categorias),
+    [categorias],
+  );
+  useEffect(() => {
+    if (busqueda) {
+      setCategoriasAbiertas(nombresCategorias);
+      return;
+    }
+    setCategoriasAbiertas((actuales) =>
+      actuales.length ? actuales : nombresCategorias.slice(0, 1),
     );
+  }, [busqueda, nombresCategorias]);
   const estilo = {
     "--sitio-principal": datos.configuracion.colorPrincipal,
     "--sitio-fondo": datos.configuracion.colorFondo,
@@ -97,32 +124,6 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
 
   return (
     <div className="publico-sitio" style={estilo}>
-      <header className="publico-header">
-        <Link href={`/sitio/${datos.slug}`} className="publico-marca">
-          {datos.configuracion.logoUrl ? (
-            <img
-              src={datos.configuracion.logoUrl}
-              alt={datos.configuracion.titulo}
-            />
-          ) : (
-            <strong>{datos.configuracion.titulo}</strong>
-          )}
-        </Link>
-        <nav>
-          {datos.configuracion.secciones.includes("servicios") && (
-            <a href="#servicios">Servicios</a>
-          )}
-          {datos.configuracion.secciones.includes("equipo") && (
-            <a href="#equipo">Equipo</a>
-          )}
-          {datos.configuracion.secciones.includes("ubicacion") && (
-            <a href="#ubicacion">Ubicación</a>
-          )}
-        </nav>
-        <Link className="publico-boton" href={`/reservar/${datos.slug}`}>
-          <CalendarDays /> Reservar turno
-        </Link>
-      </header>
       <main>
         <section
           className={`publico-hero ${hero.length ? "con-imagen" : ""}`}
@@ -137,6 +138,13 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
           }
         >
           <div className="publico-hero__velo" />
+          {datos.configuracion.logoUrl && (
+            <img
+              className="publico-logo-portada"
+              src={datos.configuracion.logoUrl}
+              alt={datos.configuracion.titulo}
+            />
+          )}
           <div className="publico-hero__contenido">
             <small>RESERVAS ONLINE</small>
             <h1>{datos.configuracion.titulo}</h1>
@@ -188,29 +196,90 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
                 placeholder="Buscar un servicio"
               />
             </label>
-            <div className="publico-servicios">
-              {servicios.map((servicio) => (
-                <article key={servicio.id}>
-                  {servicio.imagen && <img src={servicio.imagen} alt="" />}
-                  <small>{servicio.categoria}</small>
-                  <h3>{servicio.nombre}</h3>
-                  <p>
-                    {servicio.descripcion ||
-                      "Consultá disponibilidad para este servicio."}
-                  </p>
-                  <div>
-                    <span>
-                      <Clock3 /> {servicio.duracionMinutos} min
-                    </span>
-                    <strong>{pesos(servicio.precio)}</strong>
-                  </div>
-                  <Link
-                    href={`/reservar/${datos.slug}?servicios=${servicio.id}`}
+            <div className="publico-catalogo">
+              <aside aria-label="Categorías de servicios">
+                {nombresCategorias.map((categoria) => (
+                  <button
+                    type="button"
+                    key={categoria}
+                    onClick={() =>
+                      document
+                        .getElementById("categoria-" + categoria)
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        })
+                    }
                   >
-                    Reservar
-                  </Link>
-                </article>
-              ))}
+                    {categoria}
+                  </button>
+                ))}
+              </aside>
+              <div className="publico-categorias">
+                {Object.entries(categorias).map(([categoria, items]) => {
+                  const abierta = categoriasAbiertas.includes(categoria);
+                  return (
+                    <details
+                      id={"categoria-" + categoria}
+                      key={categoria}
+                      open={abierta}
+                      onToggle={(evento) => {
+                        const mostrar = evento.currentTarget.open;
+                        setCategoriasAbiertas((actuales) =>
+                          mostrar
+                            ? Array.from(new Set([...actuales, categoria]))
+                            : actuales.filter((item) => item !== categoria),
+                        );
+                      }}
+                    >
+                      <summary>
+                        <strong>{categoria}</strong>
+                        <span>{abierta ? "−" : "+"}</span>
+                      </summary>
+                      <div>
+                        {items.map((servicio) => (
+                          <article
+                            key={servicio.id}
+                            className={
+                              servicioElegido === servicio.id ? "elegido" : ""
+                            }
+                          >
+                            <small>{servicio.duracionMinutos} min</small>
+                            <h3>{servicio.nombre}</h3>
+                            <p>
+                              {servicio.descripcion ||
+                                "Consultá disponibilidad para este servicio."}
+                            </p>
+                            <footer>
+                              <strong>{pesos(servicio.precio)}</strong>
+                              <button
+                                type="button"
+                                className="publico-seleccionar"
+                                aria-pressed={servicioElegido === servicio.id}
+                                onClick={() => setServicioElegido(servicio.id)}
+                              >
+                                {servicioElegido === servicio.id
+                                  ? "Seleccionado"
+                                  : "Seleccionar"}
+                              </button>
+                              <Link
+                                href={
+                                  "/reservar/" +
+                                  datos.slug +
+                                  "?servicios=" +
+                                  servicio.id
+                                }
+                              >
+                                Reservar
+                              </Link>
+                            </footer>
+                          </article>
+                        ))}
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
             </div>
             {!servicios.length && (
               <p className="publico-sin-resultados">
@@ -281,8 +350,12 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
                         <Phone /> {sede.telefono}
                       </a>
                     )}
-                    {sede.googlePuntaje && (
-                      <a href={sede.googleMapsUrl ?? "#"} target="_blank">
+                    {sede.googlePuntaje !== null && sede.googleMapsUrl && (
+                      <a
+                        href={sede.googleMapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <Star fill="currentColor" /> {sede.googlePuntaje} ·{" "}
                         {sede.googleResenas ?? 0} valoraciones <ExternalLink />
                       </a>
@@ -310,10 +383,19 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
           className="whatsapp-flotante"
           href={`https://wa.me/${datos.configuracion.whatsapp.replace(/\D/g, "")}`}
           target="_blank"
+          rel="noopener noreferrer"
           aria-label="Contactar por WhatsApp"
         >
           <MessageCircle />
         </a>
+      )}
+      {servicioElegido && (
+        <Link
+          className="reserva-movil-persistente"
+          href={"/reservar/" + datos.slug + "?servicios=" + servicioElegido}
+        >
+          <CalendarDays /> Reservar servicio
+        </Link>
       )}
     </div>
   );

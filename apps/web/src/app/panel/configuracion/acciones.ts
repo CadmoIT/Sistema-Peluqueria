@@ -3,6 +3,7 @@
 
 import type { PoliticaContacto } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { leerTexto, textoOpcional } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
 import { requerirContextoPanel } from "@/servicios/panel-datos.service";
@@ -35,6 +36,7 @@ export async function actualizarConfiguracionNegocio(datos: FormData) {
   });
 
   revalidatePath("/panel", "layout");
+  redirect("/panel/configuracion?configuracion=guardada");
 }
 
 export async function actualizarSede(datos: FormData) {
@@ -54,6 +56,7 @@ export async function actualizarSede(datos: FormData) {
 
   revalidatePath("/panel/configuracion");
   revalidatePath(`/sitio/${negocio.slug}`);
+  redirect("/panel/configuracion?configuracion=local-guardado");
 }
 
 export async function actualizarPuntajeGoogle(datos: FormData) {
@@ -100,6 +103,7 @@ export async function actualizarPuntajeGoogle(datos: FormData) {
 
   revalidatePath("/panel/configuracion");
   revalidatePath(`/sitio/${negocio.slug}`);
+  redirect("/panel/configuracion?configuracion=google-actualizado");
 }
 
 function elegirEnlaceGoogle(valor?: string, existente?: string | null) {

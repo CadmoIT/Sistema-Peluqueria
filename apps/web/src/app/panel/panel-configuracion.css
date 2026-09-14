@@ -1,0 +1,164 @@
+/** Presenta ajustes del negocio, locales e integraciones con una interfaz sobria. */
+.indice-configuracion {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  padding: 10px 0;
+  overflow-x: auto;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--panel-borde);
+}
+.indice-configuracion a {
+  flex: 0 0 auto;
+  padding: 8px 10px;
+  border-radius: 7px;
+  color: #454a4c;
+  font: 12px var(--fuente-marca);
+}
+.indice-configuracion a:hover {
+  background: var(--panel-suave);
+  color: #111;
+}
+.configuracion-sobria {
+  max-width: 980px;
+}
+.seccion-ajustes {
+  display: grid;
+  grid-template-columns: minmax(220px, 34%) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 64px);
+  padding: 38px 0;
+  scroll-margin-top: 60px;
+  border-bottom: 1px solid var(--panel-borde);
+}
+.seccion-ajustes > header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.seccion-ajustes > header > span {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--panel-marca-suave);
+  color: var(--panel-marca);
+}
+.seccion-ajustes > header svg {
+  width: 19px;
+}
+.seccion-ajustes h2,
+.seccion-ajustes p {
+  margin: 0;
+}
+.seccion-ajustes h2 {
+  font: 16px var(--fuente-marca);
+}
+.seccion-ajustes header p {
+  margin-top: 6px;
+  color: #6a7072;
+  font-size: 14px;
+}
+.ajustes-campos {
+  display: grid;
+  gap: 16px;
+}
+.ajustes-campos > label,
+.ajustes-campos form > label,
+.ajuste-avanzado label {
+  display: grid;
+  gap: 7px;
+  color: #222;
+  font: 13px var(--fuente-preguntas);
+}
+.ajustes-campos input,
+.ajustes-campos select {
+  width: 100%;
+  min-height: 45px;
+  padding: 0 12px;
+  border: 1px solid #b9bfc2;
+  border-radius: 8px;
+  color: #111;
+  background: #fff;
+  font: 14px var(--fuente-preguntas);
+}
+.lista-locales > details {
+  border: 1px solid var(--panel-borde);
+  border-radius: 10px;
+}
+.lista-locales > details > summary {
+  padding: 14px 16px;
+  cursor: pointer;
+  font: 14px var(--fuente-marca);
+}
+.lista-locales > details > form {
+  display: grid;
+  gap: 14px;
+  padding: 0 16px 16px;
+}
+.ajuste-avanzado {
+  padding: 10px 0;
+  border-top: 1px solid var(--panel-borde);
+}
+.ajuste-avanzado > summary {
+  cursor: pointer;
+  color: var(--panel-marca);
+  font-size: 13px;
+}
+.ajuste-avanzado label {
+  margin-top: 12px;
+}
+.ajuste-avanzado small {
+  color: #73787a;
+}
+.aviso-ajustes,
+.ayuda-ajustes {
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--panel-suave);
+  color: #555c5f;
+}
+.resumen-horarios {
+  display: grid;
+  gap: 5px;
+}
+.resumen-horarios p {
+  color: #4f5557;
+  line-height: 1.7;
+}
+.estado-integracion {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--panel-borde);
+}
+.estado-integracion > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.estado-integracion svg {
+  color: var(--panel-marca);
+}
+.estado-integracion strong,
+.estado-integracion small {
+  display: block;
+}
+.estado-integracion small {
+  margin-top: 4px;
+  color: #717678;
+}
+.etiqueta-estado {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: var(--panel-suave);
+  color: #555;
+  font: 11px var(--fuente-marca);
+}

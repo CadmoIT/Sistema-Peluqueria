@@ -3,6 +3,7 @@
 
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { leerTexto } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
 import { requerirContextoPanel } from "@/servicios/panel-datos.service";
@@ -61,6 +62,7 @@ export async function guardarBorradorSitio(datos: FormData) {
   });
 
   revalidatePath("/panel/mi-sitio");
+  redirect("/panel/mi-sitio?sitio=guardado");
 }
 
 function limitarPorcentaje(valor: string, alternativa: number) {
@@ -94,4 +96,5 @@ export async function publicarSitio() {
 
   revalidatePath("/panel/mi-sitio");
   revalidatePath(`/sitio/${negocio.slug}`);
+  redirect("/panel/mi-sitio?sitio=publicado");
 }

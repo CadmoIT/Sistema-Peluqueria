@@ -1,62 +1,84 @@
-/** Compone el header, sidebar y navegación móvil compartidos por todo el panel. */
+/** Compone el sidebar plegable y la navegación móvil compartidos por todo el panel. */
 "use client";
 
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useState } from "react";
-import { Bell, ExternalLink, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { enlacesPanel, NavegacionPanel } from "./navegacion-panel";
+import { NotificacionesPanel } from "./notificaciones-panel";
 
 export function EstructuraPanel({
   children,
-  nombreNegocio,
   nombreUsuario,
-  slug,
 }: {
   children: React.ReactNode;
-  nombreNegocio: string;
   nombreUsuario: string;
-  slug: string;
 }) {
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [contraido, setContraido] = useState(false);
+
+  useEffect(() => {
+    setContraido(
+      window.localStorage.getItem("panel-sidebar-contraido") === "si",
+    );
+  }, []);
+
+  function alternarSidebar() {
+    setContraido((actual) => {
+      const siguiente = !actual;
+      window.localStorage.setItem(
+        "panel-sidebar-contraido",
+        siguiente ? "si" : "no",
+      );
+      return siguiente;
+    });
+  }
+
   return (
-    <div className="panel-shell">
+    <div
+      className={
+        contraido ? "panel-shell panel-shell--contraido" : "panel-shell"
+      }
+    >
+      <Suspense fallback={null}>
+        <NotificacionesPanel />
+      </Suspense>
       <div
         className={menuAbierto ? "panel-overlay visible" : "panel-overlay"}
         onClick={() => setMenuAbierto(false)}
+        aria-hidden="true"
       />
-      <div className={menuAbierto ? "panel-mobile abierto" : "panel-mobile"}>
+      <div
+        id="panel-menu-movil"
+        className={menuAbierto ? "panel-mobile abierto" : "panel-mobile"}
+        inert={!menuAbierto}
+      >
         <button onClick={() => setMenuAbierto(false)} aria-label="Cerrar menú">
           <X />
         </button>
-        <NavegacionPanel nombreUsuario={nombreUsuario} />
+        <NavegacionPanel
+          nombreUsuario={nombreUsuario}
+          movil
+          onNavegar={() => setMenuAbierto(false)}
+        />
       </div>
-      <NavegacionPanel nombreUsuario={nombreUsuario} />
+      <NavegacionPanel
+        nombreUsuario={nombreUsuario}
+        contraido={contraido}
+        onAlternar={alternarSidebar}
+      />
       <main className="panel-main">
-        <header className="panel-top">
+        <header className="panel-mobile-top">
           <button
             className="icono-boton menu-mobile"
             onClick={() => setMenuAbierto(true)}
             aria-label="Abrir menú"
+            aria-expanded={menuAbierto}
+            aria-controls="panel-menu-movil"
           >
             <Menu />
           </button>
-          <div className="panel-top__negocio">
-            <small>ESPACIO DE TRABAJO</small>
-            <strong>{nombreNegocio}</strong>
-          </div>
-          <div className="panel-top__acciones">
-            <button className="icono-boton" aria-label="Notificaciones">
-              <Bell size={19} />
-              <i />
-            </button>
-            <Link
-              href={`/sitio/${slug}`}
-              className="boton boton--claro"
-              target="_blank"
-            >
-              Ver mi sitio <ExternalLink size={16} />
-            </Link>
-          </div>
+          <strong>TurnosRápidos</strong>
         </header>
         {children}
       </main>
@@ -67,7 +89,11 @@ export function EstructuraPanel({
             <span>{texto}</span>
           </Link>
         ))}
-        <button onClick={() => setMenuAbierto(true)}>
+        <button
+          onClick={() => setMenuAbierto(true)}
+          aria-expanded={menuAbierto}
+          aria-controls="panel-menu-movil"
+        >
           <Menu />
           <span>Más</span>
         </button>

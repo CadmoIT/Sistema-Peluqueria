@@ -1,0 +1,57 @@
+/** Adapta el panel y sus módulos a tabletas y teléfonos. */
+@media (max-width: 820px) {
+  .panel-shell,
+  .panel-shell--contraido {
+    display: block;
+  }
+  .panel-mobile-top {
+    height: 58px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    border-bottom: 1px solid var(--panel-borde);
+    background: #fff;
+  }
+  .panel-mobile-top strong {
+    font: 16px var(--fuente-marca);
+  }
+  .panel-mobile-top .menu-mobile {
+    display: grid;
+  }
+  .panel-mobile .nav-panel {
+    display: flex;
+    width: 100%;
+  }
+  .panel-inferior {
+    background: #fff;
+    border-top: 1px solid var(--panel-borde);
+  }
+  .panel-inferior a,
+  .panel-inferior button {
+    color: #3f4446;
+  }
+  .panel-contenido {
+    padding-top: 24px;
+  }
+  .skeleton-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .skeleton-editor {
+    grid-template-columns: 1fr;
+  }
+  .seccion-ajustes {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .planes-panel {
+    grid-template-columns: 1fr;
+  }
+  .estado-plan {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .tabla-pagos > div {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -2,6 +2,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { leerTexto, textoOpcional } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
 import { requerirContextoPanel } from "@/servicios/panel-datos.service";
@@ -23,6 +24,7 @@ export async function crearCliente(datos: FormData) {
   });
 
   revalidatePath("/panel/clientes");
+  redirect("/panel/clientes?clientes=creado");
 }
 
 export async function eliminarCliente(datos: FormData) {

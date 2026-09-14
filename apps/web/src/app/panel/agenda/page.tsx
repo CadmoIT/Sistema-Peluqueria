@@ -2,12 +2,15 @@
 import { CalendarPlus, Cloud, Plus } from "lucide-react";
 import { crearReservaPanel } from "./acciones";
 import { CalendarioAgenda } from "@/componentes/panel/calendario-agenda";
+import { BotonEnvio } from "@/componentes/panel/boton-envio";
+import { googleCalendarConfigurado } from "@/lib/google-calendar";
 import { obtenerAgenda } from "@/servicios/panel-datos.service";
 
 export const metadata = { title: "Agenda" };
 
 export default async function PaginaAgenda() {
   const datos = await obtenerAgenda();
+  const googleDisponible = googleCalendarConfigurado();
   const eventos = [
     ...datos.reservas.map((reserva) => {
       const servicio = reserva.servicios[0]?.servicio.nombre ?? "Turno";
@@ -62,12 +65,27 @@ export default async function PaginaAgenda() {
           <p>Turnos, bloqueos y disponibilidad en una vista clara.</p>
         </div>
         <div className="acciones-seccion">
-          <a
-            className="boton boton--secundario"
-            href={`/api/integraciones/google-calendar/conectar${datos.sedes[0] ? `?sedeId=${datos.sedes[0].id}` : ""}`}
-          >
-            <Cloud /> Conectar Google
-          </a>
+          {googleDisponible ? (
+            <a
+              className="boton boton--secundario"
+              href={`/api/integraciones/google-calendar/conectar${datos.sedes[0] ? `?sedeId=${datos.sedes[0].id}` : ""}`}
+            >
+              <Cloud /> Conectar Google
+            </a>
+          ) : (
+            <details className="integracion-ayuda">
+              <summary className="boton boton--secundario">
+                <Cloud /> Conectar Google
+              </summary>
+              <div>
+                <strong>Google Calendar no está configurado</strong>
+                <p>
+                  Cuando se agreguen las credenciales de Google, vas a poder
+                  conectar un calendario desde acá.
+                </p>
+              </div>
+            </details>
+          )}
           <details className="desplegable-accion" id="nuevo">
             <summary className="boton boton--primario">
               <Plus /> Nuevo turno
@@ -92,6 +110,12 @@ export default async function PaginaAgenda() {
         sedes={datos.sedes.map((sede) => ({
           id: sede.id,
           nombre: sede.nombre,
+          horarios: sede.horarios.map((horario) => ({
+            diaSemana: horario.diaSemana,
+            abre: horario.abre,
+            cierra: horario.cierra,
+            activo: horario.activo,
+          })),
         }))}
       />
     </div>
@@ -112,16 +136,20 @@ function FormularioTurno({
         Fecha y hora
         <input name="inicio" type="datetime-local" required />
       </label>
-      <label>
-        Sede
-        <select name="sedeId" required>
-          {datos.sedes.map((sede) => (
-            <option value={sede.id} key={sede.id}>
-              {sede.nombre}
-            </option>
-          ))}
-        </select>
-      </label>
+      {datos.sedes.length === 1 ? (
+        <input type="hidden" name="sedeId" value={datos.sedes[0]!.id} />
+      ) : (
+        <label>
+          Local
+          <select name="sedeId" required>
+            {datos.sedes.map((sede) => (
+              <option value={sede.id} key={sede.id}>
+                {sede.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label>
         Profesional
         <select name="profesionalId" required>
@@ -157,7 +185,7 @@ function FormularioTurno({
         Nombre del cliente
         <input name="clienteNombre" />
       </label>
-      <button className="boton boton--primario">Guardar turno</button>
+      <BotonEnvio pendiente="Guardando turno…">Guardar turno</BotonEnvio>
     </form>
   );
 }

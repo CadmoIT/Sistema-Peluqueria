@@ -1,0 +1,215 @@
+/** Organiza los controles y la vista previa del editor del micrositio. */
+.editor-sitio--simple .editor-controles {
+  padding: 18px;
+  border-color: var(--panel-borde);
+  box-shadow: none;
+}
+.grupo-editor {
+  border-top: 1px solid var(--panel-borde);
+}
+.grupo-editor > summary {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  cursor: pointer;
+  color: #17191a;
+  font: 14px var(--fuente-marca);
+}
+.grupo-editor > summary::-webkit-details-marker {
+  display: none;
+}
+.grupo-editor > summary::after {
+  content: "+";
+  margin-left: auto;
+  font-size: 19px;
+  color: #697073;
+}
+.grupo-editor[open] > summary::after {
+  content: "−";
+}
+.grupo-editor > div {
+  display: grid;
+  gap: 15px;
+  padding: 0 0 20px;
+}
+.colores-circulares {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px !important;
+}
+.selector-color {
+  position: relative;
+}
+.selector-color > summary {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  list-style: none;
+  cursor: pointer;
+  font: 12px var(--fuente-preguntas);
+}
+.selector-color > summary::-webkit-details-marker {
+  display: none;
+}
+.selector-color > summary i {
+  width: 48px;
+  height: 48px;
+  border: 1px solid #aeb5b8;
+  border-radius: 50%;
+}
+.selector-color > div {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  width: 220px;
+  padding: 14px;
+  border: 1px solid var(--panel-borde);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(14, 33, 40, 0.1);
+}
+.selector-color > div > div {
+  display: grid;
+  grid-template-columns: repeat(4, 34px);
+  gap: 8px;
+  margin: 12px 0;
+}
+.selector-color > div button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #bbc1c3;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.selector-color > div button.activo {
+  outline: 2px solid var(--panel-marca);
+  outline-offset: 2px;
+}
+.selector-color label {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+}
+.selector-color input[type="color"] {
+  width: 42px;
+  min-height: 34px;
+  padding: 2px;
+}
+.selector-foco {
+  display: grid;
+  gap: 8px;
+}
+.selector-foco > span {
+  font: 13px var(--fuente-preguntas);
+}
+.selector-foco > button {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  border: 1px solid var(--panel-borde);
+  border-radius: 9px;
+  background-size: cover;
+  background-position: center;
+  cursor: crosshair;
+  overflow: hidden;
+}
+.selector-foco > button i {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--panel-marca);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+.selector-foco > div {
+  width: 66px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+}
+.selector-foco > div button {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #adb4b7;
+  border-radius: 4px;
+  background: #fff;
+}
+.resumen-contenido-sitio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.resumen-contenido-sitio span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--panel-suave);
+  font-size: 13px;
+}
+.resumen-contenido-sitio svg {
+  width: 17px;
+  color: var(--panel-marca);
+}
+.mini-sitio--nuevo > header {
+  display: none;
+}
+.mini-sitio--nuevo .mini-hero {
+  position: relative;
+}
+.mini-logo {
+  position: absolute;
+  z-index: 2;
+  top: 18px;
+  left: 18px;
+  max-width: 82px;
+  max-height: 58px;
+  object-fit: contain;
+}
+.mini-catalogo {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+.mini-catalogo nav {
+  display: grid;
+  align-content: start;
+}
+.mini-catalogo nav span {
+  padding: 8px 4px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 10px;
+}
+.mini-catalogo > div {
+  display: grid;
+  gap: 7px;
+}
+.mini-catalogo article {
+  padding: 10px;
+  border-radius: 7px;
+  background: rgba(18, 103, 131, 0.07);
+}
+.mini-catalogo article > strong {
+  font: 11px var(--fuente-marca);
+}
+.mini-catalogo article p {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 7px 0 0;
+  font-size: 9px;
+}
+.mini-ubicacion {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.mini-ubicacion p {
+  margin: 3px 0;
+}

@@ -45,6 +45,7 @@ La web queda en `http://localhost:3000`, la API en `http://localhost:3001/api/v1
 - `/panel/inventario`, `/panel/caja` y `/panel/reportes`: control administrativo inicial.
 - `/panel/mi-sitio`: editor con borrador, vista previa y publicación.
 - `/panel/configuracion`: negocio, política de contacto, sedes y Google Places.
+- `/panel/facturacion`: plan, estado de suscripción e historial de cobros.
 - `/sitio/{slug}` y `/reservar/{slug}`: micrositio y reserva pública reales.
 
 ## Qué funciona y qué requiere credenciales
@@ -54,6 +55,12 @@ El panel y el sitio leen PostgreSQL. Las reservas públicas calculan horarios di
 Google Calendar cuenta con consentimiento separado, tokens cifrados, sincronización incremental de ocupaciones y exportación de turnos sin correo ni teléfono. Google Places actualiza puntaje y cantidad de valoraciones. Mercado Pago crea la suscripción y sólo activa el sitio después de validar el webhook y consultar el recurso al proveedor. R2 recibe logo, portadas, servicios y fotos mediante una carga autenticada que valida y optimiza cada imagen en el servidor. Estas integraciones requieren las credenciales documentadas en `.env.example`.
 
 Las imágenes se decodifican en el servidor, corrigen su orientación, se reducen a un máximo de 2400 × 1800, pierden sus metadatos y se convierten a WebP antes de llegar a R2. Si R2 no está configurado, el editor mantiene la alternativa de pegar una URL y explica el motivo sin romper el formulario.
+
+## Cuenta de demostración local
+
+Con PostgreSQL local funcionando, `pnpm db:demo` crea o regenera exclusivamente `demo@turnosrapidos.com.ar` con la contraseña `DemoTurnos2026!`. Incluye dos locales, profesionales, servicios, clientes, turnos, stock y ventas ficticias. El comando rechaza bases de datos remotas y no modifica `admin@gmail.com`. Nunca usar esas credenciales en un entorno publicado.
+
+`pnpm test:e2e` regenera esta demo y comprueba en Chromium el acceso, las rutas del panel, el catálogo y el ancho móvil. Requiere instalar una vez el navegador con `pnpm --filter @turnos/web exec playwright install chromium`.
 
 ## Dominios: etapa final
 
@@ -75,6 +82,7 @@ La compra del dominio, wildcard, certificados y verificación DNS se deja expres
 ```bash
 pnpm lint
 pnpm test
+pnpm test:e2e
 pnpm build
 pnpm validar:encabezados
 ```
