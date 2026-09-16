@@ -1,4 +1,46 @@
 /** Presenta ajustes del negocio, locales e integraciones con una interfaz sobria. */
+.avisos-formulario textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #b9bfc2;
+  border-radius: 8px;
+  color: #111;
+  background: #fff;
+  font: 14px var(--fuente-preguntas);
+  resize: vertical;
+}
+.avisos-opciones {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--panel-borde);
+  border-radius: 10px;
+}
+.avisos-opciones label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 14px var(--fuente-preguntas);
+}
+.avisos-opciones input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  accent-color: var(--panel-marca);
+}
+.avisos-opciones strong { font: 15px var(--fuente-marca); }
+.avisos-opciones p,
+.avisos-opciones small { color: #41484b; font-size: 13px; }
+.avisos-vista {
+  display: grid;
+  gap: 9px;
+  padding: 16px;
+  border: 1px solid var(--panel-borde);
+  border-radius: 10px;
+  background: #f9fafb;
+}
+.avisos-vista label { display: grid; gap: 6px; font: 13px var(--fuente-marca); }
+.avisos-vista strong { font: 16px var(--fuente-marca); }
+.avisos-vista p { white-space: pre-wrap; font: 14px/1.5 var(--fuente-editorial); }
 .indice-configuracion {
   position: sticky;
   top: 0;

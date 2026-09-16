@@ -21,6 +21,7 @@ const mensajes: Record<
     tipo: "error",
     texto: "No pudimos conectar Google Calendar.",
   },
+  "google-cancelado": { tipo: "info", texto: "Cancelaste la autorización de Google Calendar. No se conectó la cuenta." },
   "facturacion-retorno": {
     tipo: "info",
     texto: "Estamos esperando la confirmación de Mercado Pago.",
@@ -53,6 +54,14 @@ const mensajes: Record<
   "configuracion-google-actualizado": {
     tipo: "success",
     texto: "La puntuación de Google fue actualizada.",
+  },
+  "configuracion-avisos-guardados": {
+    tipo: "success",
+    texto: "Los mensajes automáticos quedaron guardados.",
+  },
+  "configuracion-avisos-error": {
+    tipo: "error",
+    texto: "Revisá los mensajes. Sólo se permiten las variables indicadas y no pueden quedar vacíos.",
   },
   "agenda-creado": { tipo: "success", texto: "Turno creado." },
 };

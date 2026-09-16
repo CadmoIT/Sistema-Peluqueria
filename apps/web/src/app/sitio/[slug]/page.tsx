@@ -85,7 +85,11 @@ export default async function PaginaSitio({
       colorFondo: cadena("colorFondo", "#ffffff"),
       colorTexto: cadena("colorTexto", "#111111"),
       logoUrl: cadena("logoUrl"),
-      whatsapp: cadena("whatsapp", negocio.telefono ?? ""),
+      whatsapp:
+        cadena("whatsapp").trim() ||
+        negocio.telefono?.trim() ||
+        negocio.sedes.find((sede) => sede.telefono?.trim())?.telefono ||
+        "",
       instagram: cadena("instagram"),
       hero,
       carruselAutomatico: publicada.carruselAutomatico !== false,

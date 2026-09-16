@@ -5,6 +5,7 @@ import {
   CircleAlert,
   CircleCheck,
   Link2,
+  Mail,
   MapPin,
   Save,
   ShieldCheck,
@@ -15,13 +16,19 @@ import {
   actualizarSede,
 } from "./acciones";
 import { BotonEnvio } from "@/componentes/panel/boton-envio";
+import { FormularioAvisos } from "@/componentes/panel/formulario-avisos";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
 import { obtenerConfiguracionNegocio } from "@/servicios/panel-datos.service";
+import {
+  obtenerPerfilNegocio,
+  puedeCambiarTipoNegocio,
+} from "@/lib/perfiles-negocio";
+import { FormularioRubro } from "@/componentes/panel/formulario-rubro";
 
 export const metadata = { title: "Configuraciones" };
 
 export default async function PaginaConfiguracion() {
-  const { negocio, sedes, conexionesGoogle } =
+  const { negocio, membresia, sedes, conexionesGoogle, configuracionAvisos } =
     await obtenerConfiguracionNegocio();
   const unicoLocal = sedes.length === 1;
   const googleDisponible = googleCalendarConfigurado();
@@ -45,59 +52,67 @@ export default async function PaginaConfiguracion() {
         <a href="#negocio">Datos del negocio</a>
         <a href="#locales">{unicoLocal ? "Datos del local" : "Locales"}</a>
         <a href="#horarios">Horarios y reservas</a>
+        <a href="#avisos">Mensajes automáticos</a>
         <a href="#integraciones">Integraciones</a>
         <a href="#seguridad">Seguridad y cuenta</a>
       </nav>
 
       <div className="configuracion-sobria">
-        <form
-          id="negocio"
-          action={actualizarConfiguracionNegocio}
-          className="seccion-ajustes"
-        >
+        <section id="negocio" className="seccion-ajustes">
           <Encabezado icono={<Building2 />} titulo="Datos del negocio">
             Esta información identifica tu espacio en TurnosRápidos.
           </Encabezado>
           <div className="ajustes-campos">
-            <label>
-              Nombre
-              <input name="nombre" defaultValue={negocio.nombre} required />
-            </label>
-            <div className="form-grid">
+            <form
+              action={actualizarConfiguracionNegocio}
+              className="ajustes-campos"
+            >
               <label>
-                Correo
-                <input
-                  name="email"
-                  type="email"
-                  defaultValue={negocio.email ?? ""}
-                />
+                Nombre
+                <input name="nombre" defaultValue={negocio.nombre} required />
               </label>
+              <div className="form-grid">
+                <label>
+                  Correo
+                  <input
+                    name="email"
+                    type="email"
+                    defaultValue={negocio.email ?? ""}
+                  />
+                </label>
+                <label>
+                  Teléfono
+                  <input
+                    name="telefono"
+                    type="tel"
+                    defaultValue={negocio.telefono ?? ""}
+                  />
+                </label>
+              </div>
               <label>
-                Teléfono
-                <input
-                  name="telefono"
-                  type="tel"
-                  defaultValue={negocio.telefono ?? ""}
-                />
+                Dato que pedís al reservar
+                <select
+                  name="politicaContacto"
+                  defaultValue={negocio.politicaContacto}
+                >
+                  <option value="CUALQUIERA">Correo o teléfono</option>
+                  <option value="EMAIL">Correo</option>
+                  <option value="TELEFONO">Teléfono</option>
+                  <option value="NINGUNO">Ninguno</option>
+                </select>
               </label>
-            </div>
-            <label>
-              Dato que pedís al reservar
-              <select
-                name="politicaContacto"
-                defaultValue={negocio.politicaContacto}
-              >
-                <option value="CUALQUIERA">Correo o teléfono</option>
-                <option value="EMAIL">Correo</option>
-                <option value="TELEFONO">Teléfono</option>
-                <option value="NINGUNO">Ninguno</option>
-              </select>
-            </label>
-            <BotonEnvio pendiente="Guardando datos…">
-              <Save /> Guardar datos
-            </BotonEnvio>
+              <BotonEnvio pendiente="Guardando datos…">
+                <Save /> Guardar datos
+              </BotonEnvio>
+            </form>
+            <FormularioRubro
+              tipoNegocio={
+                obtenerPerfilNegocio(negocio.configuracion).tipoNegocio
+              }
+              editable={puedeCambiarTipoNegocio(membresia.rol)}
+            />
           </div>
-        </form>
+        </section>
 
         <section id="locales" className="seccion-ajustes">
           <Encabezado
@@ -212,6 +227,47 @@ export default async function PaginaConfiguracion() {
               Equipo.
             </p>
           </div>
+        </section>
+
+        <section id="avisos" className="seccion-ajustes">
+          <Encabezado icono={<Mail />} titulo="Mensajes automáticos">
+            Elegí qué avisos reciben tus clientes y mirá cómo se verán.
+          </Encabezado>
+          <FormularioAvisos
+            inicial={{
+              emailConfirmacionActivo:
+                configuracionAvisos?.emailConfirmacionActivo ?? true,
+              emailRecordatorioActivo:
+                configuracionAvisos?.emailRecordatorioActivo ?? true,
+              emailAsuntoConfirmacion:
+                configuracionAvisos?.emailAsuntoConfirmacion ??
+                "Tu turno en {negocio} está confirmado",
+              emailTextoConfirmacion:
+                configuracionAvisos?.emailTextoConfirmacion ??
+                "Hola {nombre}, tu turno de {servicio} es el {fecha} a las {hora} en {negocio}.",
+              emailAsuntoRecordatorio:
+                configuracionAvisos?.emailAsuntoRecordatorio ??
+                "Recordatorio de tu turno en {negocio}",
+              emailTextoRecordatorio:
+                configuracionAvisos?.emailTextoRecordatorio ??
+                "Hola {nombre}, te recordamos tu turno de {servicio} el {fecha} a las {hora} en {negocio}.",
+              whatsappConfirmacionActivo:
+                configuracionAvisos?.whatsappConfirmacionActivo ?? false,
+              whatsappRecordatorioActivo:
+                configuracionAvisos?.whatsappRecordatorioActivo ?? false,
+            }}
+            emailConfigurado={Boolean(
+              process.env.SMTP_HOST &&
+              process.env.SMTP_USER &&
+              process.env.SMTP_OAUTH_CLIENT_ID &&
+              process.env.SMTP_OAUTH_CLIENT_SECRET &&
+              process.env.SMTP_OAUTH_REFRESH_TOKEN,
+            )}
+            proActivo={
+              negocio.suscripcion?.estado === "ACTIVA" &&
+              negocio.suscripcion.plan === "pro"
+            }
+          />
         </section>
 
         <section id="integraciones" className="seccion-ajustes">

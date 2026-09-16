@@ -1,15 +1,21 @@
 /** Muestra el calendario real y permite crear turnos internos sin superposiciones. */
-import { CalendarPlus, Cloud, Plus } from "lucide-react";
-import { crearReservaPanel } from "./acciones";
+import { Plus } from "lucide-react";
 import { CalendarioAgenda } from "@/componentes/panel/calendario-agenda";
-import { BotonEnvio } from "@/componentes/panel/boton-envio";
+import { FormularioTurno } from "@/componentes/panel/agenda/formulario-turno";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
 import { obtenerAgenda } from "@/servicios/panel-datos.service";
+import { ConexionGoogleAgenda } from "@/componentes/panel/agenda/conexion-google-agenda";
+import "./agenda.css";
 
 export const metadata = { title: "Agenda" };
 
-export default async function PaginaAgenda() {
-  const datos = await obtenerAgenda();
+export default async function PaginaAgenda({
+  searchParams,
+}: {
+  searchParams: Promise<{ fecha?: string }>;
+}) {
+  const parametros = await searchParams;
+  const datos = await obtenerAgenda(parametros.fecha);
   const googleDisponible = googleCalendarConfigurado();
   const eventos = [
     ...datos.reservas.map((reserva) => {
@@ -19,18 +25,16 @@ export default async function PaginaAgenda() {
         title: `${nombreCliente(reserva.cliente)} · ${servicio}`,
         start: reserva.inicio.toISOString(),
         end: reserva.fin.toISOString(),
-        backgroundColor: colorEstado(reserva.estado),
-        borderColor: colorEstado(reserva.estado),
-        editable: !["CANCELADA", "VENCIDA", "COMPLETADA"].includes(
+        editable: !["CANCELADA", "VENCIDA", "COMPLETADA", "AUSENTE"].includes(
           reserva.estado,
         ),
         tipo: "reserva" as const,
         estado: reserva.estado,
         cliente: nombreCliente(reserva.cliente),
         servicio,
-        profesionalId: reserva.profesionalId,
+        profesionalId: reserva.profesionalId ?? "profesional-eliminado",
         profesional:
-          `${reserva.profesional.nombre} ${reserva.profesional.apellido ?? ""}`.trim(),
+          reserva.profesional ? `${reserva.profesional.nombre} ${reserva.profesional.apellido ?? ""}`.trim() : "Profesional eliminado",
         sedeId: reserva.sedeId,
         sede: reserva.sede.nombre,
       };
@@ -40,8 +44,6 @@ export default async function PaginaAgenda() {
       title: `Ocupado · ${bloqueo.conexion.nombre}`,
       start: bloqueo.inicio.toISOString(),
       end: bloqueo.fin.toISOString(),
-      backgroundColor: "#64748b",
-      borderColor: "#64748b",
       editable: false,
       tipo: "google" as const,
       estado: "OCUPADO",
@@ -52,46 +54,76 @@ export default async function PaginaAgenda() {
       sedeId: bloqueo.conexion.sedeId ?? "",
       sede: "Calendario externo",
     })),
+    ...datos.bloqueosInternos.map((bloqueo) => ({
+      id: `bloqueo-${bloqueo.id}`,
+      title: bloqueo.motivo || "Horario bloqueado",
+      start: bloqueo.inicio.toISOString(),
+      end: bloqueo.fin.toISOString(),
+      editable: false,
+      tipo: "bloqueo" as const,
+      estado: "OCUPADO",
+      cliente: "Horario bloqueado",
+      servicio: bloqueo.motivo || "Bloqueo de atención",
+      profesionalId: bloqueo.profesionalId,
+      profesional: bloqueo.profesional.nombre,
+      sedeId: "",
+      sede: "",
+    })),
   ];
   const puedeCrear =
     datos.sedes.length > 0 &&
     datos.profesionales.length > 0 &&
     datos.servicios.length > 0;
   return (
-    <div className="panel-contenido panel-contenido--ancho">
+    <div className="panel-contenido panel-contenido--ancho panel-contenido--agenda">
       <header className="cabecera-seccion">
         <div>
           <h1>Agenda</h1>
-          <p>Turnos, bloqueos y disponibilidad en una vista clara.</p>
         </div>
         <div className="acciones-seccion">
-          {googleDisponible ? (
-            <a
-              className="boton boton--secundario"
-              href={`/api/integraciones/google-calendar/conectar${datos.sedes[0] ? `?sedeId=${datos.sedes[0].id}` : ""}`}
-            >
-              <Cloud /> Conectar Google
-            </a>
-          ) : (
-            <details className="integracion-ayuda">
-              <summary className="boton boton--secundario">
-                <Cloud /> Conectar Google
-              </summary>
-              <div>
-                <strong>Google Calendar no está configurado</strong>
-                <p>
-                  Cuando se agreguen las credenciales de Google, vas a poder
-                  conectar un calendario desde acá.
-                </p>
-              </div>
-            </details>
-          )}
+          <ConexionGoogleAgenda
+            disponible={googleDisponible}
+            fecha={datos.fecha}
+            locales={datos.sedes.map((s) => ({ id: s.id, nombre: s.nombre }))}
+            profesionales={datos.profesionales.map((p) => ({
+              id: p.id,
+              nombre: `${p.nombre} ${p.apellido ?? ""}`.trim(),
+            }))}
+            conexiones={datos.conexionesGoogle.map((c) => ({
+              ...c,
+              sincronizadoEn: c.sincronizadoEn?.toISOString() ?? null,
+            }))}
+          />
           <details className="desplegable-accion" id="nuevo">
             <summary className="boton boton--primario">
               <Plus /> Nuevo turno
             </summary>
             {puedeCrear ? (
-              <FormularioTurno datos={datos} />
+              <FormularioTurno
+                datos={{
+                  fecha: datos.fecha,
+                  sedes: datos.sedes.map((s) => ({
+                    id: s.id,
+                    nombre: s.nombre,
+                  })),
+                  profesionales: datos.profesionales.map((p) => ({
+                    id: p.id,
+                    nombre: p.nombre,
+                    apellido: p.apellido,
+                  })),
+                  servicios: datos.servicios.map((s) => ({
+                    id: s.id,
+                    nombre: s.nombre,
+                  })),
+                  clientes: datos.clientes.map((c) => ({
+                    id: c.id,
+                    nombre: c.nombre,
+                    apellido: c.apellido,
+                    email: c.email,
+                    telefono: c.telefono,
+                  })),
+                }}
+              />
             ) : (
               <div className="formulario-flotante">
                 <h2>Antes de crear un turno</h2>
@@ -102,11 +134,20 @@ export default async function PaginaAgenda() {
         </div>
       </header>
       <CalendarioAgenda
+        fecha={datos.fecha}
+        zonaHoraria={datos.negocio.zonaHoraria}
         eventos={eventos}
-        profesionales={datos.profesionales.map((profesional) => ({
+        profesionales={[...datos.profesionales.map((profesional) => ({
           id: profesional.id,
           nombre: `${profesional.nombre} ${profesional.apellido ?? ""}`.trim(),
-        }))}
+          localesIds: profesional.sedes.map((s) => s.sedeId),
+          horarios: profesional.horarios.map((horario) => ({
+            sedeId: horario.sedeId,
+            diaSemana: horario.diaSemana,
+            comienza: horario.comienza,
+            termina: horario.termina,
+          })),
+        })), ...(datos.reservas.some((r) => !r.profesionalId) ? [{ id: "profesional-eliminado", nombre: "Profesional eliminado", localesIds: [], horarios: [] }] : [])]}
         sedes={datos.sedes.map((sede) => ({
           id: sede.id,
           nombre: sede.nombre,
@@ -122,89 +163,17 @@ export default async function PaginaAgenda() {
   );
 }
 
-function FormularioTurno({
-  datos,
-}: {
-  datos: Awaited<ReturnType<typeof obtenerAgenda>>;
-}) {
-  return (
-    <form action={crearReservaPanel} className="formulario-flotante">
-      <h2>
-        <CalendarPlus /> Nuevo turno
-      </h2>
-      <label>
-        Fecha y hora
-        <input name="inicio" type="datetime-local" required />
-      </label>
-      {datos.sedes.length === 1 ? (
-        <input type="hidden" name="sedeId" value={datos.sedes[0]!.id} />
-      ) : (
-        <label>
-          Local
-          <select name="sedeId" required>
-            {datos.sedes.map((sede) => (
-              <option value={sede.id} key={sede.id}>
-                {sede.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      <label>
-        Profesional
-        <select name="profesionalId" required>
-          {datos.profesionales.map((profesional) => (
-            <option value={profesional.id} key={profesional.id}>
-              {profesional.nombre} {profesional.apellido}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Servicio
-        <select name="servicioId" required>
-          {datos.servicios.map((servicio) => (
-            <option value={servicio.id} key={servicio.id}>
-              {servicio.nombre}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Cliente existente
-        <select name="clienteId">
-          <option value="">Crear cliente rápido</option>
-          {datos.clientes.map((cliente) => (
-            <option value={cliente.id} key={cliente.id}>
-              {nombreCliente(cliente)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Nombre del cliente
-        <input name="clienteNombre" />
-      </label>
-      <BotonEnvio pendiente="Guardando turno…">Guardar turno</BotonEnvio>
-    </form>
-  );
-}
 function nombreCliente(cliente: {
   nombre: string | null;
   apellido: string | null;
   email: string | null;
   telefono: string | null;
-}) {
+} | null) {
+  if (!cliente) return "Cliente eliminado";
   return (
     [cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||
     cliente.email ||
     cliente.telefono ||
     "Cliente sin datos"
   );
-}
-function colorEstado(estado: string) {
-  if (estado === "CONFIRMADA") return "#126783";
-  if (estado === "CANCELADA") return "#a8a8a8";
-  if (estado === "COMPLETADA") return "#21835f";
-  return "#2a9fba";
 }

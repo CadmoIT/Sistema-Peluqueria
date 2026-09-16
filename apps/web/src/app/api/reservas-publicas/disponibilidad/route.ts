@@ -112,7 +112,7 @@ export async function GET(solicitud: Request) {
         cancelado: false,
         conexion: {
           negocioId: negocio.id,
-          OR: [{ profesionalId }, { profesionalId: null, sedeId }],
+          OR: [{ profesionalId }, { profesionalId: null, sedeId }, { profesionalId: null, sedeId: null }],
         },
         inicio: { lt: finDia },
         fin: { gt: inicioDia },

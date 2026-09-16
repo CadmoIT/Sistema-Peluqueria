@@ -1,11 +1,52 @@
 /** Define una pantalla de registro clara basada en la identidad azul de la marca. */
 .acceso {
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
   position: relative;
   display: grid;
   place-items: center;
-  padding: 130px 24px 70px;
-  background: #f3f8fb;
+  padding: 92px 24px 24px;
+  background: #fff;
+  overflow: hidden;
+  transition: background 320ms ease;
+}
+
+.acceso--fondo-7 {
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 1fr);
+  place-items: stretch;
+  column-gap: clamp(30px, 5vw, 90px);
+  padding: 92px clamp(32px, 8vw, 150px) 24px;
+}
+
+.acceso__imagen-variante {
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+}
+
+.acceso__imagen-variante img {
+  width: min(100%, 620px);
+  height: auto;
+  display: block;
+  object-fit: contain;
+  transform: scale(1.08);
+}
+
+.acceso--fondo-7 .acceso__formulario {
+  align-self: center;
+}
+
+.acceso--ingreso .acceso__imagen-variante {
+  order: 2;
+}
+
+.acceso--ingreso .acceso__formulario {
+  order: 1;
+}
+
+.acceso--fondo-7 > .acceso__imagen-variante,
+.acceso--fondo-7 > .acceso__formulario {
+  transform: translateY(-28px);
 }
 
 .acceso__logo {
@@ -19,20 +60,20 @@
 .acceso .logo-turnos {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .acceso .logo-turnos__imagen {
-  width: 62px;
-  height: 62px;
-  border-radius: 15px;
+  width: 78px;
+  height: 78px;
+  border-radius: 0;
   object-fit: contain;
 }
 
 .acceso .logo-turnos__nombre {
   color: var(--tinta);
   font-family: var(--fuente-marca);
-  font-size: 23px;
+  font-size: 28px;
   font-weight: 400;
   letter-spacing: -0.035em;
 }
@@ -50,12 +91,12 @@
 }
 
 .formulario-caja {
-  width: min(570px, 100%);
+  width: min(620px, 100%);
   padding: 42px 48px 38px;
-  border: 1px solid #d9e6eb;
-  border-radius: 24px;
+  border: 0;
+  border-radius: 0;
   background: #fff;
-  box-shadow: 0 22px 60px rgba(16, 67, 91, 0.1);
+  box-shadow: none;
   color: #000;
   font-family: var(--fuente-marca);
 }
@@ -80,8 +121,10 @@
 .google {
   width: 100%;
   height: 56px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   border: 1px solid #000;
   border-radius: 9px;
   background: #eef1f3;
@@ -121,10 +164,22 @@
 }
 
 .formulario-caja label {
-  display: grid;
-  gap: 8px;
+  position: relative;
+  display: block;
   color: #000;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.formulario-caja label > span {
+  position: absolute;
+  z-index: 1;
+  top: -8px;
+  left: 13px;
+  padding: 0 5px;
+  background: #fff;
+  color: #000;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -294,8 +349,11 @@
 
 @media (max-width: 600px) {
   .acceso {
+    height: auto;
+    min-height: 100vh;
     align-items: start;
-    padding: 112px 12px 70px;
+    padding: 86px 12px 40px;
+    overflow-y: auto;
   }
 
   .acceso__logo {
@@ -303,9 +361,37 @@
     left: 50%;
   }
 
+  .acceso .logo-turnos {
+    gap: 10px;
+  }
+
+  .acceso .logo-turnos__imagen {
+    width: 66px;
+    height: 66px;
+  }
+
+  .acceso .logo-turnos__nombre {
+    font-size: 24px;
+  }
+
   .formulario-caja {
     padding: 30px 20px;
-    border-radius: 18px;
+    border-radius: 0;
+  }
+
+  .acceso--fondo-7 {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding-inline: 12px;
+  }
+
+  .acceso__imagen-variante {
+    display: none;
+  }
+
+  .acceso--fondo-7 > .acceso__imagen-variante,
+  .acceso--fondo-7 > .acceso__formulario {
+    transform: translateY(-16px);
   }
 
   .formulario-caja h1 {

@@ -1,0 +1,167 @@
+/** Da jerarquía al resumen sin tarjetas superfluas ni adornos luminosos. */
+.resumen-pagina .panel-bienvenida {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.resumen-pagina__cabecera {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.resumen-pagina__cabecera h1 {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.resumen-pagina .enlace-sitio-resumen {
+  margin: 0;
+  padding: 8px 0;
+  align-items: center;
+  gap: 9px;
+  color: #111;
+  font: 17px var(--fuente-marca);
+  white-space: nowrap;
+}
+.resumen-pagina .enlace-sitio-resumen:hover,
+.resumen-pagina .modulo__titulo > a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.resumen-metrica:hover {
+  background: #f7f8f8;
+  transform: translateY(-2px);
+}
+.resumen-pagina .metricas-panel {
+  gap: 14px;
+}
+.resumen-metrica {
+  min-height: 132px;
+  padding: 23px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--panel-borde);
+  border-radius: 14px;
+  background: #fff;
+  color: #111;
+  transition: background 150ms ease, transform 150ms ease;
+}
+.resumen-metrica span {
+  font: 18px/1.25 var(--fuente-marca);
+}
+.resumen-metrica strong {
+  font: 34px/1.1 var(--fuente-marca);
+}
+.resumen-pagina .panel-grilla {
+  gap: 32px;
+  margin-top: 32px;
+}
+.resumen-pagina .agenda-modulo {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.resumen-pagina .modulo__titulo h2 {
+  font-size: 20px;
+}
+.resumen-pagina .modulo__titulo > a {
+  color: #111;
+  font-size: 15px;
+}
+.resumen-pagina .tabla-turnos__cabecera,
+.resumen-pagina .tabla-turnos__fila {
+  grid-template-columns: 72px minmax(100px, 1.3fr) minmax(100px, 1.2fr) minmax(95px, 1fr) 110px;
+  gap: 13px;
+}
+.resumen-pagina .tabla-turnos--sin-profesional .tabla-turnos__cabecera,
+.resumen-pagina .tabla-turnos--sin-profesional .tabla-turnos__fila {
+  grid-template-columns: 72px minmax(100px, 1.3fr) minmax(100px, 1.2fr) 110px;
+}
+.resumen-pagina .tabla-turnos__cabecera {
+  font-size: 12px;
+}
+.resumen-pagina .tabla-turnos__fila {
+  min-height: 70px;
+  font-size: 15px;
+}
+.resumen-estado {
+  color: #111;
+  font: 14px var(--fuente-marca);
+}
+.resumen-pagina .acceso-resumen {
+  font-size: 15px;
+}
+.resumen-pagina .acceso-resumen svg {
+  color: #111;
+}
+.resumen-pagina .acceso-resumen {
+  border-radius: 8px;
+  transition: background 150ms ease;
+}
+.resumen-pagina .acceso-resumen:hover {
+  background: #f1f3f4;
+}
+.resumen-pagina .prueba-panel {
+  display: block;
+  transition: background 150ms ease;
+}
+.resumen-pagina .prueba-panel:hover {
+  background: #0e536b;
+}
+.resumen-pagina .acceso-resumen:focus-visible,
+.resumen-pagina .prueba-panel:focus-visible {
+  outline: 2px solid #126783;
+  outline-offset: 2px;
+}
+@media (max-width: 1100px) {
+  .resumen-pagina .metricas-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .resumen-pagina .panel-grilla {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 650px) {
+  .resumen-pagina__cabecera {
+    gap: 12px;
+  }
+  .resumen-pagina__cabecera h1 {
+    font-size: clamp(22px, 5.5vw, 30px);
+  }
+  .resumen-pagina .enlace-sitio-resumen {
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+  .resumen-pagina .metricas-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .resumen-metrica {
+    min-height: 112px;
+    padding: 16px;
+  }
+  .resumen-metrica span {
+    font-size: 14px;
+  }
+  .resumen-metrica strong {
+    font-size: 25px;
+  }
+  .resumen-pagina .tabla-turnos__cabecera {
+    display: none;
+  }
+  .resumen-pagina .tabla-turnos__fila,
+  .resumen-pagina .tabla-turnos--sin-profesional .tabla-turnos__fila {
+    grid-template-columns: 70px minmax(0, 1fr) auto;
+    gap: 7px;
+    font-size: 13px;
+  }
+  .resumen-pagina .tabla-turnos__fila span:nth-child(3),
+  .resumen-pagina .tabla-turnos__fila span:nth-child(4) {
+    display: none;
+  }
+}

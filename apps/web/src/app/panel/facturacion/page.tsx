@@ -5,7 +5,7 @@ import {
   CreditCard,
   ReceiptText,
 } from "lucide-react";
-import { formatearPesos, PLANES } from "@turnos/config";
+import { formatearPesos, nombrePlan, PLANES, PLAN_GRATIS, PLAN_PRO } from "@turnos/config";
 import { obtenerFacturacion } from "@/servicios/panel-datos.service";
 
 export const metadata = { title: "Pagos y Facturación" };
@@ -30,10 +30,10 @@ export default async function PaginaFacturacion() {
             <small>ESTADO ACTUAL</small>
             <strong>
               {suscripcion?.estado === "ACTIVA"
-                ? "Plan activo"
+                ? `Plan activo · ${nombrePlan(suscripcion.plan)}`
                 : suscripcion?.estado === "EN_GRACIA"
                   ? "Pago pendiente"
-                  : "Período de prueba"}
+                  : "Plan Gratis · período de prueba"}
             </strong>
           </span>
         </div>
@@ -52,7 +52,7 @@ export default async function PaginaFacturacion() {
         </aside>
       )}
       <section className="planes-panel" aria-label="Planes disponibles">
-        {PLANES.map((plan) => (
+        {[PLAN_GRATIS, ...PLANES, PLAN_PRO].map((plan) => (
           <article
             key={plan.id}
             className={suscripcion?.plan === plan.id ? "actual" : ""}
@@ -63,15 +63,21 @@ export default async function PaginaFacturacion() {
             <h2>{plan.nombre}</h2>
             <p>{plan.descripcion}</p>
             <strong>
-              {formatearPesos(plan.precioMensual)}
-              <span>/mes</span>
+              {plan.precioMensual === null ? "Precio a definir" : formatearPesos(plan.precioMensual)}
+              {plan.precioMensual !== null && plan.id !== "PRUEBA" && <span>/mes</span>}
             </strong>
             <ul>
               {plan.beneficios.map((beneficio) => (
                 <li key={beneficio}>{beneficio}</li>
               ))}
             </ul>
-            {suscripcion?.estado === "ACTIVA" || suscripcion?.proveedorId ? (
+            {plan.id === "PRUEBA" ? (
+              <button className="boton boton--secundario" disabled>
+                {suscripcion?.estado === "CONFIGURACION_GRATUITA" ? "Prueba en curso" : "Prueba de siete días"}
+              </button>
+            ) : plan.id === "pro" ? (
+              <button className="boton boton--secundario" disabled>Próximamente</button>
+            ) : suscripcion?.estado === "ACTIVA" || suscripcion?.proveedorId ? (
               <button className="boton boton--secundario" disabled>
                 {suscripcion.estado === "ACTIVA"
                   ? "Plan en curso"

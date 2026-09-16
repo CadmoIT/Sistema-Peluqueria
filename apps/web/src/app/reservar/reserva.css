@@ -250,6 +250,17 @@
   font-weight: 500;
   color: #64706b;
 }
+.datos-cliente .consentimiento-whatsapp {
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  color: #111;
+  font: 13px/1.4 var(--fuente-preguntas);
+}
+.consentimiento-whatsapp input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+}
 .volver-paso {
   border: 0;
   background: transparent;

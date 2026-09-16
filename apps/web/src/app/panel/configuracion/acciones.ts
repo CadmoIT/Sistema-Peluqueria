@@ -7,6 +7,39 @@ import { redirect } from "next/navigation";
 import { leerTexto, textoOpcional } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
 import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { esTipoNegocio, puedeCambiarTipoNegocio } from "@/lib/perfiles-negocio";
+import { guardarRubroNegocio } from "@/servicios/rubro-negocio.service";
+
+export type ResultadoTipoNegocio = { ok: boolean; mensaje: string };
+
+export async function actualizarTipoNegocio(
+  _anterior: ResultadoTipoNegocio,
+  datos: FormData,
+): Promise<ResultadoTipoNegocio> {
+  const { negocio, membresia } = await requerirContextoPanel();
+  if (!puedeCambiarTipoNegocio(membresia.rol))
+    return {
+      ok: false,
+      mensaje:
+        "Sólo el dueño o un administrador puede cambiar el tipo de negocio.",
+    };
+  const tipoNegocio = leerTexto(datos, "tipoNegocio");
+  if (!esTipoNegocio(tipoNegocio))
+    return { ok: false, mensaje: "Elegí un tipo de negocio de la lista." };
+  try {
+    await guardarRubroNegocio(negocio.id, tipoNegocio);
+  } catch {
+    return {
+      ok: false,
+      mensaje: "No pudimos guardar el tipo de negocio. Intentá nuevamente.",
+    };
+  }
+  revalidatePath("/panel", "layout");
+  return {
+    ok: true,
+    mensaje: "El tipo de negocio quedó actualizado. Tus datos se conservaron.",
+  };
+}
 
 const politicasContacto = new Set<PoliticaContacto>([
   "EMAIL",
@@ -104,6 +137,72 @@ export async function actualizarPuntajeGoogle(datos: FormData) {
   revalidatePath("/panel/configuracion");
   revalidatePath(`/sitio/${negocio.slug}`);
   redirect("/panel/configuracion?configuracion=google-actualizado");
+}
+
+const variablesAviso = new Set([
+  "nombre",
+  "negocio",
+  "servicio",
+  "fecha",
+  "hora",
+  "enlace",
+]);
+
+export async function guardarConfiguracionAvisos(datos: FormData) {
+  const { negocio } = await requerirContextoPanel();
+  const campos = [
+    "emailAsuntoConfirmacion",
+    "emailTextoConfirmacion",
+    "emailAsuntoRecordatorio",
+    "emailTextoRecordatorio",
+  ] as const;
+  const textos = Object.fromEntries(
+    campos.map((campo) => [campo, leerTexto(datos, campo)]),
+  );
+  const validos = campos.every((campo) => {
+    const valor = textos[campo] ?? "";
+    const maximo = campo.includes("Asunto") ? 140 : 1000;
+    return (
+      valor.length > 0 &&
+      valor.length <= maximo &&
+      Array.from(valor.matchAll(/\{([^}]+)\}/g)).every((grupo) =>
+        variablesAviso.has(grupo[1] ?? ""),
+      )
+    );
+  });
+  if (!validos)
+    redirect("/panel/configuracion?configuracion=avisos-error#avisos");
+
+  await prisma.configuracionAvisos.upsert({
+    where: { negocioId: negocio.id },
+    create: {
+      negocioId: negocio.id,
+      emailConfirmacionActivo: datos.get("emailConfirmacionActivo") === "on",
+      emailRecordatorioActivo: datos.get("emailRecordatorioActivo") === "on",
+      whatsappConfirmacionActivo:
+        datos.get("whatsappConfirmacionActivo") === "on",
+      whatsappRecordatorioActivo:
+        datos.get("whatsappRecordatorioActivo") === "on",
+      emailAsuntoConfirmacion: textos.emailAsuntoConfirmacion!,
+      emailTextoConfirmacion: textos.emailTextoConfirmacion!,
+      emailAsuntoRecordatorio: textos.emailAsuntoRecordatorio!,
+      emailTextoRecordatorio: textos.emailTextoRecordatorio!,
+    },
+    update: {
+      emailConfirmacionActivo: datos.get("emailConfirmacionActivo") === "on",
+      emailRecordatorioActivo: datos.get("emailRecordatorioActivo") === "on",
+      whatsappConfirmacionActivo:
+        datos.get("whatsappConfirmacionActivo") === "on",
+      whatsappRecordatorioActivo:
+        datos.get("whatsappRecordatorioActivo") === "on",
+      emailAsuntoConfirmacion: textos.emailAsuntoConfirmacion!,
+      emailTextoConfirmacion: textos.emailTextoConfirmacion!,
+      emailAsuntoRecordatorio: textos.emailAsuntoRecordatorio!,
+      emailTextoRecordatorio: textos.emailTextoRecordatorio!,
+    },
+  });
+  revalidatePath("/panel/configuracion");
+  redirect("/panel/configuracion?configuracion=avisos-guardados#avisos");
 }
 
 function elegirEnlaceGoogle(valor?: string, existente?: string | null) {

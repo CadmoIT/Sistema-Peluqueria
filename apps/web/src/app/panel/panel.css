@@ -32,8 +32,7 @@
   display: grid;
   gap: 5px;
 }
-.nav-panel nav a,
-.nav-panel__ajustes {
+.nav-panel nav a {
   min-height: 46px;
   display: flex;
   align-items: center;
@@ -45,14 +44,10 @@
   transition: 0.18s ease;
 }
 .nav-panel nav a:hover,
-.nav-panel nav a.activo,
-.nav-panel__ajustes:hover {
+.nav-panel nav a.activo {
   background: #fff;
   color: #111;
   transform: translateX(2px);
-}
-.nav-panel__ajustes {
-  margin-top: auto;
 }
 .nav-panel__usuario {
   margin-top: 14px;
@@ -91,46 +86,6 @@
 .panel-main {
   min-width: 0;
   background: #fff;
-}
-.panel-top {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  height: 76px;
-  padding: 0 30px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #126783;
-  color: #fff;
-}
-.panel-top__negocio small,
-.panel-top__negocio strong {
-  display: block;
-}
-.panel-top__negocio small {
-  font: 9px var(--fuente-marca);
-  letter-spacing: 0.12em;
-  opacity: 0.7;
-}
-.panel-top__negocio strong {
-  margin-top: 4px;
-  font: 17px var(--fuente-marca);
-}
-.panel-top__acciones {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.panel-top .icono-boton {
-  border-color: rgba(255, 255, 255, 0.24);
-  background: transparent;
-  color: #fff;
-}
-.panel-top .boton--claro {
-  color: #111;
-  font-family: var(--fuente-marca);
-  border-radius: 999px;
 }
 .icono-boton {
   width: 43px;
@@ -498,9 +453,6 @@
   min-height: 66px;
   border-top: 1px solid #e7ebed;
   font-size: 13px;
-}
-.tabla-clientes {
-  grid-template-columns: 1.1fr 1.4fr 1fr 0.8fr 60px 42px;
 }
 .tabla-inventario {
   grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr 150px;

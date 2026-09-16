@@ -21,6 +21,7 @@ export async function buscarNegocioDelUsuario(usuarioId: string) {
           nombre: true,
           slug: true,
           publicado: true,
+          configuracion: true,
           suscripcion: {
             select: { estado: true, pruebaFinalizaEn: true },
           },

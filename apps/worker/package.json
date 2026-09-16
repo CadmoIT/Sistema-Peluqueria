@@ -7,14 +7,17 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "lint": "tsc --noEmit",
-    "test": "node --test"
+    "test": "tsx --test src/**/*.spec.ts"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
+    "@turnos/google-calendar": "workspace:*",
+    "nodemailer": "^10.0.9",
     "pg-boss": "^10.3.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
+    "@types/nodemailer": "^8.0.1",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
   }

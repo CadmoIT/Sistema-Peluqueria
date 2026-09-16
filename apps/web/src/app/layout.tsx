@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { Doppio_One, PT_Serif, PT_Serif_Caption } from "next/font/google";
 import "./globals.css";
+import { CierreDesplegables } from "@/componentes/interaccion/cierre-exterior";
 
 const doppioOne = Doppio_One({
   weight: "400",
@@ -24,6 +25,10 @@ const ptSerifCaption = PT_Serif_Caption({
 export const metadata: Metadata = {
   title: { default: "TurnosRapidos", template: "%s · TurnosRapidos" },
   description: "Tu negocio, tus turnos y tus clientes en un solo lugar.",
+  icons: {
+    icon: { url: "/marca/favicon.svg", type: "image/svg+xml" },
+    apple: "/marca/logo-turnos-rapidos.png",
+  },
 };
 
 export default function RootLayout({
@@ -34,6 +39,7 @@ export default function RootLayout({
       <body
         className={`${doppioOne.variable} ${ptSerif.variable} ${ptSerifCaption.variable}`}
       >
+        <CierreDesplegables />
         {children}
       </body>
     </html>

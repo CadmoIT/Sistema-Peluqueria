@@ -5,12 +5,16 @@ import { Toaster } from "sonner";
 import { autenticacion } from "@/lib/autenticacion";
 import { buscarNegocioDelUsuario } from "@/servicios/configuracion-inicial.service";
 import { EstructuraPanel } from "@/componentes/panel/estructura-panel";
+import { obtenerPerfilNegocio } from "@/lib/perfiles-negocio";
+import { ProveedorPerfilNegocio } from "@/componentes/panel/perfil-negocio-contexto";
 import "./panel.css";
 import "./panel-sobrio.css";
 import "./panel-configuracion.css";
 import "./panel-facturacion.css";
 import "./panel-mi-sitio.css";
 import "./panel-responsive.css";
+import "./panel-tipografia.css";
+import "./panel-formularios.css";
 
 export default async function LayoutPanel({
   children,
@@ -24,15 +28,18 @@ export default async function LayoutPanel({
   const membresia = await buscarNegocioDelUsuario(sesion.user.id);
   if (!membresia) redirect("/primeros-pasos");
   const nombreUsuario = sesion.user.name;
+  const perfil = obtenerPerfilNegocio(membresia.negocio.configuracion);
   return (
-    <EstructuraPanel nombreUsuario={nombreUsuario}>
-      {children}
-      <Toaster
-        position="bottom-right"
-        richColors
-        closeButton
-        toastOptions={{ className: "toast-turnos" }}
-      />
-    </EstructuraPanel>
+    <ProveedorPerfilNegocio tipoNegocio={perfil.tipoNegocio}>
+      <EstructuraPanel nombreUsuario={nombreUsuario}>
+        {children}
+        <Toaster
+          position="bottom-right"
+          richColors
+          closeButton
+          toastOptions={{ className: "toast-turnos" }}
+        />
+      </EstructuraPanel>
+    </ProveedorPerfilNegocio>
   );
 }

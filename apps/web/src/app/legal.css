@@ -1,0 +1,78 @@
+/** Da una lectura cómoda y sobria a las páginas legales públicas. */
+.pagina-legal {
+  max-width: 820px;
+  padding-top: 72px;
+  padding-bottom: 96px;
+}
+
+.pagina-legal__volver {
+  color: var(--azul-marca);
+  font-family: var(--fuente-marca);
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.pagina-legal__volver:hover {
+  text-decoration: underline;
+}
+
+.pagina-legal__etiqueta {
+  margin: 54px 0 10px;
+  color: var(--azul-marca);
+  font-family: var(--fuente-marca);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.pagina-legal h1 {
+  margin: 0;
+  color: var(--tinta);
+  font-family: var(--fuente-marca);
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: 1.1;
+}
+
+.pagina-legal__actualizacion {
+  margin: 14px 0 46px;
+  color: #607887;
+  font-family: var(--fuente-editorial);
+  font-size: 15px;
+}
+
+.pagina-legal section + section {
+  margin-top: 34px;
+}
+
+.pagina-legal h2 {
+  margin: 0 0 9px;
+  color: var(--tinta);
+  font-family: var(--fuente-marca);
+  font-size: 24px;
+}
+
+.pagina-legal section p {
+  margin: 0;
+  color: #29495e;
+  font-family: var(--fuente-editorial);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.pagina-legal section a {
+  color: var(--azul-marca);
+}
+
+@media (max-width: 620px) {
+  .pagina-legal {
+    padding-top: 44px;
+    padding-bottom: 64px;
+  }
+
+  .pagina-legal__etiqueta {
+    margin-top: 38px;
+  }
+
+  .pagina-legal section p {
+    font-size: 17px;
+  }
+}

@@ -1,6 +1,6 @@
 /** Muestra el isotipo oficial acompañado por el nombre legible de la marca. */
 import Image from "next/image";
-import logoTurnosRapidos from "../../../../../imagenes/logo-turnos-rapidos-azul.jpeg";
+import logoTurnosRapidos from "../../../public/marca/logo-turnos-rapidos.png";
 
 export function LogoTurnosRapidos({
   compacto = false,

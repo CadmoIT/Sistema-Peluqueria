@@ -378,7 +378,7 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
         <strong>{datos.configuracion.titulo}</strong>
         <span>Reservas impulsadas por TurnosRápidos</span>
       </footer>
-      {datos.configuracion.whatsapp && (
+      {datos.configuracion.whatsapp.replace(/\D/g, "").length >= 8 && (
         <a
           className="whatsapp-flotante"
           href={`https://wa.me/${datos.configuracion.whatsapp.replace(/\D/g, "")}`}

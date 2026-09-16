@@ -1,0 +1,83 @@
+/** Comparte tamaños legibles del resumen sin agrandar la navegación ni reducir estilos aprobados. */
+.panel-main {
+  --panel-texto: 15px;
+  font-size: var(--panel-texto);
+}
+.panel-main h2,
+.panel-main .modulo__titulo h2 {
+  font-size: 20px;
+}
+.panel-main
+  :is(.tabla-panel__fila, .tabla-panel__cabecera, .buscador-panel input) {
+  font-size: 15px;
+}
+.panel-main
+  :is(
+    .metricas-panel small,
+    .metricas-panel em,
+    .modulo__titulo p,
+    .modulo__titulo > a,
+    .tarjeta-listado p,
+    .prueba-panel span,
+    .selector-periodo a,
+    .seccion-ajustes header p,
+    .ajuste-avanzado > summary,
+    .avisos-opciones p,
+    .avisos-opciones small,
+    .resumen-contenido-sitio > span,
+    .punto-venta__articulos small,
+    .punto-venta__articulos em,
+    .previsualizacion-importacion table,
+    .previsualizacion-importacion th
+  ) {
+  font-size: 15px;
+}
+.panel-main
+  :is(
+    .formulario-flotante,
+    .formulario-dialogo,
+    .formulario-configuracion-real,
+    .sedes-configuracion,
+    .editor-controles,
+    .dialogo-importacion,
+    .filtro-local-reportes
+  )
+  :is(label, input, select, textarea) {
+  font-size: var(--panel-texto);
+}
+.formulario-turno {
+  --panel-texto: 18px;
+}
+.panel-main
+  :is(.formulario-flotante, .formulario-dialogo, .editor-controles)
+  :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--panel-marca);
+  outline-offset: 2px;
+}
+.panel-main .boton,
+.panel-main .acciones-seccion .boton {
+  font-size: 18px;
+}
+.panel-main :is(.formulario-flotante, .formulario-dialogo) h2 {
+  font-size: 20px;
+}
+.panel-main .formulario-turno h2 {
+  font-size: 24px;
+}
+@media (max-width: 820px) {
+  .panel-main .formulario-flotante {
+    position: fixed;
+    top: 76px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    z-index: 45;
+    max-height: calc(100dvh - 160px);
+  }
+  .panel-main .cabecera-seccion {
+    flex-wrap: wrap;
+  }
+  .panel-main .acciones-seccion {
+    justify-content: flex-start;
+  }
+}

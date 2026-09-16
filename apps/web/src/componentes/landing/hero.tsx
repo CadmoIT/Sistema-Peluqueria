@@ -1,24 +1,19 @@
-/** Presenta la pieza promocional principal y dirige al registro gratuito. */
-import Image from "next/image";
+/** Presenta la propuesta de TurnosRápidos con fotografías y acceso al registro. */
 import Link from "next/link";
-import heroPromocional from "../../../../../imagenes/hero-turnosrapidos-azul.png";
+import { ArrowRight } from "lucide-react";
+import { CarruselHero } from "./carrusel-hero";
+import "./hero.css";
 
 export function Hero() {
   return (
-    <section
-      className="inicio-hero"
-      aria-label="Prueba gratuita de Turnos Rápidos"
-    >
-      <div className="inicio-hero__lienzo">
-        <Image
-          className="inicio-hero__imagen"
-          src={heroPromocional}
-          alt="Profesionales de peluquería trabajando y gestionando sus turnos"
-          priority
-          sizes="(max-width: 1080px) 100vw, 1600px"
-        />
-        <Link className="inicio-hero__cta" href="/acceder?modo=registro">
-          Probar gratis
+    <section className="hero-fotografico" aria-labelledby="hero-titulo">
+      <div className="hero-fotografico__contenido">
+        <h1 id="hero-titulo">
+          Reserva de turnos para tu negocio de manera sencilla y rápida
+        </h1>
+        <CarruselHero />
+        <Link className="hero-fotografico__cta" href="/acceder?modo=registro">
+          Probar gratis <ArrowRight size={22} aria-hidden="true" />
         </Link>
       </div>
     </section>

@@ -3,8 +3,8 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsIn, IsString } from "class-validator";
 
 export class ContratarPlanDto {
-  @ApiProperty({ enum: ["autogestionado", "dominio-gestionado"] })
-  @IsIn(["autogestionado", "dominio-gestionado"])
+  @ApiProperty({ enum: ["autogestionado"] })
+  @IsIn(["autogestionado"])
   planId!: string;
 
   @ApiProperty()

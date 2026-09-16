@@ -8,17 +8,19 @@
 }
 
 .panel-shell {
+  --panel-sidebar-ancho: 248px;
   grid-template-columns: 248px minmax(0, 1fr);
   transition: grid-template-columns 180ms ease;
 }
 .panel-shell--contraido {
+  --panel-sidebar-ancho: 76px;
   grid-template-columns: 76px minmax(0, 1fr);
 }
 .nav-panel {
   padding: 18px 12px 14px;
   background: #fff;
   color: var(--panel-tinta);
-  border-right: 1px solid var(--panel-borde);
+  border-right: 0;
   z-index: 30;
 }
 .nav-panel__marca {
@@ -65,15 +67,20 @@
   transform: none;
 }
 .nav-panel nav a.activo::before,
-.nav-panel__configuracion > div a.activo::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 3px;
-  height: 22px;
-  border-radius: 99px;
-  background: var(--panel-marca);
+.nav-panel__configuracion > div a.activo::before { content: none; }
+.nav-panel__alternar-arriba {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #111;
+  cursor: pointer;
 }
+.nav-panel__alternar-arriba:hover { background: var(--panel-suave); }
 .nav-panel__configuracion {
   margin-top: auto;
 }
@@ -108,20 +115,20 @@
 }
 .nav-panel__plegar {
   position: absolute;
-  right: -13px;
-  top: 78px;
+  right: 9px;
+  top: 23px;
   width: 26px;
   height: 26px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--panel-borde);
-  border-radius: 50%;
-  background: #fff;
-  color: #555;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #111;
   cursor: pointer;
 }
 .nav-panel__plegar svg {
-  width: 15px;
+  width: 20px;
 }
 .nav-panel--contraido nav a,
 .nav-panel--contraido .nav-panel__configuracion summary {
@@ -157,14 +164,28 @@
 .panel-main {
   background: #fff;
 }
-.panel-top {
-  display: none;
-}
 .panel-mobile-top {
   display: none;
 }
 .panel-contenido {
   padding-top: 38px;
+}
+.filtro-local-reportes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 20px;
+  color: #111;
+  font: 14px var(--fuente-marca);
+}
+.filtro-local-reportes select {
+  min-width: 180px;
+  padding: 9px 12px;
+  border: 1px solid var(--panel-borde);
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  font: 14px var(--fuente-preguntas);
 }
 .enlace-sitio-resumen {
   width: fit-content;

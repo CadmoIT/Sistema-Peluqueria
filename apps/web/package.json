@@ -21,6 +21,7 @@
     "@fullcalendar/timegrid": "^6.1.19",
     "@prisma/client": "6.19.3",
     "@turnos/config": "workspace:*",
+    "@turnos/google-calendar": "workspace:*",
     "@turnos/contratos": "workspace:*",
     "@turnos/ui": "workspace:*",
     "better-auth": "1.7.3",

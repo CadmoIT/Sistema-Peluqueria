@@ -1,4 +1,18 @@
 /** Organiza los controles y la vista previa del editor del micrositio. */
+.mini-sitio--nuevo { position: relative; }
+.mini-whatsapp {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+}
+.mini-whatsapp svg { width: 23px; height: 23px; }
 .editor-sitio--simple .editor-controles {
   padding: 18px;
   border-color: var(--panel-borde);

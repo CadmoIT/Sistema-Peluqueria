@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { Prisma, type Cliente } from "@prisma/client";
 import { Reserva } from "../../domain/entities/reserva.entity";
 import type { CrearReservaDto } from "../../dto/reservas/crear-reserva.dto";
 import type { ReservasRepository } from "../contracts/reservas.repository";
@@ -45,20 +45,20 @@ export class ReservasPrismaRepository implements ReservasRepository {
       claveHorario: crearClaveHorario({
         negocioSlug: reserva.negocio.slug,
         sedeId: reserva.sedeId,
-        profesionalId: reserva.profesionalId,
+        profesionalId: reserva.profesionalId ?? "profesional-eliminado",
         inicio: reserva.inicio.toISOString(),
       }),
       venceEn: (reserva.retenidaHasta ?? reserva.fin).toISOString(),
       datos: {
         negocioSlug: reserva.negocio.slug,
         sedeId: reserva.sedeId,
-        profesionalId: reserva.profesionalId,
+        profesionalId: reserva.profesionalId ?? "profesional-eliminado",
         servicioIds: reserva.servicios.map((item) => item.servicioId),
         inicio: reserva.inicio.toISOString(),
         cliente: {
-          nombre: reserva.cliente.nombre ?? "",
-          email: reserva.cliente.email ?? "",
-          telefono: reserva.cliente.telefono ?? "",
+          nombre: reserva.cliente?.nombre ?? "",
+          email: reserva.cliente?.email ?? "",
+          telefono: reserva.cliente?.telefono ?? "",
         },
       },
       estado: reserva.estado === "CONFIRMADA" ? "CONFIRMADA" : "RETENIDA",
@@ -173,7 +173,7 @@ export class ReservasPrismaRepository implements ReservasRepository {
             /[^+\d]/g,
             "",
           );
-          const clienteExistente =
+          let clienteExistente =
             email || telefono
               ? await tx.cliente.findFirst({
                   where: {
@@ -185,10 +185,20 @@ export class ReservasPrismaRepository implements ReservasRepository {
                   },
                 })
               : null;
+          if (!clienteExistente && (email || telefono)) {
+            const coincidencias = await tx.$queryRaw<Cliente[]>(Prisma.sql`
+              SELECT * FROM "Cliente" WHERE "negocioId" = ${negocio.id} AND (
+                ${email ? Prisma.sql`LOWER(TRIM("email")) = ${email}` : Prisma.sql`FALSE`}
+                OR ${telefono ? Prisma.sql`regexp_replace("telefono", '[^+0-9]', '', 'g') = ${telefono}` : Prisma.sql`FALSE`}
+              ) ORDER BY "creadoEn" ASC LIMIT 1
+            `);
+            clienteExistente = coincidencias[0] ?? null;
+          }
           const cliente = clienteExistente
             ? await tx.cliente.update({
                 where: { id: clienteExistente.id },
                 data: {
+                  
                   nombre:
                     limpiar(reserva.datos.cliente.nombre) ??
                     clienteExistente.nombre,

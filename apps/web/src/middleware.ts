@@ -2,6 +2,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 export function middleware(solicitud: NextRequest) {
+  // Mantiene disponible el logo compartido también desde los subdominios públicos.
+  if (solicitud.nextUrl.pathname.startsWith("/marca/")) {
+    return NextResponse.next();
+  }
   const host =
     (solicitud.headers.get("host") ?? "").split(":")[0]?.toLowerCase() ?? "";
   const sufijo = ".site.turnosrapidos.com.ar";

@@ -10,6 +10,13 @@ export const RUBROS_NEGOCIO = [
   { valor: "consultorios", nombre: "Consultorios" },
   { valor: "veterinarias", nombre: "Veterinarias" },
   { valor: "entrenamiento", nombre: "Entrenamiento" },
+  { valor: "psicologia", nombre: "Psicología" },
+  { valor: "odontologia", nombre: "Odontología" },
+  { valor: "nutricion", nombre: "Nutrición" },
+  { valor: "kinesiologia", nombre: "Kinesiología" },
+  { valor: "oftalmologia", nombre: "Oftalmología" },
+  { valor: "depilacion", nombre: "Depilación" },
+  { valor: "maquillaje", nombre: "Maquillaje" },
 ] as const;
 
 export const CANTIDADES_LOCALES = [

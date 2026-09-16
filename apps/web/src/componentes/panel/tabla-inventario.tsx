@@ -1,215 +1,35 @@
-/** Filtra productos y reúne edición, visibilidad y ajustes de stock por sede. */
+/** Muestra una tabla abierta con búsqueda, cantidades por local y ajustes seguros. */
 "use client";
-
-import { useState } from "react";
-import { Edit3, Eye, EyeOff, PackagePlus, Search } from "lucide-react";
-import {
-  ajustarStock,
-  actualizarProducto,
-  alternarProducto,
-} from "@/app/panel/inventario/acciones";
-
-type Producto = {
-  id: string;
-  nombre: string;
-  sku: string | null;
-  precio: number;
-  costo: number;
-  activo: boolean;
-  existencias: Array<{
-    sedeId: string;
-    cantidad: number;
-    minimo: number;
-    sede: { nombre: string };
-  }>;
-};
-type Sede = { id: string; nombre: string };
-
-export function TablaInventario({
-  productos,
-  sedes,
-}: {
-  productos: Producto[];
-  sedes: Sede[];
-}) {
-  const [busqueda, setBusqueda] = useState("");
-  const filtrados = productos.filter((producto) =>
-    `${producto.nombre} ${producto.sku ?? ""}`
-      .toLowerCase()
-      .includes(busqueda.toLowerCase()),
-  );
-  return (
-    <>
-      <label className="buscador-panel">
-        <Search />
-        <input
-          type="search"
-          placeholder="Buscar por producto o SKU"
-          value={busqueda}
-          onChange={(evento) => setBusqueda(evento.target.value)}
-        />
-      </label>
-      <div className="tabla-panel">
-        <div className="tabla-panel__cabecera tabla-inventario">
-          <span>Producto</span>
-          <span>SKU</span>
-          <span>Precio</span>
-          <span>Stock</span>
-          <span>Acciones</span>
-        </div>
-        {filtrados.map((producto) => {
-          const stock = producto.existencias.reduce(
-            (total, item) => total + item.cantidad,
-            0,
-          );
-          const minimo = producto.existencias.reduce(
-            (total, item) => total + item.minimo,
-            0,
-          );
-          return (
-            <div
-              className={`tabla-panel__fila tabla-inventario ${producto.activo ? "" : "fila-inactiva"}`}
-              key={producto.id}
-            >
-              <strong>{producto.nombre}</strong>
-              <span>{producto.sku || "Sin dato"}</span>
-              <span>{pesos(producto.precio)}</span>
-              <span>
-                <b className={stock <= minimo ? "stock-bajo" : "stock-bien"}>
-                  {stock} unidades
-                </b>
-              </span>
-              <div className="acciones-tabla">
-                <details className="desplegable-accion">
-                  <summary
-                    className="accion-icono"
-                    aria-label={`Editar ${producto.nombre}`}
-                  >
-                    <Edit3 />
-                  </summary>
-                  <form
-                    action={actualizarProducto}
-                    className="formulario-flotante"
-                  >
-                    <h2>Editar producto</h2>
-                    <input type="hidden" name="id" value={producto.id} />
-                    <label>
-                      Nombre
-                      <input
-                        name="nombre"
-                        required
-                        defaultValue={producto.nombre}
-                      />
-                    </label>
-                    <label>
-                      SKU
-                      <input name="sku" defaultValue={producto.sku ?? ""} />
-                    </label>
-                    <div className="form-grid">
-                      <label>
-                        Precio
-                        <input
-                          name="precio"
-                          type="number"
-                          min="0"
-                          defaultValue={producto.precio}
-                          required
-                        />
-                      </label>
-                      <label>
-                        Costo
-                        <input
-                          name="costo"
-                          type="number"
-                          min="0"
-                          defaultValue={producto.costo}
-                        />
-                      </label>
-                    </div>
-                    <button className="boton boton--primario">
-                      Guardar cambios
-                    </button>
-                  </form>
-                </details>
-                <details className="desplegable-accion">
-                  <summary
-                    className="accion-icono"
-                    aria-label={`Ajustar stock de ${producto.nombre}`}
-                  >
-                    <PackagePlus />
-                  </summary>
-                  <form action={ajustarStock} className="formulario-flotante">
-                    <h2>Ajustar stock</h2>
-                    <input
-                      type="hidden"
-                      name="productoId"
-                      value={producto.id}
-                    />
-                    {sedes.length === 1 ? (
-                      <input type="hidden" name="sedeId" value={sedes[0]!.id} />
-                    ) : (
-                      <label>
-                        Local
-                        <select name="sedeId" required>
-                          {sedes.map((sede) => (
-                            <option key={sede.id} value={sede.id}>
-                              {sede.nombre}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                    <label>
-                      Cantidad a sumar o quitar
-                      <input
-                        name="diferencia"
-                        type="number"
-                        step="1"
-                        required
-                        placeholder="Ejemplo: 5 o -2"
-                      />
-                    </label>
-                    <label>
-                      Motivo
-                      <input
-                        name="motivo"
-                        placeholder="Compra, rotura, corrección..."
-                      />
-                    </label>
-                    <button className="boton boton--primario">
-                      Aplicar ajuste
-                    </button>
-                  </form>
-                </details>
-                <form action={alternarProducto}>
-                  <input type="hidden" name="id" value={producto.id} />
-                  <button
-                    className="accion-icono"
-                    aria-label={
-                      producto.activo
-                        ? `Archivar ${producto.nombre}`
-                        : `Activar ${producto.nombre}`
-                    }
-                  >
-                    {producto.activo ? <EyeOff /> : <Eye />}
-                  </button>
-                </form>
-              </div>
-            </div>
-          );
-        })}
-        {!filtrados.length && (
-          <p className="sin-resultados">No hay productos que coincidan.</p>
-        )}
-      </div>
-    </>
-  );
-}
-
-function pesos(valor: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(valor);
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Edit3, Minus, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
+import { ajustarStock, eliminarProducto } from "@/app/panel/inventario/acciones";
+import { nombresColumnas, type ColumnaLibre } from "@/lib/columnas-inventario";
+import { FormularioProducto, type ProductoEditable } from "./formulario-producto";
+import { FormularioAccion } from "./formulario-accion";
+import { BotonEliminar } from "./boton-eliminar";
+import { EditorTablaInventario } from "./editor-tabla-inventario";
+const dinero = (valor: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(valor);
+type Producto = ProductoEditable & { existencias: Array<{ sedeId: string; cantidad: number; sede: { nombre: string } }> };
+export function TablaInventario({ productos, sedes, columnas, libres }: { productos: Producto[]; sedes: Array<{ id: string; nombre: string }>; columnas: string[]; libres: ColumnaLibre[] }) {
+  const [buscar, cambiar] = useState(""), [pendiente, iniciar] = useTransition(); const router = useRouter();
+  function ajustar(productoId: string, sedeId: string, diferencia: number) {
+    iniciar(async () => { const datos = new FormData(); datos.set("productoId", productoId); datos.set("sedeId", sedeId); datos.set("diferencia", String(diferencia));
+      try { const resultado = await ajustarStock(datos); if (resultado.ok) { toast.success(resultado.mensaje); router.refresh(); } else toast.error(resultado.mensaje); } catch { toast.error("No pudimos ajustar la cantidad."); }
+    });
+  }
+  const normalizar = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  const visibles = productos.filter((p) => normalizar(`${p.nombre} ${p.sku ?? ""}`).includes(normalizar(buscar)));
+  return <><div className="herramientas-modulo"><label className="buscador-panel"><Search /><input aria-label="Buscar productos" placeholder="Buscar productos" value={buscar} onChange={(e) => cambiar(e.target.value)} /></label><EditorTablaInventario columnas={columnas} libres={libres} variosLocales={sedes.length > 1} /></div>
+    <div className="tabla-abierta inventario-tabla"><table><thead><tr>{columnas.map((c) => <th key={c} scope="col">{nombresColumnas[c] ?? libres.find((l) => l.id === c)?.nombre}</th>)}</tr></thead><tbody>
+      {visibles.flatMap((p) => sedes.map((s) => { const cantidad = p.existencias.find((e) => e.sedeId === s.id)?.cantidad ?? 0; return <tr key={`${p.id}:${s.id}`}>
+        {columnas.map((c) => <td key={c}>{c === "nombre" ? <strong>{p.nombre}</strong> : c === "precio" ? dinero(p.precio) : c === "costo" ? dinero(p.costo) : c === "sku" ? p.sku || "Sin dato" : c === "local" ? s.nombre : c === "cantidad" ? <div className="cantidad-inventario"><span>{cantidad}</span><button className="accion-icono" type="button" disabled={pendiente || cantidad === 0} aria-label={`Quitar una unidad de ${p.nombre} en ${s.nombre}`} onClick={() => ajustar(p.id, s.id, -1)}><Minus /></button><button className="accion-icono" type="button" disabled={pendiente} aria-label={`Agregar una unidad de ${p.nombre} en ${s.nombre}`} onClick={() => ajustar(p.id, s.id, 1)}><Plus /></button></div> : c === "acciones" ? <div className="acciones-tabla">
+          <details className="desplegable-accion"><summary className="accion-icono" aria-label={`Editar ${p.nombre}`}><Edit3 /></summary><FormularioProducto producto={p} sedes={sedes} columnas={columnas} libres={libres} /></details>
+          <details className="desplegable-accion"><summary className="boton boton--secundario">Ajustar</summary><FormularioAccion accion={ajustarStock} texto="Actualizar cantidad"><h2>Ajustar cantidad</h2><input name="productoId" type="hidden" value={p.id} /><input name="sedeId" type="hidden" value={s.id} /><label>Cantidad a agregar o quitar<input name="diferencia" type="number" step={1} required placeholder="Por ejemplo, 20 o −20" /></label><label>Motivo (opcional)<input name="motivo" maxLength={200} /></label></FormularioAccion></details>
+          <BotonEliminar id={p.id} nombre={p.nombre} accion={eliminarProducto} advertencia={`Se quitarán sus unidades: ${sedes.map((local) => `${local.nombre}: ${p.existencias.find((e) => e.sedeId === local.id)?.cantidad ?? 0}`).join("; ")}. Se registrará un ajuste final por local.`} />
+        </div> : String(p.valoresPersonalizados.find((v) => v.columnaId === c)?.valor ?? "Sin dato")}</td>)}
+      </tr>; }))}
+    </tbody></table></div>{!visibles.length && <p className="sin-resultados">{buscar ? "No encontramos productos con esa búsqueda." : "Tu inventario está vacío. Agregá tu primer producto."}</p>}
+  </>;
 }

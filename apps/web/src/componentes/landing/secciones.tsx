@@ -8,10 +8,9 @@ import { FaChartLine } from "react-icons/fa6";
 import { FiGlobe } from "react-icons/fi";
 import { GiLipstick } from "react-icons/gi";
 import { HiOutlineUserGroup } from "react-icons/hi2";
-import { MdEventAvailable, MdSpa } from "react-icons/md";
+import { MdEventNote, MdSpa } from "react-icons/md";
 import type { IconType } from "react-icons";
 import {
-  TbDumbbell,
   TbMassage,
   TbPalette,
   TbPaw,
@@ -31,22 +30,58 @@ const rubros: Rubro[] = [
   { nombre: "Barberías", imagen: "/rubros/barberia.avif" },
   {
     nombre: "Uñas",
-    imagen: "/rubros/unas.jpg",
-    ajusteImagen: "rubros__imagen--unas",
+    imagen: "/iconos/unas.png",
   },
   { nombre: "Estética", icono: GiLipstick },
   { nombre: "Spa", icono: MdSpa },
   { nombre: "Masajes", icono: TbMassage },
-  { nombre: "Tatuajes", imagen: "/rubros/tatuajes.png" },
+  { nombre: "Tatuajes", imagen: "/iconos/tatuajes.png" },
   { nombre: "Consultorios", icono: TbStethoscope },
   { nombre: "Veterinarias", icono: TbPaw },
-  { nombre: "Entrenamiento", icono: TbDumbbell },
+  { nombre: "Entrenamiento", imagen: "/iconos/entrenamiento.png" },
+  { nombre: "Psicología", imagen: "/iconos/psicologia.png" },
+  { nombre: "Odontología", imagen: "/iconos/odontologia.png" },
+  { nombre: "Nutrición", imagen: "/iconos/nutricion.png" },
+  { nombre: "Kinesiología", imagen: "/iconos/kinesiologia.png" },
+  { nombre: "Oftalmología", imagen: "/iconos/oftalmologia.png" },
+  { nombre: "Depilación", imagen: "/iconos/depilacion.png" },
+  { nombre: "Maquillaje", imagen: "/iconos/maquillaje.png" },
 ];
 
-function GrupoRubros({ repetido = false }: { repetido?: boolean }) {
+// Distribuye los rubros en dos pistas mixtas para una marquesina continua.
+const seleccionarRubro = (indice: number) => rubros[indice]!;
+const rubrosArriba = [
+  seleccionarRubro(0),
+  seleccionarRubro(10),
+  seleccionarRubro(2),
+  seleccionarRubro(13),
+  seleccionarRubro(6),
+  seleccionarRubro(4),
+  seleccionarRubro(11),
+  seleccionarRubro(9),
+  seleccionarRubro(16),
+];
+const rubrosAbajo = [
+  seleccionarRubro(1),
+  seleccionarRubro(12),
+  seleccionarRubro(3),
+  seleccionarRubro(7),
+  seleccionarRubro(8),
+  seleccionarRubro(5),
+  seleccionarRubro(14),
+  seleccionarRubro(15),
+];
+
+function GrupoRubros({
+  lista,
+  repetido = false,
+}: {
+  lista: Rubro[];
+  repetido?: boolean;
+}) {
   return (
     <div className="rubros__grupo" aria-hidden={repetido || undefined}>
-      {rubros.map(({ nombre, icono: Icono, imagen, ajusteImagen }) => (
+      {lista.map(({ nombre, icono: Icono, imagen, ajusteImagen }) => (
         <span className="rubros__item" key={nombre}>
           {imagen ? (
             <span className="rubros__imagen-contenedor" aria-hidden="true">
@@ -71,7 +106,7 @@ function GrupoRubros({ repetido = false }: { repetido?: boolean }) {
 
 const beneficios = [
   {
-    icono: MdEventAvailable,
+    icono: MdEventNote,
     titulo: "Una agenda personalizada",
     texto: "Fechas, horarios y profesionales organizados en una misma agenda.",
   },
@@ -129,10 +164,16 @@ export function SeccionesLanding() {
   return (
     <>
       <section className="rubros" aria-label="Rubros compatibles">
-        <div className="rubros__marquesina">
+        <div className="rubros__marquesina rubros__marquesina--arriba">
           <div className="rubros__pista">
-            <GrupoRubros />
-            <GrupoRubros repetido />
+            <GrupoRubros lista={rubrosArriba} />
+            <GrupoRubros lista={rubrosArriba} repetido />
+          </div>
+        </div>
+        <div className="rubros__marquesina rubros__marquesina--abajo">
+          <div className="rubros__pista">
+            <GrupoRubros lista={rubrosAbajo} />
+            <GrupoRubros lista={rubrosAbajo} repetido />
           </div>
         </div>
       </section>

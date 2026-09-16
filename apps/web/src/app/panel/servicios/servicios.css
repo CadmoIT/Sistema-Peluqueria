@@ -1,0 +1,65 @@
+/** Mantiene servicios compactos, sin iconos decorativos y con la tipografía común del panel. */
+.servicios-pagina .tarjeta-listado {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  gap: 20px;
+  border-radius: 12px;
+}
+.servicios-pagina .tarjeta-listado__acciones {
+  grid-column: 1;
+}
+.servicios-pagina .tarjeta-listado small {
+  color: #111;
+  font: 15px var(--fuente-preguntas);
+}
+.servicios-pagina .tarjeta-listado h2 {
+  font-size: 20px;
+  margin: 8px 0 18px;
+}
+.servicio-datos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  font: 15px/1.6 var(--fuente-preguntas);
+}
+.servicio-datos div {
+  min-width: 0;
+}
+.servicio-datos dt {
+  color: #414141;
+}
+.servicio-datos dd {
+  margin: 0;
+  color: #111;
+  overflow-wrap: anywhere;
+}
+.servicio-datos__ancho {
+  grid-column: 1 / -1;
+}
+.panel-main .formulario-servicio .selector-multiple legend {
+  font-size: 15px;
+}
+.formulario-servicio {
+  color: #111;
+}
+@media (min-width: 821px) {
+  .servicios-pagina .tarjeta-listado__acciones .formulario-servicio {
+    left: 0;
+    right: auto;
+  }
+}
+@media (max-width: 820px) {
+  .servicios-pagina .tarjeta-listado {
+    padding: 18px;
+  }
+}
+.servicios-pagina .servicios-listado { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.servicios-pagina .servicio-fila { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px; }
+.servicio-fila__detalle { display: grid; grid-template-columns: minmax(180px, 2fr) minmax(100px, 1fr) repeat(3, minmax(80px, 1fr)); gap: 20px; flex: 1; padding: 0; background: none; border: 0; text-align: left; color: #111; cursor: pointer; font: 15px var(--fuente-preguntas); }
+.servicio-fila__detalle h2 { margin: 4px 0 0; }
+.servicio-fila__etiqueta { display: block; margin-bottom: 6px; color: #555; font-size: 13px; }
+.servicio-fila__detalle:hover h2 { text-decoration: underline; }
+.servicios-pagina .servicio-fila .tarjeta-listado__acciones { flex-shrink: 0; }
+@media (max-width: 1120px) { .servicios-pagina .servicio-fila { align-items: stretch; flex-direction: column; } }
+@media (max-width: 680px) { .servicio-fila__detalle { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .servicio-fila__detalle > div:first-child { grid-column: 1 / -1; } }

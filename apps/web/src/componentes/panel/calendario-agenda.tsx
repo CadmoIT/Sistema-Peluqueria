@@ -1,329 +1,158 @@
-/** Presenta la agenda interactiva con vistas diaria, semanal y mensual. */
+/** Coordina la fecha, filtros y columnas del calendario diario del negocio. */
 "use client";
-
-import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
-import esLocale from "@fullcalendar/core/locales/es";
-import { Check, CircleX, ClockAlert, X } from "lucide-react";
+import { useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  cambiarEstadoReserva,
-  moverReserva,
-} from "@/app/panel/agenda/acciones";
-
-export type EventoAgenda = {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-  backgroundColor: string;
-  borderColor: string;
-  editable: boolean;
-  tipo: "reserva" | "google";
-  estado: string;
-  cliente: string;
-  servicio: string;
-  profesionalId: string;
-  profesional: string;
-  sedeId: string;
-  sede: string;
-};
+  ESTADOS_AGENDA,
+  fechaEnZona,
+  grupoEstado,
+  rangoDelDia,
+  type EventoAgenda,
+  type ProfesionalAgenda,
+  type LocalAgenda,
+} from "./agenda/agenda-modelo";
+import { MiniCalendario, FilaDias } from "./agenda/navegacion-fechas";
+import { FiltrosAgenda } from "./agenda/filtros-agenda";
+import { ColumnasAgenda } from "./agenda/columnas-agenda";
+import { DetalleTurno } from "./agenda/detalle-turno";
+export type { EventoAgenda } from "./agenda/agenda-modelo";
 
 export function CalendarioAgenda({
   eventos,
   profesionales,
   sedes,
+  fecha,
+  zonaHoraria,
 }: {
   eventos: EventoAgenda[];
-  profesionales: Array<{ id: string; nombre: string }>;
-  sedes: Array<{
-    id: string;
-    nombre: string;
-    horarios: Array<{
-      diaSemana: number;
-      abre: string;
-      cierra: string;
-      activo: boolean;
-    }>;
-  }>;
+  profesionales: ProfesionalAgenda[];
+  sedes: LocalAgenda[];
+  fecha: string;
+  zonaHoraria: string;
 }) {
   const router = useRouter();
-  const [procesando, iniciarTransicion] = useTransition();
+  const parametros = useSearchParams();
+  const [pendiente, iniciar] = useTransition();
   const [profesional, setProfesional] = useState("");
-  const [sede, setSede] = useState("");
-  const [estado, setEstado] = useState("");
+  const [local, setLocal] = useState("");
+  const [estados, setEstados] = useState(ESTADOS_AGENDA.map((g) => g.id));
   const [seleccionado, setSeleccionado] = useState<EventoAgenda | null>(null);
-  const eventosVisibles = useMemo(
-    () =>
-      eventos.filter(
-        (evento) =>
-          (!profesional || evento.profesionalId === profesional) &&
-          (!sede || evento.sedeId === sede) &&
-          (!estado || evento.estado === estado),
-      ),
-    [estado, eventos, profesional, sede],
+  const hoy = fechaEnZona(new Date(), zonaHoraria);
+  const locales = local ? sedes.filter((l) => l.id === local) : sedes;
+  const personas = profesionales.filter(
+    (p) =>
+      (!profesional || p.id === profesional) &&
+      (!local ||
+        (p.localesIds?.length
+          ? p.localesIds.includes(local)
+          : !p.horarios.length || p.horarios.some((j) => j.sedeId === local))),
   );
-  const horarioVisible = useMemo(() => {
-    const elegidas = sede
-      ? sedes.filter((opcion) => opcion.id === sede)
-      : sedes;
-    const horarios = elegidas.flatMap((opcion) =>
-      opcion.horarios.filter((horario) => horario.activo),
-    );
-    if (!horarios.length) {
-      return {
-        minimo: "08:00:00",
-        maximo: "20:00:00",
-        ocultos: [] as number[],
-      };
-    }
-    const minutos = (valor: string) => {
-      const [hora, minuto] = valor.split(":").map(Number);
-      return (hora ?? 0) * 60 + (minuto ?? 0);
-    };
-    const texto = (valor: number) => {
-      const ajustado = Math.max(0, Math.min(24 * 60, valor));
-      return `${String(Math.floor(ajustado / 60)).padStart(2, "0")}:${String(ajustado % 60).padStart(2, "0")}:00`;
-    };
-    const diasAbiertos = new Set(horarios.map((horario) => horario.diaSemana));
-    return {
-      minimo: texto(
-        Math.min(...horarios.map((horario) => minutos(horario.abre))) - 30,
-      ),
-      maximo: texto(
-        Math.max(...horarios.map((horario) => minutos(horario.cierra))) + 30,
-      ),
-      ocultos: [0, 1, 2, 3, 4, 5, 6].filter((dia) => !diasAbiertos.has(dia)),
-    };
-  }, [sede, sedes]);
-
-  function actualizarEstado(nuevoEstado: string) {
-    if (!seleccionado) return;
-    iniciarTransicion(async () => {
-      try {
-        await cambiarEstadoReserva(seleccionado.id, nuevoEstado);
-        setSeleccionado(null);
-        toast.success("El estado del turno fue actualizado.");
-        router.refresh();
-      } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "No pudimos actualizar el turno.",
-        );
-      }
-    });
+  const eventosFiltrados = eventos.filter(
+    (e) =>
+      (!local || !e.sedeId || e.sedeId === local) &&
+      (!profesional || !e.profesionalId || e.profesionalId === profesional),
+  );
+  const rango = rangoDelDia(
+    fecha,
+    personas,
+    locales,
+    eventosFiltrados,
+    zonaHoraria,
+  );
+  const visibles = eventosFiltrados.filter((e) =>
+    estados.includes(grupoEstado(e.estado).id),
+  );
+  function elegirFecha(nueva: string) {
+    const query = new URLSearchParams(parametros.toString());
+    query.set("fecha", nueva);
+    query.delete("agenda");
+    query.delete("google");
+    iniciar(() => router.replace(`/panel/agenda?${query}`, { scroll: false }));
   }
-
-  return (
-    <div className="calendario-panel">
-      <div className="filtros-agenda">
-        <label>
-          Profesional
-          <select
-            value={profesional}
-            onChange={(e) => setProfesional(e.target.value)}
-          >
-            <option value="">Todos</option>
-            {profesionales.map((opcion) => (
-              <option value={opcion.id} key={opcion.id}>
-                {opcion.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
-        {sedes.length > 1 && (
-          <label>
-            Local
-            <select value={sede} onChange={(e) => setSede(e.target.value)}>
-              <option value="">Todos</option>
-              {sedes.map((opcion) => (
-                <option value={opcion.id} key={opcion.id}>
-                  {opcion.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <label>
-          Estado
-          <select value={estado} onChange={(e) => setEstado(e.target.value)}>
-            <option value="">Todos</option>
-            <option value="CONFIRMADA">Confirmados</option>
-            <option value="PENDIENTE_PAGO">Pendientes</option>
-            <option value="COMPLETADA">Completados</option>
-            <option value="AUSENTE">Ausentes</option>
-            <option value="CANCELADA">Cancelados</option>
-            <option value="OCUPADO">Google Calendar</option>
-          </select>
-        </label>
-      </div>
-      <FullCalendar
-        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        locale={esLocale}
-        initialView="timeGridWeek"
-        headerToolbar={{
-          left: "prev,next today",
-          center: "title",
-          right: "dayGridMonth,timeGridWeek,timeGridDay",
-        }}
-        buttonText={{ today: "Hoy", month: "Mes", week: "Semana", day: "Día" }}
-        events={eventosVisibles}
-        nowIndicator
-        editable
-        allDaySlot={false}
-        slotMinTime={horarioVisible.minimo}
-        slotMaxTime={horarioVisible.maximo}
-        hiddenDays={horarioVisible.ocultos}
-        height="auto"
-        eventClick={(informacion) => {
-          const evento = eventos.find(
-            (item) => item.id === informacion.event.id,
-          );
-          if (evento) setSeleccionado(evento);
-        }}
-        eventDrop={async (info) => {
-          if (!info.event.start || !info.event.end) return info.revert();
-          try {
-            await moverReserva(
-              info.event.id,
-              info.event.start.toISOString(),
-              info.event.end.toISOString(),
-            );
-            toast.success("Turno actualizado.");
-          } catch (error) {
-            info.revert();
-            toast.error(
-              error instanceof Error
-                ? error.message
-                : "No pudimos mover el turno.",
-            );
-          }
-        }}
-        eventResize={async (info) => {
-          if (!info.event.start || !info.event.end) return info.revert();
-          try {
-            await moverReserva(
-              info.event.id,
-              info.event.start.toISOString(),
-              info.event.end.toISOString(),
-            );
-            toast.success("Duración actualizada.");
-          } catch (error) {
-            info.revert();
-            toast.error(
-              error instanceof Error
-                ? error.message
-                : "No pudimos modificar el turno.",
-            );
-          }
-        }}
+  const filtros = (
+    <>
+      <MiniCalendario fecha={fecha} hoy={hoy} elegir={elegirFecha} />
+      <FiltrosAgenda
+        profesionales={profesionales}
+        locales={sedes}
+        profesional={profesional}
+        local={local}
+        estados={estados}
+        cambiarProfesional={setProfesional}
+        cambiarLocal={setLocal}
+        cambiarEstados={setEstados}
       />
-      {seleccionado && (
-        <div className="dialogo-fondo" role="presentation">
-          <section className="dialogo-turno" role="dialog" aria-modal="true">
-            <header>
-              <div>
-                <small>
-                  {seleccionado.tipo === "google"
-                    ? "GOOGLE CALENDAR"
-                    : seleccionado.estado}
-                </small>
-                <h2>{seleccionado.cliente}</h2>
-              </div>
-              <button
-                className="accion-icono"
-                type="button"
-                onClick={() => setSeleccionado(null)}
-                aria-label="Cerrar detalle"
-              >
-                <X />
-              </button>
-            </header>
-            <dl>
-              <div>
-                <dt>Servicio</dt>
-                <dd>{seleccionado.servicio}</dd>
-              </div>
-              <div>
-                <dt>Profesional</dt>
-                <dd>{seleccionado.profesional}</dd>
-              </div>
-              <div>
-                <dt>Sede</dt>
-                <dd>{seleccionado.sede}</dd>
-              </div>
-              <div>
-                <dt>Comienza</dt>
-                <dd>{formatearFecha(seleccionado.start)}</dd>
-              </div>
-            </dl>
-            {seleccionado.tipo === "reserva" &&
-              seleccionado.estado === "CONFIRMADA" && (
-                <footer>
-                  <button
-                    className="boton boton--secundario"
-                    type="button"
-                    disabled={procesando}
-                    onClick={() => actualizarEstado("CANCELADA")}
-                  >
-                    <CircleX /> Cancelar
-                  </button>
-                  <button
-                    className="boton boton--secundario"
-                    type="button"
-                    disabled={procesando}
-                    onClick={() => actualizarEstado("AUSENTE")}
-                  >
-                    <ClockAlert /> Ausente
-                  </button>
-                  <button
-                    className="boton boton--primario"
-                    type="button"
-                    disabled={procesando}
-                    onClick={() => actualizarEstado("COMPLETADA")}
-                  >
-                    <Check /> Completar
-                  </button>
-                </footer>
-              )}
-            {seleccionado.tipo === "reserva" &&
-              ["BORRADOR", "RETENIDA", "PENDIENTE_PAGO"].includes(
-                seleccionado.estado,
-              ) && (
-                <footer>
-                  <button
-                    className="boton boton--secundario"
-                    type="button"
-                    disabled={procesando}
-                    onClick={() => actualizarEstado("CANCELADA")}
-                  >
-                    <CircleX /> Cancelar
-                  </button>
-                  <button
-                    className="boton boton--primario"
-                    type="button"
-                    disabled={procesando}
-                    onClick={() => actualizarEstado("CONFIRMADA")}
-                  >
-                    <Check /> Confirmar
-                  </button>
-                </footer>
-              )}
-          </section>
+    </>
+  );
+  return (
+    <div className="agenda-diaria" aria-busy={pendiente}>
+      <aside className="agenda-lateral">{filtros}</aside>
+      <div className="agenda-principal">
+        <details className="agenda-filtros-movil">
+          <summary>Calendario y filtros</summary>
+          {filtros}
+        </details>
+        <div className="agenda-navegacion">
+          <h2>
+            {new Intl.DateTimeFormat("es-AR", {
+              month: "long",
+              year: "numeric",
+              timeZone: "UTC",
+            }).format(new Date(fecha))}
+          </h2>
         </div>
+        <FilaDias
+          fecha={fecha}
+          hoy={hoy}
+          elegir={elegirFecha}
+          pendiente={pendiente}
+        />
+        {rango.cerrado && (
+          <p className="agenda-aviso" role="status">
+            No hay horarios de atención configurados para este día. Los turnos
+            existentes siguen visibles.
+          </p>
+        )}
+        {!visibles.some(
+          (e) =>
+            fechaEnZona(new Date(e.start), zonaHoraria) <= fecha &&
+            fechaEnZona(new Date(e.end), zonaHoraria) >= fecha,
+        ) && (
+          <p className="agenda-aviso">
+            No hay turnos para este día con los filtros elegidos.
+          </p>
+        )}
+        {pendiente ? (
+          <div
+            className="skeleton skeleton--calendario"
+            aria-label="Cargando turnos"
+          />
+        ) : personas.length ? (
+          <ColumnasAgenda
+            fecha={fecha}
+            zona={zonaHoraria}
+            personas={personas}
+            locales={locales}
+            eventos={visibles}
+            minimo={rango.minimo}
+            maximo={rango.maximo}
+            elegir={setSeleccionado}
+          />
+        ) : (
+          <p className="agenda-aviso">
+            Agregá un profesional y sus horarios para comenzar.
+          </p>
+        )}
+      </div>
+      {seleccionado && (
+        <DetalleTurno
+          evento={seleccionado}
+          zona={zonaHoraria}
+          cerrar={() => setSeleccionado(null)}
+          variosProfesionales={profesionales.length > 1}
+          variosLocales={sedes.length > 1}
+        />
       )}
     </div>
   );
-}
-
-function formatearFecha(valor: string) {
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "full",
-    timeStyle: "short",
-  }).format(new Date(valor));
 }

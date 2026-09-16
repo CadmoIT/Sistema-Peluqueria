@@ -130,6 +130,7 @@ export function FlujoReserva({
         apellido: formulario.get("apellido"),
         email: formulario.get("email"),
         telefono: formulario.get("telefono"),
+        aceptaWhatsapp: formulario.get("aceptaWhatsapp") === "on",
       }),
     });
     const resultado = (await respuesta.json()) as {
@@ -323,6 +324,10 @@ export function FlujoReserva({
               {politicaContacto === "CUALQUIERA" && (
                 <small>Ingresá al menos correo o teléfono.</small>
               )}
+              <label className="consentimiento-whatsapp">
+                <input name="aceptaWhatsapp" type="checkbox" />
+                Acepto recibir confirmaciones y recordatorios de este negocio por WhatsApp. Es opcional y puedo pedir que dejen de enviármelos.
+              </label>
               {mensaje && (
                 <p className="error-reserva" role="alert">
                   {mensaje}

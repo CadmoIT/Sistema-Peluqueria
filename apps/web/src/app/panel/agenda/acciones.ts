@@ -11,8 +11,46 @@ import { sincronizarReservaEnGoogle } from "@/lib/google-calendar";
 import { prisma } from "@/lib/prisma";
 import { fechaLocalAUtc } from "@/servicios/disponibilidad.service";
 import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { fechaValida } from "@/componentes/panel/agenda/agenda-modelo";
 
-export async function crearReservaPanel(datos: FormData) {
+export type ResultadoNuevoTurno = { ok: boolean; mensaje: string };
+export async function crearReservaPanel(
+  _anterior: ResultadoNuevoTurno,
+  datos: FormData,
+): Promise<ResultadoNuevoTurno> {
+  try {
+    await guardarReservaPanel(datos);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      String(error.digest).startsWith("NEXT_REDIRECT;")
+    )
+      throw error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return {
+        ok: false,
+        mensaje:
+          error.code === "P2034"
+            ? "Ese horario acaba de cambiar. Revisá la agenda e intentá nuevamente."
+            : "No pudimos guardar el turno. Intentá nuevamente.",
+      };
+    }
+    return {
+      ok: false,
+      mensaje:
+        error instanceof Error
+          ? error.message
+          : "No pudimos crear el turno. Intentá nuevamente.",
+    };
+  }
+  const fechaAgenda = leerTexto(datos, "fechaAgenda");
+  redirect(
+    `/panel/agenda?agenda=creado${fechaValida(fechaAgenda) ? `&fecha=${fechaAgenda}` : ""}`,
+  );
+}
+async function guardarReservaPanel(datos: FormData) {
   const { negocio } = await requerirContextoPanel();
   const profesionalId = leerTexto(datos, "profesionalId");
   const sedeId = leerTexto(datos, "sedeId");
@@ -88,6 +126,7 @@ export async function crearReservaPanel(datos: FormData) {
             OR: [
               { profesionalId: profesional.id },
               { profesionalId: null, sedeId: sede.id },
+              { profesionalId: null, sedeId: null },
             ],
           },
           inicio: { lt: fin },
@@ -143,7 +182,6 @@ export async function crearReservaPanel(datos: FormData) {
 
   revalidatePath("/panel");
   revalidatePath("/panel/agenda");
-  redirect("/panel/agenda?agenda=creado");
 }
 
 export async function moverReserva(
@@ -161,10 +199,12 @@ export async function moverReserva(
   if (
     !reserva ||
     Number.isNaN(inicio.getTime()) ||
-    Number.isNaN(fin.getTime())
+    Number.isNaN(fin.getTime()) ||
+    fin <= inicio
   ) {
     throw new Error("El turno o las fechas no son válidos.");
   }
+  if (!reserva.profesionalId || !reserva.clienteId) throw new Error("Este turno conserva una ficha eliminada y no puede reprogramarse.");
   await validarHorarioLaboral({
     negocioId: negocio.id,
     sedeId: reserva.sedeId,
@@ -197,6 +237,7 @@ export async function moverReserva(
         OR: [
           { profesionalId: reserva.profesionalId },
           { profesionalId: null, sedeId: reserva.sedeId },
+          { profesionalId: null, sedeId: null },
         ],
       },
       inicio: { lt: fin },
@@ -208,10 +249,24 @@ export async function moverReserva(
     throw new Error("El nuevo horario está ocupado en Google Calendar.");
   }
 
-  await prisma.reserva.update({
-    where: { id },
-    data: { inicio, fin },
-  });
+  await prisma.$transaction(
+    async (tx) => {
+      const conflicto = await tx.reserva.findFirst({
+        where: {
+          negocioId: negocio.id,
+          profesionalId: reserva.profesionalId,
+          id: { not: id },
+          estado: { notIn: ["CANCELADA", "VENCIDA"] },
+          inicio: { lt: fin },
+          fin: { gt: inicio },
+        },
+      });
+      if (conflicto)
+        throw new Error("El nuevo horario se superpone con otro turno.");
+      await tx.reserva.update({ where: { id }, data: { inicio, fin } });
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
   after(() => sincronizarReservaEnGoogle(id));
   revalidatePath("/panel/agenda");
 }
@@ -282,7 +337,7 @@ async function validarHorarioLaboral({
       where: { negocioId, sedeId, diaSemana: inicioLocal.dia, activo: true },
     }),
     prisma.horarioProfesional.findMany({
-      where: { negocioId, sedeId, profesionalId, diaSemana: inicioLocal.dia },
+      where: { negocioId, sedeId, profesionalId },
     }),
     prisma.bloqueoAgenda.findFirst({
       where: {
@@ -305,7 +360,12 @@ async function validarHorarioLaboral({
   if (!horariosLocal.some(contiene)) {
     throw new Error("El local está cerrado en ese horario.");
   }
-  if (horariosProfesional.length && !horariosProfesional.some(contiene)) {
+  if (
+    horariosProfesional.length &&
+    !horariosProfesional.some(
+      (h) => h.diaSemana === inicioLocal.dia && contiene(h),
+    )
+  ) {
     throw new Error("El profesional no trabaja en ese horario.");
   }
   if (bloqueo) {

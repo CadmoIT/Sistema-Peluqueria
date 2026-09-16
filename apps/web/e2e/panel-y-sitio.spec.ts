@@ -1,17 +1,47 @@
 /** Recorre el panel demo y el micrositio con resoluciones de escritorio y móvil. */
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures/panel-fixture";
 
 test("la cuenta demo puede entrar y recorrer el panel", async ({ page }) => {
+  await page.context().clearCookies();
   await page.goto("/acceder?modo=ingreso");
   await page.getByLabel("Email").fill("demo@turnosrapidos.com.ar");
   await page.locator('input[name="password"]').fill("DemoTurnos2026!");
   await page.getByRole("button", { name: "Ingresar", exact: true }).click();
 
-  await expect(page).toHaveURL(/\/panel$/);
+  await expect(page).toHaveURL(/\/panel\/resumen$/, { timeout: 60_000 });
   await expect(
-    page.getByRole("heading", { name: "Resumen de Estudio Aurora" }),
+    page.getByRole("heading", { name: "Estudio Aurora" }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: /Ver mi sitio/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Página Web/ })).toBeVisible();
+  await expect(page.locator(".resumen-pagina__cabecera svg")).toHaveCount(1);
+  await expect(
+    page.getByRole("link", { name: "Nuevo turno", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Ver plan y facturación" }),
+  ).toHaveAttribute("href", "/panel/facturacion");
+  await expect(page.locator(".resumen-lateral .acceso-resumen")).toHaveCount(3);
+  await page.locator(".resumen-lateral .acceso-resumen").first().hover();
+  await expect(
+    page.locator(".resumen-lateral .acceso-resumen").first(),
+  ).toHaveCSS("background-color", "rgb(241, 243, 244)");
+  await expect(
+    page.getByRole("link", { name: /Turnos de hoy/ }),
+  ).toHaveAttribute("href", "/panel/agenda");
+  await expect(
+    page.getByRole("link", { name: /Próximo turno/ }),
+  ).toHaveAttribute("href", "/panel/agenda");
+  await expect(page.getByRole("link", { name: /Clientes:/ })).toHaveAttribute(
+    "href",
+    "/panel/clientes",
+  );
+  await expect(
+    page.getByRole("link", { name: /Ingresos de hoy/ }),
+  ).toHaveAttribute("href", "/panel/reportes");
+  await page.screenshot({
+    path: "test-results/resumen-desktop.png",
+    fullPage: true,
+  });
   await expect(
     page.getByRole("button", { name: "Contraer menú" }),
   ).toBeVisible();
@@ -21,6 +51,11 @@ test("la cuenta demo puede entrar y recorrer el panel", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "Expandir menú" }),
   ).toBeVisible();
+  await expect(page.locator(".panel-ruta-contraida")).toHaveCount(0);
+  await page.screenshot({
+    path: "test-results/resumen-sidebar-plegado.png",
+    fullPage: true,
+  });
   await page.locator(".nav-panel--contraido summary").click();
   await expect(
     page.locator(".nav-panel--contraido").getByRole("link", {
@@ -32,9 +67,11 @@ test("la cuenta demo puede entrar y recorrer el panel", async ({ page }) => {
     page.getByRole("button", { name: "Expandir menú" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Expandir menú" }).click();
+  await page.goto("/panel");
+  await expect(page).toHaveURL(/\/panel\/resumen$/);
 
   await page.goto("/panel/agenda");
-  await expect(page.locator(".fc")).toBeVisible();
+  await expect(page.locator(".fc").first()).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Local" })).toBeVisible();
 
   await page.goto("/panel/clientes");
@@ -75,6 +112,32 @@ test("el sitio demo permite buscar y elegir un servicio con teclado", async ({
   await expect(
     page.getByRole("link", { name: "Reservar", exact: true }).first(),
   ).toHaveAttribute("href", /servicios=/);
+  await expect(
+    page.getByRole("link", { name: "Contactar por WhatsApp" }),
+  ).toBeVisible();
+});
+
+test("facturación, avisos y reportes muestran estados reales de la demo", async ({
+  page,
+}) => {
+  await page.goto("/panel/facturacion");
+  await expect(page.getByText("Plan activo · Plus")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "PRO" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Próximamente" }),
+  ).toBeDisabled();
+
+  await page.goto("/panel/configuracion#avisos");
+  await expect(
+    page.getByRole("heading", { name: "Mensajes automáticos" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("El correo todavía no está configurado.", { exact: false }),
+  ).toBeVisible();
+  await expect(page.getByText("Ana, tu turno", { exact: false })).toBeVisible();
+
+  await page.goto("/panel/reportes");
+  await expect(page.getByLabel("Local del reporte")).toBeVisible();
 });
 
 test("panel y micrositio no desbordan en los anchos principales", async ({
@@ -88,10 +151,7 @@ test("panel y micrositio no desbordan en los anchos principales", async ({
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);
-  await page.goto("/acceder?modo=ingreso");
-  await page.getByLabel("Email").fill("demo@turnosrapidos.com.ar");
-  await page.locator('input[name="password"]').fill("DemoTurnos2026!");
-  await page.getByRole("button", { name: "Ingresar", exact: true }).click();
+  await page.goto("/panel/resumen");
   await expect(page.getByRole("button", { name: "Abrir menú" })).toBeVisible();
   await page.getByRole("button", { name: "Abrir menú" }).click();
   await page
@@ -103,7 +163,7 @@ test("panel y micrositio no desbordan en los anchos principales", async ({
   for (const ancho of [360, 390, 768, 1440]) {
     await page.setViewportSize({ width: ancho, height: 900 });
     for (const ruta of [
-      "/panel",
+      "/panel/resumen",
       "/panel/agenda",
       "/panel/clientes",
       "/panel/mi-sitio",

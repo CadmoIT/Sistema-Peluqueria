@@ -20,7 +20,11 @@ export default async function PaginaMiSitio() {
     colorFondo: base.colorFondo ?? "#ffffff",
     colorTexto: base.colorTexto ?? "#111111",
     logoUrl: base.logoUrl ?? "",
-    whatsapp: base.whatsapp ?? datos.negocio.telefono ?? "",
+    whatsapp:
+      base.whatsapp?.trim() ||
+      datos.negocio.telefono?.trim() ||
+      datos.sedes.find((sede) => sede.telefono?.trim())?.telefono ||
+      "",
     instagram: base.instagram ?? "",
     hero: normalizarHero(base.hero),
     carruselAutomatico: base.carruselAutomatico ?? true,
@@ -36,7 +40,6 @@ export default async function PaginaMiSitio() {
       <header className="cabecera-seccion">
         <div>
           <h1>Mi sitio</h1>
-          <p>Personalizá, revisá y publicá tu página de reservas.</p>
         </div>
         <span className="direccion-sitio">
           {datos.negocio.slug}.site.turnosrapidos.com.ar

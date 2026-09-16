@@ -6,11 +6,17 @@ import {
   googleCalendarConfigurado,
 } from "@/lib/google-calendar";
 import { prisma } from "@/lib/prisma";
+import { fechaValida } from "@/componentes/panel/agenda/agenda-modelo";
 
 export async function GET(solicitud: Request) {
+  const url = new URL(solicitud.url);
+  const fecha = url.searchParams.get("fecha") ?? "";
   if (!googleCalendarConfigurado())
     return NextResponse.redirect(
-      new URL("/panel/equipo?google=no-configurado", solicitud.url),
+      new URL(
+        `/panel/agenda?google=no-configurado${fechaValida(fecha) ? `&fecha=${fecha}` : ""}`,
+        solicitud.url,
+      ),
     );
   const sesion = await autenticacion.api.getSession({
     headers: solicitud.headers,
@@ -19,7 +25,6 @@ export async function GET(solicitud: Request) {
     return NextResponse.redirect(
       new URL("/acceder?modo=ingreso", solicitud.url),
     );
-  const url = new URL(solicitud.url);
   const profesionalId = url.searchParams.get("profesionalId");
   const sedeId = url.searchParams.get("sedeId");
   const membresia = await prisma.membresia.findFirst({
@@ -51,6 +56,7 @@ export async function GET(solicitud: Request) {
       profesionalId,
       sedeId,
       expira: Date.now() + 10 * 60_000,
+      fecha: fechaValida(fecha) ? fecha : undefined,
     }),
   );
 }

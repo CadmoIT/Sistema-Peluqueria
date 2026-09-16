@@ -1,0 +1,418 @@
+/** Presenta la agenda diaria con navegación compacta y colores de estado suaves. */
+.panel-contenido--agenda {
+  --agenda-margen-izquierdo: 16px;
+  width: 100%;
+  margin: 0;
+  padding-left: var(--agenda-margen-izquierdo);
+}
+.panel-contenido--agenda .cabecera-seccion h1 {
+  margin: 0 0 0 calc(clamp(20px, 3vw, 48px) - var(--agenda-margen-izquierdo) + max(0px, (100vw - var(--panel-sidebar-ancho, 248px) - 1420px) / 2));
+}
+.panel-contenido--agenda #nuevo > summary {
+  font-size: 18px;
+}
+.formulario-turno h2 {
+  font-size: 24px;
+}
+.formulario-turno label,
+.formulario-turno input,
+.formulario-turno select,
+.formulario-turno .boton {
+  font-size: 18px;
+}
+.agenda-diaria {
+  display: grid;
+  grid-template-columns: 214px minmax(0, 1fr);
+  gap: 40px;
+  column-gap: 64px;
+  min-width: 0;
+}
+.agenda-lateral {
+  padding-top: 3px;
+}
+.agenda-principal {
+  min-width: 0;
+}
+.agenda-navegacion {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.agenda-navegacion h2 {
+  font: 19px var(--fuente-marca);
+  text-transform: capitalize;
+  margin: 0;
+}
+.agenda-navegacion > div,
+.agenda-mini header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.agenda-navegacion button,
+.agenda-mini button {
+  background: #fff;
+  color: #111;
+  border: 0;
+  border-radius: 7px;
+  padding: 7px;
+  cursor: pointer;
+  font: 13px var(--fuente-preguntas);
+}
+.agenda-navegacion button:hover,
+.agenda-mini button:hover {
+  background: #f1f3f4;
+}
+.agenda-mini header {
+  margin-bottom: 12px;
+}
+.agenda-mini header strong {
+  flex: 1;
+  font: 13px var(--fuente-marca);
+  text-transform: capitalize;
+}
+.agenda-mini__grilla {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  text-align: center;
+}
+.agenda-mini__grilla small {
+  padding: 5px 0;
+  font: 11px var(--fuente-preguntas);
+}
+.agenda-mini__grilla button {
+  padding: 7px 0;
+  font-size: 12px;
+}
+.agenda-mini button.otro-mes {
+  color: #666;
+}
+.agenda-mini button[aria-current="date"] {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.agenda-mini button.seleccionado,
+.agenda-dias button.seleccionado {
+  background: #126783;
+  color: #fff;
+}
+.agenda-filtros {
+  margin-top: 24px;
+  display: grid;
+  gap: 16px;
+  font: 13px var(--fuente-preguntas);
+}
+.agenda-filtros > label {
+  display: grid;
+  gap: 7px;
+}
+.agenda-filtros select {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #d8dde0;
+  border-radius: 7px;
+  padding: 9px 7px;
+  color: #111;
+  font: 13px var(--fuente-preguntas);
+}
+.agenda-filtros fieldset {
+  border: 0;
+  padding: 0;
+  margin: 6px 0;
+  display: grid;
+  gap: 13px;
+}
+.agenda-filtros legend {
+  font: 13px var(--fuente-marca);
+  margin-bottom: 14px;
+}
+.agenda-leyenda {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+.agenda-leyenda input {
+  width: 16px;
+  height: 16px;
+}
+.agenda-leyenda > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.agenda-dias {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 9px;
+}
+.agenda-fila-dias {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 6px;
+}
+.agenda-flecha-dias {
+  display: grid;
+  place-items: center;
+  height: 58px;
+  align-self: start;
+  padding: 0;
+  background: #fff;
+  border: 0;
+  border-radius: 8px;
+  color: #111;
+  cursor: pointer;
+}
+.agenda-flecha-dias:hover {
+  background: #f3f5f6;
+}
+.agenda-dias button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 58px;
+  padding: 12px 6px;
+  background: #fff;
+  color: #111;
+  border: 1px solid #eef0f1;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.agenda-dias button:hover {
+  background: #f3f5f6;
+}
+.agenda-dias button.seleccionado:hover {
+  background: #126783;
+  color: #fff;
+}
+.agenda-dias span {
+  font: 18px var(--fuente-marca);
+  white-space: nowrap;
+}
+.agenda-aviso {
+  font: 13px var(--fuente-preguntas);
+  color: #444;
+  margin: 12px 0;
+}
+.agenda-columnas-scroll {
+  max-height: 650px;
+  overflow: auto;
+  border: 0;
+  background: #fff;
+  border-radius: 8px;
+  overscroll-behavior: contain;
+}
+.agenda-columnas {
+  display: grid;
+  width: 100%;
+}
+.agenda-columna {
+  min-width: 0;
+}
+.agenda-columna + .agenda-columna {
+  border-left: 1px solid #eceeef;
+}
+.agenda-columna h3 {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fff;
+  padding: 16px 8px;
+  text-align: center;
+  margin: 0;
+  font: 18px/24px var(--fuente-marca);
+  min-height: 56px;
+  height: 56px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agenda-columna .fc {
+  font: 15px var(--fuente-preguntas);
+  --fc-border-color: transparent;
+  --fc-today-bg-color: transparent;
+}
+.agenda-columna .fc .fc-timegrid-slot {
+  height: 40px;
+}
+.agenda-columna .fc td,
+.agenda-columna .fc th {
+  border: 0;
+}
+.agenda-columna .fc-timegrid-axis,
+.agenda-columna .fc-timegrid-slot-label {
+  display: none;
+}
+.agenda-escala {
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: #fff;
+}
+.agenda-escala h3 {
+  position: sticky;
+  top: 0;
+  z-index: 7;
+  height: 56px;
+  background: #fff;
+  margin: 0;
+  padding: 16px 0;
+}
+.agenda-escala__hora {
+  height: 40px;
+  position: relative;
+}
+.agenda-escala__hora span {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font: 15px var(--fuente-preguntas);
+  color: #111;
+}
+.agenda-columna .fc .fc-scrollgrid {
+  border: 0;
+}
+.agenda-columna .fc .fc-timegrid-event {
+  border-radius: 5px;
+  border-width: 0 0 0 3px;
+  box-shadow: none;
+  overflow: hidden;
+}
+.agenda-evento {
+  padding: 4px;
+  display: grid;
+  gap: 3px;
+  color: #111;
+  line-height: 1.2;
+}
+.agenda-evento strong {
+  font-size: 15px;
+}
+.agenda-evento span {
+  font-size: 15px;
+}
+.agenda-detalle {
+  width: min(480px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid #ddd;
+  border-radius: 14px;
+  box-shadow: 0 16px 48px #0002;
+  color: #111;
+}
+.agenda-detalle::backdrop {
+  background: #0004;
+}
+.agenda-detalle header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.agenda-detalle h2 {
+  font: 21px var(--fuente-marca);
+}
+.agenda-detalle small,
+.agenda-detalle dl {
+  font: 14px var(--fuente-preguntas);
+}
+.agenda-detalle dl > div {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+.agenda-detalle dt {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+.agenda-detalle dd {
+  margin: 0;
+}
+.agenda-detalle footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+.agenda-filtros-movil {
+  display: none;
+}
+.google-conectado-indicador {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #207345;
+}
+.google-agenda-dialogo p {
+  font: 14px/1.6 var(--fuente-preguntas);
+}
+.google-agenda-dialogo label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  font: 14px var(--fuente-preguntas);
+}
+.google-agenda-dialogo select {
+  font: 14px var(--fuente-preguntas);
+  padding: 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #111;
+  border-radius: 7px;
+}
+.google-agenda-conexion {
+  border-top: 1px solid #eee;
+  padding: 14px 0;
+}
+.google-agenda-conexion > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.agenda-diaria button:focus-visible,
+.agenda-diaria select:focus-visible {
+  outline: 2px solid #126783;
+  outline-offset: 2px;
+}
+@media (max-width: 900px) {
+  .panel-contenido--agenda {
+    --agenda-margen-izquierdo: 14px;
+  }
+  .agenda-diaria {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .agenda-lateral {
+    display: none;
+  }
+  .agenda-filtros-movil {
+    display: block;
+    margin-bottom: 24px;
+  }
+  .agenda-filtros-movil summary {
+    cursor: pointer;
+    font: 14px var(--fuente-marca);
+    padding: 10px 0;
+  }
+  .agenda-filtros-movil .agenda-mini {
+    max-width: 280px;
+  }
+  .agenda-filtros-movil .agenda-filtros {
+    max-width: 320px;
+  }
+  .agenda-columnas-scroll {
+    max-height: 600px;
+  }
+  .agenda-dias {
+    grid-template-columns: repeat(5, minmax(180px, 1fr));
+  }
+}
+@media (max-width: 820px) {
+  .panel-contenido--agenda .cabecera-seccion h1 {
+    margin-left: 0;
+  }
+}

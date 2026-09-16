@@ -1,32 +1,46 @@
 /** Centraliza la marca, los precios y las reglas comerciales compartidas. */
 export const MARCA_APP = process.env.MARCA_APP ?? "TurnosRapidos";
 
+export const PLAN_GRATIS = {
+  id: "PRUEBA",
+  nombre: "Gratis",
+  precioMensual: 0,
+  descripcion: "Probá tu agenda y tu sitio durante siete días.",
+  destacado: false,
+  beneficios: ["Siete días de prueba", "Sitio de reservas", "Avisos por email durante la prueba"],
+} as const;
+
 export const PLANES = [
   {
     id: "autogestionado",
-    nombre: "Autogestionado",
+    nombre: "Plus",
     precioMensual: 9_900,
-    descripcion: "Tu sitio completo con subdominio o dominio propio.",
-    destacado: false,
-    beneficios: [
-      "Sedes y profesionales ilimitados",
-      "Suite de gestion completa",
-      "Dominio propio opcional",
-    ],
-  },
-  {
-    id: "dominio-gestionado",
-    nombre: "Dominio gestionado",
-    precioMensual: 12_900,
-    descripcion: "Nos ocupamos del dominio, DNS y renovacion.",
+    descripcion: "Tu negocio organizado y avisos automáticos por email.",
     destacado: true,
     beneficios: [
-      "Todo Autogestionado",
-      "Alta y renovacion .com.ar",
-      "Configuracion y soporte DNS",
+      "Sedes y profesionales ilimitados",
+      "Sitio y agenda de reservas",
+      "Confirmaciones y recordatorios por email",
     ],
   },
 ] as const;
+
+export const PLAN_PRO = {
+  id: "pro",
+  nombre: "PRO",
+  precioMensual: null,
+  descripcion: "Todo Plus, con recordatorios automáticos por WhatsApp.",
+  destacado: false,
+  beneficios: ["Todo Plus", "Recordatorios por WhatsApp"],
+} as const;
+
+export function nombrePlan(plan: string | null | undefined) {
+  if (plan === "PRUEBA" || !plan) return "Gratis";
+  if (plan === "autogestionado") return "Plus";
+  if (plan === "pro") return "PRO";
+  if (plan === "dominio-gestionado") return "Dominio gestionado (anterior)";
+  return "Plan anterior";
+}
 
 export const PAQUETES_WHATSAPP = [
   { mensajes: 100, precioMensual: 5_900 },

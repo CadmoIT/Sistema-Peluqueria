@@ -40,7 +40,7 @@ a {
 .logo-turnos__imagen {
   width: 52px;
   height: 52px;
-  border-radius: 13px;
+  border-radius: 0;
   object-fit: contain;
 }
 .logo-turnos__nombre {

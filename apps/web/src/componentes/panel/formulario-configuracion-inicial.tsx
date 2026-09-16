@@ -6,11 +6,18 @@ import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { LogoTurnosRapidos } from "@/componentes/layout/logo-turnos-rapidos";
 import { CANTIDADES_LOCALES, RUBROS_NEGOCIO } from "@/lib/registro-inicial";
+import { obtenerPerfilNegocio } from "@/lib/perfiles-negocio";
 
-export function FormularioConfiguracionInicial() {
+export function FormularioConfiguracionInicial({
+  tipoNegocioInicial = "",
+}: {
+  tipoNegocioInicial?: string;
+}) {
   const router = useRouter();
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const [tipoNegocio, setTipoNegocio] = useState(tipoNegocioInicial);
+  const perfil = obtenerPerfilNegocio({ tipoNegocio });
 
   async function continuar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -35,7 +42,7 @@ export function FormularioConfiguracionInicial() {
         return;
       }
 
-      router.push("/panel");
+      router.push("/panel/resumen");
       router.refresh();
     } catch {
       setMensaje("No pudimos conectarnos. Intentá nuevamente.");
@@ -63,7 +70,12 @@ export function FormularioConfiguracionInicial() {
         <form className="primeros-pasos__formulario" onSubmit={continuar}>
           <label className="texto-pregunta">
             ¿Qué tipo de negocio tenés?
-            <select name="tipoNegocio" required defaultValue="">
+            <select
+              name="tipoNegocio"
+              required
+              value={tipoNegocio}
+              onChange={(evento) => setTipoNegocio(evento.target.value)}
+            >
               <option value="" disabled>
                 Elegí una opción
               </option>
@@ -82,7 +94,7 @@ export function FormularioConfiguracionInicial() {
               type="text"
               minLength={2}
               maxLength={80}
-              placeholder="Por ejemplo, Estudio Abril"
+              placeholder={`Por ejemplo, ${perfil.ejemploNegocio}`}
               autoComplete="organization"
               required
             />

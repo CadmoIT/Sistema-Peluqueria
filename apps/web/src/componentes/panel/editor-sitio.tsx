@@ -9,6 +9,7 @@ import {
   Eye,
   Globe2,
   MapPin,
+  MessageCircle,
   Palette,
   Save,
   UsersRound,
@@ -389,6 +390,9 @@ export function EditorSitio({
                   }
                 />
               </label>
+              {!datos.whatsapp.trim() && (
+                <p className="aviso-ajustes">Agregá un teléfono para mostrar el botón de contacto en tu página. También podés cargarlo en Datos del local.</p>
+              )}
               <label>
                 Instagram
                 <input
@@ -654,6 +658,17 @@ function VistaPrevia({
             )}
           </div>
         </section>
+      )}
+      {datos.whatsapp.replace(/\D/g, "").length >= 8 && (
+        <a
+          className="mini-whatsapp"
+          href={`https://wa.me/${datos.whatsapp.replace(/\D/g, "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Contactar por WhatsApp"
+        >
+          <MessageCircle aria-hidden="true" />
+        </a>
       )}
     </div>
   );

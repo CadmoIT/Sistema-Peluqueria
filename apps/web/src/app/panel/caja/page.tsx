@@ -1,8 +1,9 @@
 /** Registra ingresos y egresos operativos y resume el movimiento del día. */
-import { ArrowDownLeft, ArrowUpRight, Plus, WalletCards } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Plus } from "lucide-react";
 import { registrarMovimientoCaja } from "./acciones";
 import { PuntoVenta } from "@/componentes/panel/punto-venta";
-import { BotonEnvio } from "@/componentes/panel/boton-envio";
+import { FormularioAccion } from "@/componentes/panel/formulario-accion";
+import { MetricasOperativas } from "@/componentes/panel/metricas-operativas";
 import { obtenerCaja } from "@/servicios/panel-datos.service";
 
 export const metadata = { title: "Caja" };
@@ -19,16 +20,12 @@ export default async function PaginaCaja() {
       <header className="cabecera-seccion">
         <div>
           <h1>Caja</h1>
-          <p>Ingresos y gastos operativos del negocio.</p>
         </div>
         <details className="desplegable-accion">
           <summary className="boton boton--primario">
             <Plus /> Registrar movimiento
           </summary>
-          <form
-            action={registrarMovimientoCaja}
-            className="formulario-flotante"
-          >
+          <FormularioAccion accion={registrarMovimientoCaja} texto="Registrar">
             <h2>Movimiento de caja</h2>
             <label>
               Tipo
@@ -59,28 +56,13 @@ export default async function PaginaCaja() {
                 </select>
               </label>
             )}
-            <BotonEnvio pendiente="Registrando…">Registrar</BotonEnvio>
-          </form>
+            {datos.profesionales.length ? <label>Atribuir movimiento a<select name="atribucion" required defaultValue=""><option value="" disabled>Elegí Local o una persona</option><option value="local">Local</option>{datos.profesionales.map((p) => <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>)}</select></label> : <input name="atribucion" type="hidden" value="local" />}
+          </FormularioAccion>
         </details>
       </header>
-      <section className="metricas-panel tres">
-        <Metrica
-          icono={<ArrowUpRight />}
-          texto="Ingresos de hoy"
-          valor={ingresos}
-        />
-        <Metrica
-          icono={<ArrowDownLeft />}
-          texto="Egresos de hoy"
-          valor={egresos}
-        />
-        <Metrica
-          icono={<WalletCards />}
-          texto="Saldo del día"
-          valor={ingresos - egresos}
-        />
-      </section>
+      <MetricasOperativas datos={[{ etiqueta: "Ingresos de hoy", valor: ingresos }, { etiqueta: "Egresos de hoy", valor: egresos }, { etiqueta: "Saldo del día", valor: ingresos - egresos }]} />
       <PuntoVenta
+        profesionales={datos.profesionales.map((p) => ({ id: p.id, nombre: [p.nombre, p.apellido].filter(Boolean).join(" ") }))}
         sedes={datos.sedes.map((sede) => ({
           id: sede.id,
           nombre: sede.nombre,
@@ -91,6 +73,7 @@ export default async function PaginaCaja() {
             tipo: "servicio" as const,
             nombre: servicio.nombre,
             precio: Number(servicio.precio),
+            sedesIds: servicio.sedes.map((s) => s.sedeId),
           })),
           ...datos.productos.map((producto) => ({
             id: producto.id,
@@ -115,7 +98,7 @@ export default async function PaginaCaja() {
             </span>
             <strong>{movimiento.concepto}</strong>
             <small>
-              {new Intl.DateTimeFormat("es-AR", { timeStyle: "short" }).format(
+              {new Intl.DateTimeFormat("es-AR", { timeStyle: "short", hour12: false, timeZone: datos.negocio.zonaHoraria }).format(
                 movimiento.creadoEn,
               )}
             </small>
@@ -132,25 +115,6 @@ export default async function PaginaCaja() {
         )}
       </div>
     </div>
-  );
-}
-function Metrica({
-  icono,
-  texto,
-  valor,
-}: {
-  icono: React.ReactNode;
-  texto: string;
-  valor: number;
-}) {
-  return (
-    <article>
-      <span className="metrica-icono">{icono}</span>
-      <div>
-        <small>{texto}</small>
-        <strong>{pesos(valor)}</strong>
-      </div>
-    </article>
   );
 }
 function pesos(valor: number) {

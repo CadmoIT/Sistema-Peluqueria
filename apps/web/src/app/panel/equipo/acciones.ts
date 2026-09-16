@@ -1,6 +1,7 @@
 /** Crea profesionales vinculados exclusivamente con el negocio autenticado. */
 "use server";
 
+import { eliminarFicha, type ResultadoAccion } from "@/servicios/eliminacion-fichas.service";
 import { revalidatePath } from "next/cache";
 import { leerTexto, textoOpcional } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
@@ -88,21 +89,15 @@ export async function actualizarProfesional(datos: FormData) {
   revalidatePath(`/sitio/${negocio.slug}`);
 }
 
-export async function alternarProfesional(datos: FormData) {
-  const { negocio } = await requerirContextoPanel();
-  const id = leerTexto(datos, "id");
-  const profesional = await prisma.profesional.findFirst({
-    where: { id, negocioId: negocio.id },
-  });
-
-  if (!profesional) return;
-
-  await prisma.profesional.update({
-    where: { id },
-    data: { activo: !profesional.activo },
-  });
-  revalidatePath("/panel/equipo");
-  revalidatePath(`/sitio/${negocio.slug}`);
+export async function eliminarProfesional(datos: FormData): Promise<ResultadoAccion> {
+  const { negocio, membresia } = await requerirContextoPanel();
+  if (!["DUENO", "ADMINISTRADOR"].includes(membresia.rol)) return { ok: false, mensaje: "Sólo el dueño o administrador puede eliminar fichas." };
+  try {
+    const resultado = await eliminarFicha(prisma, negocio.id, "profesional", leerTexto(datos, "id"));
+    for (const ruta of ["equipo", "agenda", "resumen", "servicios", "caja", "reportes", "mi-sitio"]) revalidatePath(`/panel/${ruta}`);
+    revalidatePath(`/sitio/${negocio.slug}`);
+    return resultado;
+  } catch { return { ok: false, mensaje: "No pudimos eliminar el profesional." }; }
 }
 
 async function obtenerAsignaciones(negocioId: string, datos: FormData) {

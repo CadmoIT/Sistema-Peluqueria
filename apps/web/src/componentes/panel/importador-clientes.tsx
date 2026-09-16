@@ -1,17 +1,19 @@
 /** Guía la carga, asociación, revisión y confirmación de un archivo de clientes. */
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { detectarCampo, type CampoCliente } from "@/lib/clientes-archivo";
+import { useCierreExterior } from "@/componentes/interaccion/cierre-exterior";
 import { useRouter } from "next/navigation";
 import { FileSpreadsheet, LoaderCircle, Upload, X } from "lucide-react";
-
-type CampoCliente = "ignorar" | "nombre" | "apellido" | "email" | "telefono";
 
 type Previsualizacion = {
   encabezados: string[];
   filas: string[][];
   totalFilas: number;
   recortado: boolean;
+  numerosFilas: number[];
 };
 
 type Resultado = {
@@ -19,6 +21,10 @@ type Resultado = {
   actualizados: number;
   omitidos: number;
   errores: Array<{ fila: number; mensaje: string }>;
+};
+type Revision = Resultado & {
+  clave: string;
+  operaciones: Array<{ fila: number; tipo: string; mensaje: string }>;
 };
 
 const campos: Array<{ valor: CampoCliente; etiqueta: string }> = [
@@ -38,75 +44,169 @@ export function ImportadorClientes() {
   const [asociacion, setAsociacion] = useState<CampoCliente[]>([]);
   const [completarExistentes, setCompletarExistentes] = useState(false);
   const [mensaje, setMensaje] = useState("");
+  const [revision, setRevision] = useState<Revision | null>(null);
+  const [revisando, setRevisando] = useState(false);
+  const dialogo = useRef<HTMLElement>(null);
+  const lectura = useRef<AbortController | null>(null);
+  useEffect(() => () => lectura.current?.abort(), []);
+  useCierreExterior(dialogo, cerrar, abierto);
 
   const filasPreparadas = useMemo(() => {
     if (!previsualizacion) return [];
     return previsualizacion.filas.map((fila, indice) => {
-      const cliente: Record<string, string | number> = { fila: indice + 2 };
+      const cliente: Record<string, string | number> = {
+        fila: previsualizacion.numerosFilas?.[indice] ?? indice + 2,
+      };
       asociacion.forEach((campo, columna) => {
         if (campo !== "ignorar") cliente[campo] = fila[columna] ?? "";
       });
       return cliente;
     });
   }, [asociacion, previsualizacion]);
+  const asignados = asociacion.filter((campo) => campo !== "ignorar");
+  const repetidos = new Set(asignados).size !== asignados.length;
+  const claveRevision = JSON.stringify({
+    filas: filasPreparadas,
+    completarExistentes,
+  });
+  const revisar = Boolean(
+    previsualizacion &&
+    filasPreparadas.length &&
+    asignados.length &&
+    !repetidos,
+  );
+  useEffect(() => {
+    setRevision(null);
+    if (!revisar) {
+      setRevisando(false);
+      return;
+    }
+    const controlador = new AbortController();
+    setRevisando(true);
+    const espera = setTimeout(async () => {
+      try {
+        const respuesta = await fetch("/api/v1/clientes/importacion/revisar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: claveRevision,
+          signal: controlador.signal,
+        });
+        const datos = await respuesta.json();
+        if (!respuesta.ok)
+          throw new Error(datos.mensaje || "No pudimos revisar el archivo.");
+        if (!controlador.signal.aborted) {
+          setRevision({ ...datos, clave: claveRevision });
+          setMensaje("");
+        }
+      } catch (error) {
+        if (!controlador.signal.aborted)
+          setMensaje(
+            error instanceof Error
+              ? error.message
+              : "No pudimos revisar el archivo.",
+          );
+      } finally {
+        if (!controlador.signal.aborted) setRevisando(false);
+      }
+    }, 300);
+    return () => {
+      clearTimeout(espera);
+      controlador.abort();
+    };
+  }, [claveRevision, revisar]);
 
   async function seleccionarArchivo(archivo?: File) {
     if (!archivo) return;
+    lectura.current?.abort();
+    const controlador = new AbortController();
+    lectura.current = controlador;
     setCargando(true);
     setMensaje("");
     const datos = new FormData();
     datos.set("archivo", archivo);
-    const respuesta = await fetch(
-      "/api/v1/clientes/importacion/previsualizar",
-      { method: "POST", body: datos },
-    );
-    const contenido = (await respuesta.json()) as Previsualizacion & {
-      mensaje?: string;
-    };
-    setCargando(false);
+    try {
+      const respuesta = await fetch(
+        "/api/v1/clientes/importacion/previsualizar",
+        { method: "POST", body: datos, signal: controlador.signal },
+      );
+      const contenido = (await respuesta.json()) as Previsualizacion & {
+        mensaje?: string;
+      };
+      if (controlador.signal.aborted) return;
+      setCargando(false);
 
-    if (!respuesta.ok) {
-      setMensaje(contenido.mensaje ?? "No pudimos leer el archivo.");
-      return;
+      if (!respuesta.ok) {
+        setMensaje(contenido.mensaje ?? "No pudimos leer el archivo.");
+        return;
+      }
+
+      setPrevisualizacion(contenido);
+      setAsociacion(contenido.encabezados.map(detectarCampo));
+    } catch {
+      if (!controlador.signal.aborted)
+        setMensaje(
+          "No pudimos leer el archivo. Revisá tu conexión e intentá nuevamente.",
+        );
+    } finally {
+      if (lectura.current === controlador) setCargando(false);
     }
-
-    setPrevisualizacion(contenido);
-    setAsociacion(contenido.encabezados.map(detectarCampo));
   }
 
   async function confirmar() {
-    if (!filasPreparadas.length) return;
+    if (
+      !revision ||
+      revision.clave !== claveRevision ||
+      repetidos ||
+      revisando ||
+      cargando
+    )
+      return;
     setCargando(true);
     setMensaje("");
-    const respuesta = await fetch("/api/v1/clientes/importacion/confirmar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        filas: filasPreparadas,
-        completarExistentes,
-      }),
-    });
-    const resultado = (await respuesta.json()) as Resultado & {
-      mensaje?: string;
-    };
-    setCargando(false);
+    try {
+      const respuesta = await fetch("/api/v1/clientes/importacion/confirmar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filas: filasPreparadas,
+          completarExistentes,
+        }),
+      });
+      const resultado = (await respuesta.json()) as Resultado & {
+        mensaje?: string;
+      };
+      setCargando(false);
 
-    if (!respuesta.ok) {
-      setMensaje(resultado.mensaje ?? "No pudimos importar los clientes.");
-      return;
+      if (!respuesta.ok) {
+        setMensaje(resultado.mensaje ?? "No pudimos importar los clientes.");
+        return;
+      }
+
+      setMensaje(
+        `${resultado.creados} creados · ${resultado.actualizados} actualizados · ${resultado.omitidos} omitidos · ${resultado.errores.length} con errores`,
+      );
+      toast.success(
+        `${resultado.creados} clientes creados · ${resultado.actualizados} completados · ${resultado.omitidos} omitidos · ${resultado.errores.length} con errores`,
+      );
+      setPrevisualizacion(null);
+      setRevision(null);
+      router.refresh();
+    } catch {
+      setMensaje("No pudimos confirmar la importación. Revisá tu conexión.");
+    } finally {
+      setCargando(false);
     }
-
-    setMensaje(
-      `${resultado.creados} creados · ${resultado.actualizados} actualizados · ${resultado.omitidos} omitidos · ${resultado.errores.length} con errores`,
-    );
-    router.refresh();
   }
 
   function cerrar() {
+    lectura.current?.abort();
+    lectura.current = null;
+    setCargando(false);
     setAbierto(false);
     setPrevisualizacion(null);
     setAsociacion([]);
     setMensaje("");
+    setRevision(null);
   }
 
   return (
@@ -121,6 +221,7 @@ export function ImportadorClientes() {
       {abierto && (
         <div className="dialogo-fondo" role="presentation">
           <section
+            ref={dialogo}
             className="dialogo-importacion"
             role="dialog"
             aria-modal="true"
@@ -229,6 +330,51 @@ export function ImportadorClientes() {
                   />
                   Completar datos vacíos de clientes que ya existen
                 </label>
+                {repetidos && (
+                  <p role="alert">
+                    Cada dato debe corresponder a una sola columna. Cambiá las
+                    asignaciones repetidas a “No importar”.
+                  </p>
+                )}
+                {revisando && (
+                  <p role="status">Revisando datos y posibles duplicados…</p>
+                )}
+                {revision?.clave === claveRevision && (
+                  <div className="revision-importacion">
+                    <p role="status">
+                      {revision.creados} nuevos · {revision.actualizados} para
+                      completar · {revision.omitidos} omitidos ·{" "}
+                      {revision.errores.length} con errores
+                    </p>
+                    <p>
+                      Se guardarán sólo las filas válidas. Los datos existentes
+                      no se reemplazan.
+                    </p>
+                    {!!revision.errores.length && (
+                      <ul aria-label="Filas con errores">
+                        {revision.errores.map((error) => (
+                          <li key={error.fila}>
+                            Fila {error.fila}: {error.mensaje}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {!!revision.omitidos && (
+                      <details>
+                        <summary>Ver filas omitidas</summary>
+                        <ul>
+                          {revision.operaciones
+                            .filter((o) => o.tipo === "OMITIR")
+                            .map((o) => (
+                              <li key={o.fila}>
+                                Fila {o.fila}: {o.mensaje}
+                              </li>
+                            ))}
+                        </ul>
+                      </details>
+                    )}
+                  </div>
+                )}
                 <footer>
                   <button
                     type="button"
@@ -242,7 +388,11 @@ export function ImportadorClientes() {
                     className="boton boton--primario"
                     disabled={
                       cargando ||
-                      asociacion.every((campo) => campo === "ignorar")
+                      revisando ||
+                      repetidos ||
+                      !revision ||
+                      revision.clave !== claveRevision ||
+                      !(revision.creados + revision.actualizados)
                     }
                     onClick={confirmar}
                   >
@@ -262,21 +412,4 @@ export function ImportadorClientes() {
       )}
     </>
   );
-}
-
-function detectarCampo(encabezado: string): CampoCliente {
-  const normalizado = encabezado
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-
-  if (["nombre", "name", "first name"].includes(normalizado)) return "nombre";
-  if (["apellido", "last name", "surname"].includes(normalizado))
-    return "apellido";
-  if (["email", "correo", "correo electronico"].includes(normalizado))
-    return "email";
-  if (["telefono", "celular", "phone", "whatsapp"].includes(normalizado))
-    return "telefono";
-  return "ignorar";
 }

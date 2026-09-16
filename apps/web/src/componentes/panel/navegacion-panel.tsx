@@ -7,30 +7,44 @@ import {
   BarChart3,
   CalendarDays,
   ChevronLeft,
-  ChevronRight,
   ContactRound,
   CreditCard,
   LayoutDashboard,
+  Menu,
   Package,
-  Scissors,
   Settings,
   Store,
   UsersRound,
   WalletCards,
 } from "lucide-react";
 import { LogoTurnosRapidos } from "@/componentes/layout/logo-turnos-rapidos";
+import { usePerfilNegocio } from "./perfil-negocio-contexto";
+import { obtenerIconoServicios } from "./iconos-rubro";
+import { PERFILES_NEGOCIO, type PerfilNegocio } from "@/lib/perfiles-negocio";
 
 export const enlacesPanel = [
-  { texto: "Resumen", href: "/panel", icono: LayoutDashboard },
+  { texto: "Resumen", href: "/panel/resumen", icono: LayoutDashboard },
   { texto: "Agenda", href: "/panel/agenda", icono: CalendarDays },
   { texto: "Clientes", href: "/panel/clientes", icono: ContactRound },
-  { texto: "Servicios", href: "/panel/servicios", icono: Scissors },
+  {
+    texto: "Servicios",
+    href: "/panel/servicios",
+    icono: obtenerIconoServicios(PERFILES_NEGOCIO.general.iconoServicios),
+  },
   { texto: "Equipo", href: "/panel/equipo", icono: UsersRound },
   { texto: "Inventario", href: "/panel/inventario", icono: Package },
   { texto: "Caja", href: "/panel/caja", icono: WalletCards },
   { texto: "Reportes", href: "/panel/reportes", icono: BarChart3 },
   { texto: "Mi sitio", href: "/panel/mi-sitio", icono: Store },
 ] as const;
+
+export function obtenerEnlacesPanel(perfil: PerfilNegocio) {
+  return enlacesPanel.map((enlace) =>
+    enlace.href === "/panel/servicios"
+      ? { ...enlace, icono: obtenerIconoServicios(perfil.iconoServicios) }
+      : enlace,
+  );
+}
 
 export function NavegacionPanel({
   nombreUsuario = "Mi cuenta",
@@ -46,27 +60,39 @@ export function NavegacionPanel({
   onNavegar?: () => void;
 }) {
   const ruta = usePathname();
+  const enlaces = obtenerEnlacesPanel(usePerfilNegocio());
   return (
     <aside
       className={contraido ? "nav-panel nav-panel--contraido" : "nav-panel"}
     >
-      <Link
-        className="nav-panel__marca"
-        href="/panel"
-        aria-label="Ir al resumen"
-        onClick={onNavegar}
-      >
-        <LogoTurnosRapidos compacto={contraido} />
-      </Link>
+      {contraido && !movil ? (
+        <button
+          className="nav-panel__alternar-arriba"
+          onClick={onAlternar}
+          aria-label="Expandir menú"
+          title="Expandir menú"
+        >
+          <Menu size={22} />
+        </button>
+      ) : (
+        <Link
+          className="nav-panel__marca"
+          href="/panel/resumen"
+          aria-label="Ir al resumen"
+          onClick={onNavegar}
+        >
+          <LogoTurnosRapidos />
+        </Link>
+      )}
       <nav aria-label="Panel de gestión">
-        {enlacesPanel.map(({ texto, href, icono: Icono }) => {
-          const activo =
-            href === "/panel" ? ruta === href : ruta.startsWith(href);
+        {enlaces.map(({ texto, href, icono: Icono }) => {
+          const activo = ruta === href || ruta.startsWith(href + "/");
           return (
             <Link
               key={href}
               href={href}
               className={activo ? "activo" : ""}
+              aria-current={activo ? "page" : undefined}
               title={contraido ? texto : undefined}
               aria-label={contraido ? texto : undefined}
               onClick={onNavegar}
@@ -117,13 +143,13 @@ export function NavegacionPanel({
           <small>Mi cuenta</small>
         </div>
       </div>
-      {!movil && (
+      {!movil && !contraido && (
         <button
           className="nav-panel__plegar"
           onClick={onAlternar}
-          aria-label={contraido ? "Expandir menú" : "Contraer menú"}
+          aria-label="Contraer menú"
         >
-          {contraido ? <ChevronRight /> : <ChevronLeft />}
+          <ChevronLeft />
         </button>
       )}
     </aside>

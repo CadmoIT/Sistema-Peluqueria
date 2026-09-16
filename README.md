@@ -10,16 +10,37 @@ SaaS multiempresa para negocios que trabajan con turnos. Incluye autenticación,
 apps/
   web/       Next.js: landing, acceso, panel, micrositio y reservas
   api/       NestJS: controladores, servicios, repositorios y dominio
-  worker/    pg-boss: recordatorios y vencimientos en segundo plano
+  worker/    pg-boss: avisos, vencimientos y sincronización de Google
 packages/
   ui/        componentes visuales compartidos
   contratos/ tipos de dominio y contratos públicos
   config/    planes, importes y configuración versionada
+  google-calendar/ OAuth y sincronización compartida entre web y worker
 prisma/      modelo relacional y migraciones
 docs/        arquitectura y material de producto
 ```
 
 La API está separada por capas técnicas para que el recorrido sea predecible: `controllers → services → repositories`. Los DTO validan entradas, `domain` concentra reglas propias del negocio y `modules` sólo conecta dependencias. La guía [Recorrido del código](./docs/recorrido-codigo.md) explica cada carpeta y qué archivos pueden borrarse sin riesgo.
+
+## Personalización por tipo de negocio
+
+El rubro se elige en Primeros pasos y se guarda en `Negocio.configuracion.tipoNegocio`.
+Dueño y Administrador pueden cambiarlo desde Configuraciones → Datos del negocio;
+la actualización mezcla sólo `tipoNegocio` y `rubro` en el JSON, sin borrar las demás claves ni datos operativos.
+Las cuentas antiguas pueden resolverse por `rubro`; los valores desconocidos utilizan el perfil general.
+
+Los perfiles tipados están centralizados en `apps/web/src/lib/perfiles-negocio.ts`:
+icono de Servicios, ejemplos de servicio, categoría y nombre del negocio.
+El layout resuelve el rubro desde la membresía autenticada y comparte sólo su identificador.
+La navegación de escritorio y móvil, Resumen y formularios reutilizan ese perfil;
+los iconos se resuelven en `componentes/panel/iconos-rubro.ts` desde Lucide React.
+Los ejemplos nunca crean datos ni reemplazan campos existentes.
+
+Para agregar un rubro, actualizar el catálogo de Primeros pasos, su perfil y las pruebas de cobertura.
+No distribuir condiciones por rubro en las páginas ni duplicar el panel.
+Las futuras funciones sectoriales serán extensiones del núcleo con especificación propia
+de datos, permisos y conservación de información al cambiar el rubro.
+Esta entrega no incorpora mascotas, historias clínicas ni reservas grupales.
 
 ## Inicio local
 
@@ -39,8 +60,8 @@ La web queda en `http://localhost:3000`, la API en `http://localhost:3001/api/v1
 - `/precios`: planes base, combos y paquetes de WhatsApp.
 - `/acceder`: registro e ingreso con Better Auth.
 - `/recuperar`: solicitud y cambio de contraseña.
-- `/panel`: resumen privado con información real.
-- `/panel/agenda`: calendario diario, semanal y mensual.
+- `/panel`: redirección al resumen privado en `/panel/resumen`.
+- `/panel/agenda`: agenda diaria, mini calendario y columnas por profesional.
 - `/panel/clientes`, `/panel/servicios` y `/panel/equipo`: gestión operativa.
 - `/panel/inventario`, `/panel/caja` y `/panel/reportes`: control administrativo inicial.
 - `/panel/mi-sitio`: editor con borrador, vista previa y publicación.
@@ -52,7 +73,25 @@ La web queda en `http://localhost:3000`, la API en `http://localhost:3001/api/v1
 
 El panel y el sitio leen PostgreSQL. Las reservas públicas calculan horarios disponibles, validan la política de contacto y evitan superposiciones también desde la base. Clientes acepta importación CSV/Excel con vista previa; Inventario registra ajustes; Caja crea ventas y descuenta stock en una transacción; Reportes resume día, semana o mes.
 
+### Clientes: archivo, exportación e importación
+
+Eliminar un cliente archiva su ficha: conserva turnos, ventas y notas anteriores. La vista Archivados permite restaurarlo. Los contadores y las nuevas reservas manuales muestran sólo activos; una reserva pública con el mismo email o teléfono reactiva la ficha sin duplicarla.
+
+Exportar clientes descarga los datos del negocio autenticado en Excel o CSV, respetando la búsqueda y la vista Activos/Archivados. Excel conserva los teléfonos como texto y CSV incluye UTF-8 con BOM y protección frente a fórmulas. La Plantilla de ejemplo se descarga aparte y contiene dos filas ficticias identificadas.
+
+La importación lee la primera hoja de `.xlsx` o CSV separado por comas, punto y coma o tabulaciones, hasta 5 MB y 1.000 filas. Reconoce encabezados como Mail, E-mail, Teléfono, Número, Móvil y Nro. de celular sin distinguir tildes o mayúsculas. Las columnas desconocidas se pueden asociar manualmente; una columna de nombre completo no se divide automáticamente. Antes de guardar muestra duplicados, conflictos y errores por fila. Completar datos vacíos nunca reemplaza información existente y una importación no restaura archivados silenciosamente.
+
+Servicios utiliza un formulario reducido: nombre, categoría, precio, duración y seña. Profesionales y locales se eligen sólo cuando hay varios activos; con uno solo se asignan desde el servidor. Crear y editar no borran información anterior que ya no aparece en el formulario, y los cambios válidos se reflejan en el catálogo del micrositio.
+
 Google Calendar cuenta con consentimiento separado, tokens cifrados, sincronización incremental de ocupaciones y exportación de turnos sin correo ni teléfono. Google Places actualiza puntaje y cantidad de valoraciones. Mercado Pago crea la suscripción y sólo activa el sitio después de validar el webhook y consultar el recurso al proveedor. R2 recibe logo, portadas, servicios y fotos mediante una carga autenticada que valida y optimiza cada imagen en el servidor. Estas integraciones requieren las credenciales documentadas en `.env.example`.
+
+### Agenda diaria y Google Calendar
+
+La agenda abre el día actual del negocio. El mini calendario y los días superiores seleccionan la fecha, conservada en `?fecha=AAAA-MM-DD`. Cada profesional tiene su columna y las horas son de 24 horas. Los filtros de local/profesional desaparecen cuando existe uno solo; los estados pueden ocultarse desde la leyenda.
+
+Para habilitar Google Calendar, activar Calendar API en Google Cloud, configurar el cliente OAuth de aplicación web y autorizar el retorno `${WEB_URL}/api/integraciones/google-calendar/callback`. Cargar `GOOGLE_CALENDAR_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_SECRET` y `INTEGRATIONS_ENCRYPTION_KEY` en los entornos de web y worker. El permiso requerido es `https://www.googleapis.com/auth/calendar.app.created`: sólo permite trabajar con calendarios separados creados por esta aplicación, sin acceder al calendario personal.
+
+Desde Agenda se elige negocio, local o profesional antes de autorizar. El calendario “TurnosRápidos · nombre del negocio” debe estar activado en Google Calendar del teléfono, usando la misma cuenta. El worker importa ocupaciones y reintenta exportaciones cada cinco minutos. Los eventos usan identificadores estables y una huella para evitar duplicados. Desconectar detiene la sincronización y conserva los eventos en Google. Sin credenciales, la interfaz indica “No configurado”. La lógica se comparte entre web y worker en `packages/google-calendar`; sus pruebas usan proveedores simulados y no envían eventos reales.
 
 Las imágenes se decodifican en el servidor, corrigen su orientación, se reducen a un máximo de 2400 × 1800, pierden sus metadatos y se convierten a WebP antes de llegar a R2. Si R2 no está configurado, el editor mantiene la alternativa de pegar una URL y explica el motivo sin romper el formulario.
 

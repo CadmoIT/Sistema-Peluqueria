@@ -4,7 +4,8 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { enlacesPanel, NavegacionPanel } from "./navegacion-panel";
+import { obtenerEnlacesPanel, NavegacionPanel } from "./navegacion-panel";
+import { usePerfilNegocio } from "./perfil-negocio-contexto";
 import { NotificacionesPanel } from "./notificaciones-panel";
 
 export function EstructuraPanel({
@@ -16,6 +17,7 @@ export function EstructuraPanel({
 }) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [contraido, setContraido] = useState(false);
+  const enlaces = obtenerEnlacesPanel(usePerfilNegocio());
 
   useEffect(() => {
     setContraido(
@@ -83,7 +85,7 @@ export function EstructuraPanel({
         {children}
       </main>
       <nav className="panel-inferior" aria-label="Navegación móvil">
-        {enlacesPanel.slice(0, 4).map(({ texto, href, icono: Icono }) => (
+        {enlaces.slice(0, 4).map(({ texto, href, icono: Icono }) => (
           <Link key={href} href={href}>
             <Icono />
             <span>{texto}</span>

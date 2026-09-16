@@ -1,0 +1,232 @@
+/** Combina un fondo difuminado de marca con fotografías superpuestas y desplazamiento lateral. */
+.hero-fotografico {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 12% 38%, rgb(18 103 131 / 22%), transparent 58%),
+    radial-gradient(ellipse at 86% 28%, rgb(42 159 186 / 25%), transparent 60%),
+    radial-gradient(ellipse at 62% 92%, rgb(85 201 216 / 32%), transparent 62%),
+    linear-gradient(125deg, #eef6fa, #e1f3f7 52%, #edfafd);
+  padding: 44px 0 46px;
+}
+.hero-fotografico::before,
+.hero-fotografico::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 780px;
+  height: 560px;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+}
+.hero-fotografico::before {
+  left: -340px;
+  top: 90px;
+  background: radial-gradient(ellipse, rgb(18 103 131 / 25%), transparent 70%);
+}
+.hero-fotografico::after {
+  right: -300px;
+  bottom: -170px;
+  background: radial-gradient(
+    ellipse,
+    rgb(42 159 186 / 28%),
+    rgb(85 201 216 / 15%) 45%,
+    transparent 72%
+  );
+}
+.hero-fotografico__contenido {
+  text-align: center;
+}
+.hero-fotografico h1 {
+  max-width: 1080px;
+  margin: 0 auto 20px;
+  padding: 0 28px;
+  color: #126783;
+  font-family: var(--fuente-marca);
+  font-size: clamp(32px, 3.8vw, 58px);
+  font-weight: 400;
+  line-height: 1.16;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  background: linear-gradient(110deg, #103c59 5%, #126783 45%, #2a9fba 88%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-carrusel {
+  position: relative;
+  max-width: 1680px;
+  margin: 0 auto 22px;
+}
+.hero-carrusel__escenario {
+  position: relative;
+  height: clamp(330px, 37vw, 540px);
+  margin: 0 auto;
+}
+.hero-carrusel__foto {
+  --desplazamiento: 0%;
+  --escala: 1;
+  --giro: 0deg;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  width: clamp(310px, 44vw, 640px);
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  overflow: hidden;
+  border: 4px solid #fff;
+  border-radius: 28px;
+  background: #edf6f8;
+  box-shadow: 0 20px 44px -18px rgb(18 60 89 / 28%);
+  cursor: pointer;
+  transform: translate(-50%, -50%) translateX(var(--desplazamiento))
+    scale(var(--escala)) rotate(var(--giro));
+  transition:
+    transform 1400ms cubic-bezier(0.22, 0.68, 0.2, 1),
+    opacity 900ms ease,
+    visibility 0s,
+    box-shadow 250ms ease;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+.hero-carrusel__foto[data-posicion="-1"] {
+  --desplazamiento: -65%;
+  --escala: 0.76;
+  --giro: -6deg;
+  z-index: 2;
+}
+.hero-carrusel__foto[data-posicion="1"] {
+  --desplazamiento: 65%;
+  --escala: 0.76;
+  --giro: 6deg;
+  z-index: 2;
+}
+.hero-carrusel__foto[data-posicion="-2"] {
+  --desplazamiento: -103%;
+  --escala: 0.54;
+  --giro: -11deg;
+  z-index: 1;
+}
+.hero-carrusel__foto[data-posicion="2"] {
+  --desplazamiento: 103%;
+  --escala: 0.54;
+  --giro: 11deg;
+  z-index: 1;
+}
+.hero-carrusel__foto img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero-carrusel__foto:focus-visible {
+  outline: 3px solid #126783;
+  outline-offset: 4px;
+}
+.hero-fotografico__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 17px 34px;
+  border-radius: 999px;
+  background: linear-gradient(105deg, #126783, #2a9fba);
+  color: #fff;
+  font-family: var(--fuente-marca);
+  font-size: 20px;
+  transition: transform 180ms ease;
+}
+.hero-fotografico__cta:hover {
+  transform: translateY(-3px);
+}
+.hero-fotografico__cta:focus-visible {
+  outline: 3px solid #126783;
+  outline-offset: 5px;
+}
+@media (max-width: 600px) {
+  .hero-fotografico {
+    padding-top: 28px;
+    padding-bottom: 30px;
+  }
+  .hero-fotografico h1 {
+    font-size: clamp(30px, 7vw, 40px);
+    padding-inline: 22px;
+    margin-bottom: 12px;
+  }
+  .hero-carrusel__escenario {
+    height: 300px;
+  }
+  .hero-carrusel__foto {
+    width: 78vw;
+    min-width: 0;
+    border-width: 3px;
+    border-radius: 20px;
+  }
+  .hero-carrusel__foto[data-posicion="-1"] {
+    --desplazamiento: -50%;
+  }
+  .hero-carrusel__foto[data-posicion="1"] {
+    --desplazamiento: 50%;
+  }
+  .hero-fotografico__cta {
+    font-size: 18px;
+    padding: 15px 30px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-fotografico__cta {
+    transition: none;
+  }
+}
+.hero-carrusel__foto[data-posicion="-3"],
+.hero-carrusel__foto[data-posicion="-4"] {
+  --desplazamiento: -145%;
+  --escala: 0.4;
+  --giro: -14deg;
+}
+.hero-carrusel__foto[data-posicion="3"],
+.hero-carrusel__foto[data-posicion="4"] {
+  --desplazamiento: 145%;
+  --escala: 0.4;
+  --giro: 14deg;
+}
+.hero-carrusel__foto--fuera {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 0;
+  /* Sale por el lateral antes de ocultarse, sin desvanecer la fotografía. */
+  transition:
+    transform 1400ms cubic-bezier(0.22, 0.68, 0.2, 1),
+    opacity 900ms ease,
+    visibility 0s 1400ms,
+    box-shadow 250ms ease;
+}
+/* Permite pausar con teclado o lector de pantalla sin añadir controles al diseño. */
+.hero-carrusel__pausa-accesible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.hero-carrusel__pausa-accesible:focus-visible {
+  width: auto;
+  height: auto;
+  top: 12px;
+  right: 24px;
+  z-index: 5;
+  padding: 10px 16px;
+  overflow: visible;
+  clip-path: none;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #126783;
+  font-family: var(--fuente-marca);
+  outline: 2px solid #126783;
+}

@@ -2,7 +2,8 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { LogoTurnosRapidos } from "@/componentes/layout/logo-turnos-rapidos";
@@ -10,7 +11,6 @@ import { clienteAutenticacion } from "@/lib/cliente-autenticacion";
 
 export function FormularioAcceso() {
   const parametros = useSearchParams();
-  const router = useRouter();
   const registro = parametros.get("modo") !== "ingreso";
   const [verContrasena, setVerContrasena] = useState(false);
   const [verRepeticion, setVerRepeticion] = useState(false);
@@ -60,7 +60,6 @@ export function FormularioAcceso() {
           email,
           password,
           rememberMe: true,
-          callbackURL: "/panel",
         });
 
     setCargando(false);
@@ -82,8 +81,7 @@ export function FormularioAcceso() {
       return;
     }
 
-    router.push("/panel");
-    router.refresh();
+    window.location.assign("/primeros-pasos");
   }
 
   async function ingresarConGoogle() {
@@ -98,7 +96,7 @@ export function FormularioAcceso() {
 
     await clienteAutenticacion.signIn.social({
       provider: "google",
-      callbackURL: registro ? "/primeros-pasos" : "/panel",
+      callbackURL: "/primeros-pasos",
     });
   }
 
@@ -125,10 +123,26 @@ export function FormularioAcceso() {
   }
 
   return (
-    <main className="acceso">
+    <main
+      className={`acceso acceso--fondo-7${registro ? "" : " acceso--ingreso"}`}
+    >
       <Link className="acceso__logo" href="/" aria-label="Volver al inicio">
         <LogoTurnosRapidos />
       </Link>
+
+      <div className="acceso__imagen-variante" aria-hidden="true">
+        <Image
+          src={
+            registro
+              ? "/acceso/ilustracion-agenda.png"
+              : "/acceso/ilustracion-ingreso.png"
+          }
+          alt=""
+          width={520}
+          height={520}
+          sizes="(max-width: 600px) 90vw, 42vw"
+        />
+      </div>
 
       <section className="acceso__formulario" aria-labelledby="titulo-acceso">
         <div className="formulario-caja">
@@ -150,6 +164,7 @@ export function FormularioAcceso() {
               title="Continuar con Google"
             >
               <FcGoogle aria-hidden="true" />
+              <span>Continuar con Google</span>
             </button>
 
             <div className="separador">
@@ -158,8 +173,8 @@ export function FormularioAcceso() {
             </div>
 
             {registro && (
-              <label>
-                Nombre
+              <label className="campo-flotante">
+                <span>Nombre</span>
                 <input
                   required
                   minLength={2}
@@ -172,8 +187,8 @@ export function FormularioAcceso() {
               </label>
             )}
 
-            <label>
-              Email
+            <label className="campo-flotante">
+              <span>Email</span>
               <input
                 required
                 name="email"
@@ -183,8 +198,8 @@ export function FormularioAcceso() {
               />
             </label>
 
-            <label>
-              Contraseña
+            <label className="campo-flotante">
+              <span>Contraseña</span>
               <div className="password">
                 <input
                   required
@@ -207,8 +222,8 @@ export function FormularioAcceso() {
             </label>
 
             {registro && (
-              <label>
-                Repetir contraseña
+              <label className="campo-flotante">
+                <span>Repetir contraseña</span>
                 <div className="password">
                   <input
                     required
@@ -276,8 +291,9 @@ export function FormularioAcceso() {
           </p>
 
           <small className="terminos">
-            Al continuar aceptás los Términos de uso y la Política de
-            privacidad.
+            Al continuar aceptás los{" "}
+            <Link href="/terminos">Términos de uso</Link> y la{" "}
+            <Link href="/privacidad">Política de privacidad</Link>.
           </small>
         </div>
       </section>

@@ -1,7 +1,7 @@
 /** Valida y crea reservas públicas para el negocio resuelto por slug. */
 import { randomUUID } from "node:crypto";
 import { after, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import { Prisma, type Cliente } from "@prisma/client";
 import { sincronizarReservaEnGoogle } from "@/lib/google-calendar";
 import { prisma } from "@/lib/prisma";
 import { estaDentroDelHorario } from "@/servicios/disponibilidad.service";
@@ -16,6 +16,7 @@ type Entrada = {
   apellido?: string;
   email?: string;
   telefono?: string;
+  aceptaWhatsapp?: boolean;
 };
 
 export async function POST(solicitud: Request) {
@@ -49,6 +50,7 @@ export async function POST(solicitud: Request) {
   const apellido = limpiar(entrada.apellido);
   const email = limpiar(entrada.email)?.toLowerCase() ?? null;
   const telefono = limpiar(entrada.telefono)?.replace(/[^+\d]/g, "") ?? null;
+  const aceptaWhatsapp = entrada.aceptaWhatsapp === true && Boolean(telefono);
   if (negocio.politicaContacto === "EMAIL" && !email)
     return respuesta("Ingresá tu correo para reservar.", 400);
   if (negocio.politicaContacto === "TELEFONO" && !telefono)
@@ -125,6 +127,7 @@ export async function POST(solicitud: Request) {
               OR: [
                 { profesionalId: profesional.id },
                 { profesionalId: null, sedeId: sede.id },
+                { profesionalId: null, sedeId: null },
               ],
             },
             inicio: { lt: fin },
@@ -142,7 +145,7 @@ export async function POST(solicitud: Request) {
         if (ocupada || bloqueo || bloqueoInterno) {
           throw new Error("HORARIO_OCUPADO");
         }
-        const existente =
+        let existente =
           email || telefono
             ? await tx.cliente.findFirst({
                 where: {
@@ -154,14 +157,26 @@ export async function POST(solicitud: Request) {
                 },
               })
             : null;
+        if (!existente && (email || telefono)) {
+          const coincidencias = await tx.$queryRaw<Cliente[]>(Prisma.sql`
+            SELECT * FROM "Cliente" WHERE "negocioId" = ${negocio.id} AND (
+              ${email ? Prisma.sql`LOWER(TRIM("email")) = ${email}` : Prisma.sql`FALSE`}
+              OR ${telefono ? Prisma.sql`regexp_replace("telefono", '[^+0-9]', '', 'g') = ${telefono}` : Prisma.sql`FALSE`}
+            ) ORDER BY "creadoEn" ASC LIMIT 1
+          `);
+          existente = coincidencias[0] ?? null;
+        }
         const cliente = existente
           ? await tx.cliente.update({
               where: { id: existente.id },
               data: {
                 nombre: nombre ?? existente.nombre,
+                
                 apellido: apellido ?? existente.apellido,
                 email: email ?? existente.email,
                 telefono: telefono ?? existente.telefono,
+                aceptaWhatsapp,
+                consentimientoWhatsappEn: aceptaWhatsapp ? new Date() : null,
               },
             })
           : await tx.cliente.create({
@@ -171,6 +186,8 @@ export async function POST(solicitud: Request) {
                 apellido,
                 email,
                 telefono,
+                aceptaWhatsapp,
+                consentimientoWhatsappEn: aceptaWhatsapp ? new Date() : null,
               },
             });
         return tx.reserva.create({
