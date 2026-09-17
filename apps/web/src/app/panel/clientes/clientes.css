@@ -111,6 +111,7 @@
 }
 .dialogo-cliente p {
   font: 15px/1.6 var(--fuente-preguntas);
+  color: #000;
 }
 .dialogo-cliente footer {
   display: flex;

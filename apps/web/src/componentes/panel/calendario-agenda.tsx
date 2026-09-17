@@ -107,21 +107,6 @@ export function CalendarioAgenda({
           elegir={elegirFecha}
           pendiente={pendiente}
         />
-        {rango.cerrado && (
-          <p className="agenda-aviso" role="status">
-            No hay horarios de atención configurados para este día. Los turnos
-            existentes siguen visibles.
-          </p>
-        )}
-        {!visibles.some(
-          (e) =>
-            fechaEnZona(new Date(e.start), zonaHoraria) <= fecha &&
-            fechaEnZona(new Date(e.end), zonaHoraria) >= fecha,
-        ) && (
-          <p className="agenda-aviso">
-            No hay turnos para este día con los filtros elegidos.
-          </p>
-        )}
         {pendiente ? (
           <div
             className="skeleton skeleton--calendario"

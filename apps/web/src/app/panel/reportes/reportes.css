@@ -1,18 +1,141 @@
 /** Mantiene filtros discretos y barras con importes legibles en escritorio y móvil. */
-.reportes-contenido { position: relative; }
-.reportes-cargando { position: absolute; inset: 185px 20px 70px; z-index: 5; background: white; padding: 20px; }
-.reportes-grafico { margin-block: 30px; }
-.reportes-grafico h2 { font-family: var(--fuente-marca); }
-.reportes-leyenda { display: flex; gap: 20px; margin-block: 20px; font-size: 15px; }
-.reportes-leyenda span:before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 3px; background: #126783; }
-.reportes-leyenda span + span:before { background: #b44146; }
-.grafico-intervalos { display: flex; gap: 10px; padding-top: 120px; overflow-x: auto; }
-.grafico-intervalo { flex: 1 0 38px; min-width: 38px; position: relative; }
-.grafico-intervalo__barra { display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 220px; width: 100%; padding: 0; background: none; border: 0; cursor: pointer; }
-.grafico-intervalo__barra > span { display: block; width: 45%; border-radius: 4px 4px 0 0; }
-.barra-ingreso { background: #126783; }
-.barra-egreso { background: #b44146; }
-.grafico-etiqueta { display: block; font-size: 12px; margin-top: 14px; color: #111; text-align: center; }
-.grafico-tooltip { position: absolute; z-index: 1; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); display: grid; gap: 5px; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 13px; white-space: nowrap; }
-.grafico-intervalo:first-child .grafico-tooltip { left: 0; transform: none; }
-.grafico-intervalo:last-child .grafico-tooltip { left: auto; right: 0; transform: none; }
+.reportes-contenido {
+  position: relative;
+}
+.reportes-cargando {
+  position: absolute;
+  inset: 185px 20px 70px;
+  z-index: 5;
+  background: white;
+  padding: 20px;
+}
+.reportes-grafico {
+  margin-block: 30px;
+}
+.reportes-grafico h2 {
+  font-family: var(--fuente-marca);
+}
+.reportes-leyenda {
+  display: flex;
+  gap: 20px;
+  margin-block: 20px;
+  font-size: 15px;
+}
+.reportes-leyenda span:before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 3px;
+  background: #126783;
+}
+.grafico-con-eje-y {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.grafico-eje-y {
+  flex: 0 0 72px;
+  height: 220px;
+  margin-top: 120px;
+  position: relative;
+  border-right: 1px solid #c9d9de;
+  color: #4f6269;
+}
+.grafico-eje-y__titulo {
+  position: absolute;
+  top: -28px;
+  right: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.grafico-eje-y__valores {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-right: 8px;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.grafico-intervalos {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 10px;
+  min-width: 0;
+  padding-top: 120px;
+  overflow-x: auto;
+}
+.grafico-intervalo {
+  flex: 1 0 38px;
+  min-width: 38px;
+  position: relative;
+}
+.grafico-intervalo__barra {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 220px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.grafico-intervalo__barra > span {
+  display: block;
+  width: 45%;
+  border-radius: 4px 4px 0 0;
+}
+.barra-ingreso {
+  background: #126783;
+}
+.grafico-etiqueta {
+  display: block;
+  font-size: 12px;
+  margin-top: 14px;
+  color: #111;
+  text-align: center;
+}
+.grafico-tooltip {
+  position: absolute;
+  z-index: 1;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 5px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.grafico-intervalo:first-child .grafico-tooltip {
+  left: 0;
+  transform: none;
+}
+.grafico-intervalo:last-child .grafico-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+@media (max-width: 600px) {
+  .grafico-eje-y {
+    flex-basis: 60px;
+  }
+  .grafico-eje-y__titulo {
+    font-size: 11px;
+  }
+  .grafico-eje-y__valores {
+    padding-right: 6px;
+    font-size: 10px;
+  }
+}

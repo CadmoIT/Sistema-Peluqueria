@@ -1,11 +1,6 @@
 /** Gestiona profesionales, presentación, disponibilidad e integración de calendario. */
 /* eslint-disable @next/next/no-img-element -- Las imágenes remotas configurables se migrarán al adaptador R2. */
-import {
-  CalendarSync,
-  Edit3,
-  Plus,
-  UserRound,
-} from "lucide-react";
+import { CalendarSync, Edit3, Plus, UserRound } from "lucide-react";
 import {
   actualizarProfesional,
   eliminarProfesional,
@@ -61,8 +56,12 @@ export default async function PaginaEquipo() {
                 </div>
                 <div className="acciones-equipo">
                   <details className="desplegable-accion">
-                    <summary className="boton boton--secundario">
-                      <Edit3 /> Editar
+                    <summary
+                      className="accion-icono accion-icono--editar"
+                      aria-label={`Editar ${profesional.nombre}`}
+                      title={`Editar ${profesional.nombre}`}
+                    >
+                      <Edit3 aria-hidden="true" />
                     </summary>
                     <FormularioProfesional
                       sedes={sedes}
@@ -77,7 +76,12 @@ export default async function PaginaEquipo() {
                     <CalendarSync />
                     {google?.estado === "ACTIVA" ? "Reconectar" : "Google"}
                   </a>
-                  <BotonEliminar id={profesional.id} nombre={`${profesional.nombre} ${profesional.apellido ?? ""}`.trim()} advertencia="Se eliminarán su presentación y sus horarios. Si tiene turnos activos, primero cancelalos o reasignalos desde Agenda. Se revocará su acceso de Profesional y su conexión exclusiva de Google." accion={eliminarProfesional} />
+                  <BotonEliminar
+                    id={profesional.id}
+                    nombre={`${profesional.nombre} ${profesional.apellido ?? ""}`.trim()}
+                    advertencia="Se eliminarán su presentación y sus horarios. Si tiene turnos activos, primero cancelalos o reasignalos desde Agenda. Se revocará su acceso de Profesional y su conexión exclusiva de Google."
+                    accion={eliminarProfesional}
+                  />
                 </div>
               </article>
             );
@@ -137,7 +141,10 @@ function FormularioProfesional({
     ],
   );
   return (
-    <FormularioAccion accion={accion} texto={profesional ? "Guardar cambios" : "Guardar profesional"}>
+    <FormularioAccion
+      accion={accion}
+      texto={profesional ? "Guardar cambios" : "Guardar profesional"}
+    >
       <h2>{profesional ? "Editar profesional" : "Nuevo profesional"}</h2>
       {profesional && <input type="hidden" name="id" value={profesional.id} />}
       <div className="form-grid">
@@ -172,25 +179,29 @@ function FormularioProfesional({
         tipo="profesional"
         valorInicial={profesional?.foto ?? ""}
       />
-      {sedes.length > 1 ? <fieldset className="selector-multiple">
-        <legend>Locales</legend>
-        {sedes.map((sede) => (
-          <label key={sede.id}>
-            <input
-              type="checkbox"
-              name="sedeIds"
-              value={sede.id}
-              defaultChecked={
-                !profesional ||
-                profesional.sedes.some(
-                  (asignacion) => asignacion.sedeId === sede.id,
-                )
-              }
-            />
-            {sede.nombre}
-          </label>
-        ))}
-      </fieldset> : <input type="hidden" name="sedeIds" value={sedes[0]?.id ?? ""} />}
+      {sedes.length > 1 ? (
+        <fieldset className="selector-multiple">
+          <legend>Locales</legend>
+          {sedes.map((sede) => (
+            <label key={sede.id}>
+              <input
+                type="checkbox"
+                name="sedeIds"
+                value={sede.id}
+                defaultChecked={
+                  !profesional ||
+                  profesional.sedes.some(
+                    (asignacion) => asignacion.sedeId === sede.id,
+                  )
+                }
+              />
+              {sede.nombre}
+            </label>
+          ))}
+        </fieldset>
+      ) : (
+        <input type="hidden" name="sedeIds" value={sedes[0]?.id ?? ""} />
+      )}
       <fieldset className="selector-multiple">
         <legend>Servicios</legend>
         {servicios.map((servicio) => (
@@ -212,19 +223,27 @@ function FormularioProfesional({
       </fieldset>
       <fieldset className="selector-multiple horario-profesional">
         <legend>Horario semanal</legend>
-        {sedes.length > 1 ? <label>
-          Local del horario
-          <select
+        {sedes.length > 1 ? (
+          <label>
+            Local del horario
+            <select
+              name="horarioSedeId"
+              defaultValue={primerHorario?.sedeId ?? sedes[0]?.id}
+            >
+              {sedes.map((sede) => (
+                <option value={sede.id} key={sede.id}>
+                  {sede.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <input
             name="horarioSedeId"
-            defaultValue={primerHorario?.sedeId ?? sedes[0]?.id}
-          >
-            {sedes.map((sede) => (
-              <option value={sede.id} key={sede.id}>
-                {sede.nombre}
-              </option>
-            ))}
-          </select>
-        </label> : <input name="horarioSedeId" type="hidden" value={sedes[0]?.id ?? ""} />}
+            type="hidden"
+            value={sedes[0]?.id ?? ""}
+          />
+        )}
         <div className="dias-profesional">
           {diasSemana.map((dia) => (
             <label key={dia.valor}>

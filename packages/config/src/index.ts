@@ -7,7 +7,7 @@ export const PLAN_GRATIS = {
   precioMensual: 0,
   descripcion: "Probá tu agenda y tu sitio durante siete días.",
   destacado: false,
-  beneficios: ["Siete días de prueba", "Sitio de reservas", "Avisos por email durante la prueba"],
+  beneficios: ["Siete días de prueba", "Sitio de reservas", "Avisos por email"],
 } as const;
 
 export const PLANES = [

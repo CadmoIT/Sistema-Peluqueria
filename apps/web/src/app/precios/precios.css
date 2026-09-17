@@ -1,8 +1,12 @@
 /** Estiliza la comparacion comercial y los paquetes adicionales. */
 .precios {
+  min-height: 100vh;
+  background: #fff;
+  color: #000;
   padding-bottom: 100px;
 }
 .precios-hero {
+  background: #fff;
   text-align: center;
   padding: 90px 20px 55px;
 }
@@ -20,69 +24,180 @@
   margin: auto;
 }
 .planes-grid {
-  width: min(1180px, calc(100% - 30px));
+  width: min(1060px, calc(100% - 80px));
   margin: auto;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 46px;
+  padding-block: 18px 24px;
 }
 .planes-grid article {
-  background: #fff;
-  border: 1px solid var(--borde);
-  border-radius: 23px;
-  padding: 34px;
+  --plan-relleno: 28px;
+  --cinta-pliegue: 22px;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+  padding: 38px var(--plan-relleno) 32px;
   position: relative;
+  min-width: 0;
+  min-height: 560px;
+  filter: none;
+  transition: transform 300ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  transform-origin: center;
 }
-.planes-grid article.destacado {
-  border: 2px solid var(--verde);
-  box-shadow: var(--sombra);
+.planes-grid article::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #fff;
+  border-radius: inherit;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+}
+.planes-grid article:focus-within {
+  z-index: 2;
+  outline: 3px solid rgba(18, 103, 131, 0.28);
+  outline-offset: 4px;
 }
 .recomendado {
   position: absolute;
-  right: 20px;
-  top: 20px;
-  background: var(--verde-2);
-  color: var(--verde);
+  left: 50%;
+  top: -18px;
+  transform: translateX(-50%);
+  background: var(--verde);
+  color: #fff;
   border-radius: 99px;
-  padding: 6px 9px;
-  font-size: 8px;
+  padding: 10px 20px;
+  font-size: 12px;
   font-weight: 850;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.9px;
+  white-space: nowrap;
 }
 .planes-grid h2 {
-  color: #111;
-  font: 500 32px var(--fuente-editorial);
+  color: var(--azul-marca);
+  font: 700 34px var(--fuente-editorial);
   margin: 0;
+  text-align: center;
 }
 .planes-grid > article > p {
-  min-height: 48px;
+  min-height: 68px;
+  margin: 12px 0 0;
   color: #111;
   font-size: 16px;
   line-height: 1.4;
+  text-align: center;
 }
 .precio {
+  position: relative;
+  isolation: isolate;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
-  margin: 26px 0;
+  width: calc(100% + 2 * var(--plan-relleno) + var(--cinta-pliegue) - 18px);
+  min-height: 86px;
+  margin: 22px 0 40px calc(-1 * (var(--plan-relleno) + var(--cinta-pliegue)));
+  padding: 12px 28px;
+  color: #fff;
+  transition: filter 300ms ease;
+}
+.precio::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, #126783 0%, #13b8d4 100%);
+  clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 100%, 0 100%);
+}
+.precio::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: -1;
+  width: var(--cinta-pliegue);
+  height: var(--cinta-pliegue);
+  background: #0a4865;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+.precio--prueba::before {
+  background: linear-gradient(105deg, #3478f6 0%, #39c5f4 100%);
+}
+.precio--prueba::after {
+  background: #2368be;
+}
+.precio--autogestionado::before {
+  background: linear-gradient(105deg, #6416d8 0%, #a04dff 100%);
+}
+.precio--autogestionado::after {
+  background: #4b12aa;
+}
+.precio--pro::before {
+  background: linear-gradient(105deg, #c319d9 0%, #ff4fb8 100%);
+}
+.precio--pro::after {
+  background: #9d13ae;
 }
 .precio strong {
-  color: #111;
-  font-size: 32px;
+  color: #fff;
+  font-family: var(--fuente-marca);
+  font-size: clamp(36px, 3.4vw, 46px);
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-shadow:
+    0 2px 0 rgba(4, 55, 75, 0.35),
+    0 4px 6px rgba(4, 55, 75, 0.18);
 }
-.precio span {
-  color: #111;
-  font-size: 12px;
-  line-height: 1.4;
+.precio__moneda {
+  color: #fff;
+  font-family: var(--fuente-marca);
+  font-size: 15px;
+  align-self: center;
 }
 .planes-grid .boton {
-  width: 100%;
+  align-self: center;
+  width: auto;
+  min-width: 176px;
+  min-height: 44px;
+  margin-top: auto;
+  padding: 10px 24px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(105deg, #126783, #2a9fba);
+  color: #fff;
+  font-size: 16px;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+.planes-grid .boton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(18, 103, 131, 0.25);
+}
+.planes-grid .boton:focus-visible {
+  outline: 3px solid #79cad8;
+  outline-offset: 4px;
+}
+.planes-grid .boton[aria-disabled="true"] {
+  opacity: 0.7;
+}
+.plan-card--prueba .boton {
+  background: linear-gradient(105deg, #3478f6, #39c5f4);
+}
+.plan-card--autogestionado .boton {
+  background: linear-gradient(105deg, #6416d8, #a04dff);
+}
+.plan-card--pro .boton {
+  background: linear-gradient(105deg, #c319d9, #ff4fb8);
 }
 .planes-grid ul {
   list-style: none;
-  padding: 22px 0 0;
-  border-top: 1px solid var(--borde);
-  margin-top: 24px;
+  padding: 0;
+  margin: 0 0 34px;
   display: grid;
   gap: 12px;
 }
@@ -95,8 +210,52 @@
   line-height: 1.35;
 }
 .planes-grid li svg {
-  width: 14px;
-  color: var(--verde);
+  width: 18px;
+  height: 18px;
+  color: #17a96b;
+  flex: 0 0 auto;
+}
+
+.planes-grid article:hover {
+  z-index: 3;
+  transform: scale(1.22);
+}
+
+@media (max-width: 1050px) and (min-width: 901px) {
+  .planes-grid {
+    gap: 28px;
+  }
+
+  .planes-grid article {
+    --plan-relleno: 22px;
+  }
+
+  .precio strong {
+    font-size: 34px;
+  }
+}
+
+@media (max-width: 900px) {
+  .planes-grid {
+    width: min(400px, calc(100% - 68px));
+    grid-template-columns: 1fr;
+    gap: 46px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planes-grid article,
+  .precio,
+  .planes-grid .boton {
+    transition: none;
+  }
+
+  .planes-grid article:hover {
+    transform: scale(1.22);
+  }
+  .planes-grid .boton:hover {
+    transform: none;
+  }
 }
 .whatsapp-planes {
   width: min(1020px, calc(100% - 30px));

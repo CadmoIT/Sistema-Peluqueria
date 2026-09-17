@@ -98,7 +98,7 @@
   background: #fff;
   box-shadow: none;
   color: #000;
-  font-family: var(--fuente-marca);
+  font-family: var(--fuente-preguntas);
 }
 
 .formulario-caja h1 {

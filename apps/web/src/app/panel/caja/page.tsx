@@ -1,5 +1,5 @@
 /** Registra ingresos y egresos operativos y resume el movimiento del día. */
-import { ArrowDownLeft, ArrowUpRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { registrarMovimientoCaja } from "./acciones";
 import { PuntoVenta } from "@/componentes/panel/punto-venta";
 import { FormularioAccion } from "@/componentes/panel/formulario-accion";
@@ -23,7 +23,7 @@ export default async function PaginaCaja() {
         </div>
         <details className="desplegable-accion">
           <summary className="boton boton--primario">
-            <Plus /> Registrar movimiento
+            <Plus /> Agregar
           </summary>
           <FormularioAccion accion={registrarMovimientoCaja} texto="Registrar">
             <h2>Movimiento de caja</h2>
@@ -56,13 +56,39 @@ export default async function PaginaCaja() {
                 </select>
               </label>
             )}
-            {datos.profesionales.length ? <label>Atribuir movimiento a<select name="atribucion" required defaultValue=""><option value="" disabled>Elegí Local o una persona</option><option value="local">Local</option>{datos.profesionales.map((p) => <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>)}</select></label> : <input name="atribucion" type="hidden" value="local" />}
+            {datos.profesionales.length ? (
+              <label>
+                Atribuir movimiento a
+                <select name="atribucion" required defaultValue="">
+                  <option value="" disabled>
+                    Elegí Local o una persona
+                  </option>
+                  <option value="local">Local</option>
+                  {datos.profesionales.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} {p.apellido}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <input name="atribucion" type="hidden" value="local" />
+            )}
           </FormularioAccion>
         </details>
       </header>
-      <MetricasOperativas datos={[{ etiqueta: "Ingresos de hoy", valor: ingresos }, { etiqueta: "Egresos de hoy", valor: egresos }, { etiqueta: "Saldo del día", valor: ingresos - egresos }]} />
+      <MetricasOperativas
+        datos={[
+          { etiqueta: "Ingresos de hoy", valor: ingresos },
+          { etiqueta: "Egresos de hoy", valor: egresos },
+          { etiqueta: "Saldo del día", valor: ingresos - egresos },
+        ]}
+      />
       <PuntoVenta
-        profesionales={datos.profesionales.map((p) => ({ id: p.id, nombre: [p.nombre, p.apellido].filter(Boolean).join(" ") }))}
+        profesionales={datos.profesionales.map((p) => ({
+          id: p.id,
+          nombre: [p.nombre, p.apellido].filter(Boolean).join(" "),
+        }))}
         sedes={datos.sedes.map((sede) => ({
           id: sede.id,
           nombre: sede.nombre,
@@ -86,41 +112,6 @@ export default async function PaginaCaja() {
           })),
         ]}
       />
-      <div className="tabla-panel movimientos-caja">
-        {datos.movimientos.map((movimiento) => (
-          <div className="tabla-panel__fila" key={movimiento.id}>
-            <span>
-              {movimiento.tipo === "INGRESO" ? (
-                <ArrowUpRight />
-              ) : (
-                <ArrowDownLeft />
-              )}
-            </span>
-            <strong>{movimiento.concepto}</strong>
-            <small>
-              {new Intl.DateTimeFormat("es-AR", { timeStyle: "short", hour12: false, timeZone: datos.negocio.zonaHoraria }).format(
-                movimiento.creadoEn,
-              )}
-            </small>
-            <b>
-              {movimiento.tipo === "EGRESO" ? "−" : "+"}
-              {pesos(Number(movimiento.monto))}
-            </b>
-          </div>
-        ))}
-        {!datos.movimientos.length && (
-          <p className="sin-resultados">
-            Todavía no registraste movimientos hoy.
-          </p>
-        )}
-      </div>
     </div>
   );
-}
-function pesos(valor: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(valor);
 }

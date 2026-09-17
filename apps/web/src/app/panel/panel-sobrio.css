@@ -5,6 +5,7 @@
   --panel-borde: #e5e7e8;
   --panel-marca: #126783;
   --panel-marca-suave: #eaf5f7;
+  --panel-sidebar-fondo: #f7f8f8;
 }
 
 .panel-shell {
@@ -18,7 +19,7 @@
 }
 .nav-panel {
   padding: 18px 12px 14px;
-  background: #fff;
+  background: var(--panel-sidebar-fondo);
   color: var(--panel-tinta);
   border-right: 0;
   z-index: 30;
@@ -67,7 +68,9 @@
   transform: none;
 }
 .nav-panel nav a.activo::before,
-.nav-panel__configuracion > div a.activo::before { content: none; }
+.nav-panel__configuracion > div a.activo::before {
+  content: none;
+}
 .nav-panel__alternar-arriba {
   width: 44px;
   height: 44px;
@@ -80,7 +83,9 @@
   color: #111;
   cursor: pointer;
 }
-.nav-panel__alternar-arriba:hover { background: var(--panel-suave); }
+.nav-panel__alternar-arriba:hover {
+  background: var(--panel-suave);
+}
 .nav-panel__configuracion {
   margin-top: auto;
 }

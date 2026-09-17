@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache";
 import { leerTexto } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
 import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import {
+  eliminarFicha,
+  type ResultadoAccion,
+} from "@/servicios/eliminacion-fichas.service";
 export type ResultadoServicio = { ok: boolean; mensaje: string };
 function invalidarCatalogo(slug: string) {
   for (const ruta of [
@@ -124,34 +128,28 @@ export async function guardarServicio(
     };
   }
 }
-export async function alternarServicio(
-  _anterior: ResultadoServicio,
+export async function eliminarServicio(
   datos: FormData,
-): Promise<ResultadoServicio> {
-  const { negocio } = await requerirContextoPanel();
-  try {
-    const id = leerTexto(datos, "id");
-    const servicio = await prisma.servicio.findFirst({
-      where: { id, negocioId: negocio.id },
-      select: { activo: true },
-    });
-    if (!servicio)
-      return { ok: false, mensaje: "El servicio ya no está disponible." };
-    await prisma.servicio.update({
-      where: { id },
-      data: { activo: !servicio.activo },
-    });
-    invalidarCatalogo(negocio.slug);
+): Promise<ResultadoAccion> {
+  const { negocio, membresia } = await requerirContextoPanel();
+  if (!["DUENO", "ADMINISTRADOR"].includes(membresia.rol))
     return {
-      ok: true,
-      mensaje: servicio.activo
-        ? "Servicio oculto de tu página."
-        : "Servicio publicado.",
+      ok: false,
+      mensaje: "Sólo el dueño o administrador puede eliminar fichas.",
     };
+  try {
+    const resultado = await eliminarFicha(
+      prisma,
+      negocio.id,
+      "servicio",
+      leerTexto(datos, "id"),
+    );
+    if (resultado.ok) invalidarCatalogo(negocio.slug);
+    return resultado;
   } catch {
     return {
       ok: false,
-      mensaje: "No pudimos cambiar la visibilidad del servicio.",
+      mensaje: "No pudimos eliminar el servicio. Intentá nuevamente.",
     };
   }
 }

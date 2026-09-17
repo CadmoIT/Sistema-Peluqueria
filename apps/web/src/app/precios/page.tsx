@@ -1,8 +1,9 @@
 /** Expone planes, paquetes de mensajeria y reglas comerciales transparentes. */
 import Link from "next/link";
-import { Check } from "lucide-react";
-import { PLANES, PLAN_GRATIS, PLAN_PRO, formatearPesos } from "@turnos/config";
+import DoneIcon from "@mui/icons-material/Done";
+import { PLANES, PLAN_GRATIS, PLAN_PRO } from "@turnos/config";
 import { CabeceraPublica } from "../../componentes/layout/cabecera-publica";
+import { EstilosPrecios } from "@/componentes/precios/estilos-precios";
 import "./precios.css";
 export const metadata = { title: "Precios" };
 export default function PaginaPrecios() {
@@ -22,59 +23,67 @@ export default function PaginaPrecios() {
             el plan que acompañe tu negocio.
           </p>
         </section>
-        <section className="planes-grid">
-          {[PLAN_GRATIS, ...PLANES, PLAN_PRO].map((plan) => (
-            <article
-              className={plan.destacado ? "destacado" : ""}
-              key={plan.id}
-            >
-              {plan.destacado && (
-                <span className="recomendado">MAS ELEGIDO</span>
-              )}
-              <h2>{plan.nombre}</h2>
-              <p>{plan.descripcion}</p>
-              <div className="precio">
-                <strong>
-                  {plan.precioMensual === null
-                    ? "A definir"
-                    : formatearPesos(plan.precioMensual)}
-                </strong>
-                {plan.id !== "PRUEBA" && plan.precioMensual !== null && (
-                  <span>
-                    / mes
-                    <br />
-                    IVA incluido
-                  </span>
+        <EstilosPrecios>
+          <section className="planes-grid">
+            {[PLAN_GRATIS, ...PLANES, PLAN_PRO].map((plan) => (
+              <article
+                className={`plan-card plan-card--${plan.id.toLowerCase()}${plan.destacado ? " destacado" : ""}`}
+                key={plan.id}
+              >
+                {plan.destacado && (
+                  <span className="recomendado">MÁS ELEGIDO</span>
                 )}
-              </div>
-              {plan.id === "pro" ? (
-                <span className="boton boton--secundario" aria-disabled="true">
-                  Próximamente
-                </span>
-              ) : (
-                <Link
-                  href="/acceder"
-                  className={`boton ${plan.destacado ? "boton--primario" : "boton--secundario"}`}
-                >
-                  {plan.id === "PRUEBA" ? "Probar gratis" : "Empezar"}
-                </Link>
-              )}
-              <ul>
-                {plan.beneficios.map((b) => (
-                  <li key={b}>
-                    <Check /> {b}
-                  </li>
-                ))}
-                <li>
-                  <Check /> Reservas, sedes y equipo ilimitados
-                </li>
-                <li>
-                  <Check /> Mercado Pago y reportes
-                </li>
-              </ul>
-            </article>
-          ))}
-        </section>
+                <h2>{plan.nombre}</h2>
+                <p>{plan.descripcion}</p>
+                <div className={`precio precio--${plan.id.toLowerCase()}`}>
+                  <strong>
+                    {plan.precioMensual === 0
+                      ? "Gratis"
+                      : plan.precioMensual === null
+                        ? "A definir"
+                        : plan.precioMensual.toLocaleString("es-AR")}
+                  </strong>
+                  {plan.precioMensual !== null && plan.precioMensual !== 0 && (
+                    <span className="precio__moneda">ARS</span>
+                  )}
+                </div>
+                <ul>
+                  {plan.beneficios.map((b) => (
+                    <li key={b}>
+                      <DoneIcon aria-hidden="true" /> {b}
+                    </li>
+                  ))}
+                  {plan.id !== "pro" && (
+                    <>
+                      <li>
+                        <DoneIcon aria-hidden="true" /> Reservas, sedes y equipo
+                        ilimitados
+                      </li>
+                      <li>
+                        <DoneIcon aria-hidden="true" /> Mercado Pago y reportes
+                      </li>
+                    </>
+                  )}
+                </ul>
+                {plan.id === "pro" ? (
+                  <span
+                    className="boton boton--secundario"
+                    aria-disabled="true"
+                  >
+                    Próximamente
+                  </span>
+                ) : (
+                  <Link
+                    href="/acceder"
+                    className={`boton ${plan.destacado ? "boton--primario" : "boton--secundario"}`}
+                  >
+                    {plan.id === "PRUEBA" ? "Probar gratis" : "Empezar"}
+                  </Link>
+                )}
+              </article>
+            ))}
+          </section>
+        </EstilosPrecios>
         <section className="faq-precios">
           <h2>Preguntas frecuentes</h2>
           <details>

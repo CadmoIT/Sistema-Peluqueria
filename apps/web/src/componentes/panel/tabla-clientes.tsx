@@ -37,11 +37,7 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
     if (visible) dialogo.current?.showModal();
   }, [visible]);
   const visibles = useMemo(
-    () =>
-      clientes.filter(
-        (cliente) =>
-          coincideCliente(cliente, busqueda),
-      ),
+    () => clientes.filter((cliente) => coincideCliente(cliente, busqueda)),
     [clientes, busqueda],
   );
   async function realizar(
@@ -134,19 +130,19 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
               >
                 <Edit3 />
               </button>
-                <button
-                  type="button"
-                  className="accion-icono accion-icono--eliminar"
-                  aria-label="Eliminar cliente"
-                  title="Eliminar cliente"
-                  disabled={guardando}
-                  onClick={() => {
-                    setError("");
-                    setArchivando(cliente);
-                  }}
-                >
-                  <Trash2 />
-                </button>
+              <button
+                type="button"
+                className="accion-icono accion-icono--eliminar"
+                aria-label="Eliminar cliente"
+                title="Eliminar cliente"
+                disabled={guardando}
+                onClick={() => {
+                  setError("");
+                  setArchivando(cliente);
+                }}
+              >
+                <Trash2 />
+              </button>
             </div>
           </div>
         ))}
@@ -198,11 +194,8 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
             <form action={(datos) => realizar(eliminarCliente, datos)}>
               <input type="hidden" name="id" value={archivando!.id} />
               <p>
-                Se perderán definitivamente el nombre, contacto y demás datos de esta ficha.
-                Los turnos y los importes históricos se conservarán como «Cliente eliminado».
-              </p>
-              <p>
-                Si vuelve a reservar, se creará una ficha nueva. Esta acción no se puede deshacer.
+                Se perderán definitivamente el nombre, contacto y demás datos de
+                esta ficha.
               </p>
               {error && <p role="alert">{error}</p>}
               <footer>

@@ -1,6 +1,6 @@
 /** Define metadatos, fuentes y estilos globales para todas las superficies web. */
 import type { Metadata } from "next";
-import { Doppio_One, PT_Serif, PT_Serif_Caption } from "next/font/google";
+import { Doppio_One, Fira_Sans, PT_Serif } from "next/font/google";
 import "./globals.css";
 import { CierreDesplegables } from "@/componentes/interaccion/cierre-exterior";
 
@@ -15,8 +15,8 @@ const ptSerif = PT_Serif({
   subsets: ["latin"],
   variable: "--fuente-editorial",
 });
-const ptSerifCaption = PT_Serif_Caption({
-  weight: "400",
+const firaSans = Fira_Sans({
+  weight: ["300", "400", "500", "600", "700", "800"],
   style: ["normal", "italic"],
   subsets: ["latin"],
   variable: "--fuente-preguntas",
@@ -26,7 +26,11 @@ export const metadata: Metadata = {
   title: { default: "TurnosRapidos", template: "%s · TurnosRapidos" },
   description: "Tu negocio, tus turnos y tus clientes en un solo lugar.",
   icons: {
-    icon: { url: "/marca/favicon.svg", type: "image/svg+xml" },
+    icon: {
+      url: "/marca/favicon.png?v=2",
+      type: "image/png",
+      sizes: "1120x1120",
+    },
     apple: "/marca/logo-turnos-rapidos.png",
   },
 };
@@ -37,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="es-AR">
       <body
-        className={`${doppioOne.variable} ${ptSerif.variable} ${ptSerifCaption.variable}`}
+        className={`${doppioOne.variable} ${ptSerif.variable} ${firaSans.variable}`}
       >
         <CierreDesplegables />
         {children}

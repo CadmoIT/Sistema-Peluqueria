@@ -368,6 +368,7 @@
 .como-funciona {
   padding: 100px 0;
   background: #eaf7fa;
+  scroll-margin-top: 20px;
 }
 
 .como-funciona__interior {
@@ -482,7 +483,8 @@
 }
 
 .cierre-landing p {
-  max-width: 340px;
+  max-width: 520px;
+  white-space: nowrap;
 }
 
 .pie {
@@ -647,6 +649,11 @@
     display: block;
     padding-top: 54px;
     padding-bottom: 54px;
+  }
+
+  .cierre-landing p {
+    max-width: 340px;
+    white-space: normal;
   }
 
   .cierre-landing .boton {
