@@ -1,5 +1,6 @@
 /** Muestra el calendario real y permite crear turnos internos sin superposiciones. */
 import { Plus } from "lucide-react";
+import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 import { CalendarioAgenda } from "@/componentes/panel/calendario-agenda";
 import { FormularioTurno } from "@/componentes/panel/agenda/formulario-turno";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
@@ -32,9 +33,11 @@ export default async function PaginaAgenda({
         estado: reserva.estado,
         cliente: nombreCliente(reserva.cliente),
         servicio,
+        observacion: reserva.notas,
         profesionalId: reserva.profesionalId ?? "profesional-eliminado",
-        profesional:
-          reserva.profesional ? `${reserva.profesional.nombre} ${reserva.profesional.apellido ?? ""}`.trim() : "Profesional eliminado",
+        profesional: reserva.profesional
+          ? `${reserva.profesional.nombre} ${reserva.profesional.apellido ?? ""}`.trim()
+          : "Profesional eliminado",
         sedeId: reserva.sedeId,
         sede: reserva.sede.nombre,
       };
@@ -49,6 +52,7 @@ export default async function PaginaAgenda({
       estado: "OCUPADO",
       cliente: "Evento privado de Google",
       servicio: "Bloqueo externo",
+      observacion: null,
       profesionalId: bloqueo.conexion.profesionalId ?? "",
       profesional: bloqueo.conexion.nombre,
       sedeId: bloqueo.conexion.sedeId ?? "",
@@ -64,6 +68,7 @@ export default async function PaginaAgenda({
       estado: "OCUPADO",
       cliente: "Horario bloqueado",
       servicio: bloqueo.motivo || "Bloqueo de atención",
+      observacion: null,
       profesionalId: bloqueo.profesionalId,
       profesional: bloqueo.profesional.nombre,
       sedeId: "",
@@ -76,6 +81,7 @@ export default async function PaginaAgenda({
     datos.servicios.length > 0;
   return (
     <div className="panel-contenido panel-contenido--ancho panel-contenido--agenda">
+      <VistaPanelLista ruta="/panel/agenda" />
       <header className="cabecera-seccion">
         <div>
           <h1>Agenda</h1>
@@ -137,17 +143,30 @@ export default async function PaginaAgenda({
         fecha={datos.fecha}
         zonaHoraria={datos.negocio.zonaHoraria}
         eventos={eventos}
-        profesionales={[...datos.profesionales.map((profesional) => ({
-          id: profesional.id,
-          nombre: `${profesional.nombre} ${profesional.apellido ?? ""}`.trim(),
-          localesIds: profesional.sedes.map((s) => s.sedeId),
-          horarios: profesional.horarios.map((horario) => ({
-            sedeId: horario.sedeId,
-            diaSemana: horario.diaSemana,
-            comienza: horario.comienza,
-            termina: horario.termina,
+        profesionales={[
+          ...datos.profesionales.map((profesional) => ({
+            id: profesional.id,
+            nombre:
+              `${profesional.nombre} ${profesional.apellido ?? ""}`.trim(),
+            localesIds: profesional.sedes.map((s) => s.sedeId),
+            horarios: profesional.horarios.map((horario) => ({
+              sedeId: horario.sedeId,
+              diaSemana: horario.diaSemana,
+              comienza: horario.comienza,
+              termina: horario.termina,
+            })),
           })),
-        })), ...(datos.reservas.some((r) => !r.profesionalId) ? [{ id: "profesional-eliminado", nombre: "Profesional eliminado", localesIds: [], horarios: [] }] : [])]}
+          ...(datos.reservas.some((r) => !r.profesionalId)
+            ? [
+                {
+                  id: "profesional-eliminado",
+                  nombre: "Profesional eliminado",
+                  localesIds: [],
+                  horarios: [],
+                },
+              ]
+            : []),
+        ]}
         sedes={datos.sedes.map((sede) => ({
           id: sede.id,
           nombre: sede.nombre,
@@ -163,12 +182,14 @@ export default async function PaginaAgenda({
   );
 }
 
-function nombreCliente(cliente: {
-  nombre: string | null;
-  apellido: string | null;
-  email: string | null;
-  telefono: string | null;
-} | null) {
+function nombreCliente(
+  cliente: {
+    nombre: string | null;
+    apellido: string | null;
+    email: string | null;
+    telefono: string | null;
+  } | null,
+) {
   if (!cliente) return "Cliente eliminado";
   return (
     [cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||

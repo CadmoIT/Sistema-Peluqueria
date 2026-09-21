@@ -104,10 +104,11 @@
 .dialogo-cliente {
   width: min(480px, calc(100vw - 32px));
   color: #111;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(14, 54, 70, 0.12);
 }
 .dialogo-cliente::backdrop {
-  background: #0004;
+  background: rgba(17, 24, 29, 0.28);
+  backdrop-filter: blur(5px);
 }
 .dialogo-cliente p {
   font: 15px/1.6 var(--fuente-preguntas);

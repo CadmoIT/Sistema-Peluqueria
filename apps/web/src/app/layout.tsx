@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { Doppio_One, Fira_Sans, PT_Serif } from "next/font/google";
 import "./globals.css";
 import { CierreDesplegables } from "@/componentes/interaccion/cierre-exterior";
+import { ProveedorCarga } from "@/componentes/carga/proveedor-carga";
+import "@/componentes/carga/carga.css";
 
 const doppioOne = Doppio_One({
   weight: "400",
@@ -44,7 +46,7 @@ export default function RootLayout({
         className={`${doppioOne.variable} ${ptSerif.variable} ${firaSans.variable}`}
       >
         <CierreDesplegables />
-        {children}
+        <ProveedorCarga>{children}</ProveedorCarga>
       </body>
     </html>
   );

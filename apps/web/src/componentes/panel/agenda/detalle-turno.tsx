@@ -122,6 +122,12 @@ export function DetalleTurno({
               .join(" – ")}
           </dd>
         </div>
+        {evento.observacion && (
+          <div>
+            <dt>Observación</dt>
+            <dd>{evento.observacion}</dd>
+          </div>
+        )}
       </dl>
       {evento.tipo === "reserva" && (
         <footer>

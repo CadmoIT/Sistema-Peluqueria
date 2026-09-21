@@ -43,12 +43,6 @@
 .formulario-servicio {
   color: #111;
 }
-@media (min-width: 821px) {
-  .servicios-pagina .tarjeta-listado__acciones .formulario-servicio {
-    left: 0;
-    right: auto;
-  }
-}
 @media (max-width: 820px) {
   .servicios-pagina .tarjeta-listado {
     padding: 18px;

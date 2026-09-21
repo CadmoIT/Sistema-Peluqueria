@@ -1,5 +1,6 @@
 /** Presenta dinero registrado en caja con filtros automáticos y agrupación por hora o fecha. */
 import { obtenerReportes } from "@/servicios/panel-datos.service";
+import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 import { agruparMovimientos } from "@/lib/reportes-movimientos";
 import { FiltrosReportes } from "@/componentes/panel/filtros-reportes";
 import { MetricasOperativas } from "@/componentes/panel/metricas-operativas";
@@ -20,8 +21,12 @@ export default async function PaginaReportes({
   const ingresos = datos.movimientos
     .filter((m) => m.tipo === "INGRESO")
     .reduce((s, m) => s + Number(m.monto), 0);
+  const egresos = datos.movimientos
+    .filter((m) => m.tipo === "EGRESO")
+    .reduce((s, m) => s + Number(m.monto), 0);
   return (
     <div className="panel-contenido reportes-contenido">
+      <VistaPanelLista ruta="/panel/reportes" />
       <header className="cabecera-seccion">
         <h1>Reportes</h1>
       </header>
@@ -38,14 +43,8 @@ export default async function PaginaReportes({
       <MetricasOperativas
         datos={[
           { etiqueta: "Ingresos", valor: ingresos },
-          {
-            etiqueta: "Saldo",
-            valor:
-              ingresos -
-              datos.movimientos
-                .filter((m) => m.tipo === "EGRESO")
-                .reduce((s, m) => s + Number(m.monto), 0),
-          },
+          { etiqueta: "Egresos", valor: egresos },
+          { etiqueta: "Saldo", valor: ingresos - egresos },
         ]}
       />
       <section className="reportes-grafico">
@@ -60,7 +59,8 @@ export default async function PaginaReportes({
         {datos.movimientos.length ? (
           <>
             <div className="reportes-leyenda">
-              <span>Ingresos</span>
+              <span className="reporte-leyenda-ingreso">Ingresos</span>
+              <span className="reporte-leyenda-egreso">Egresos</span>
             </div>
             <GraficoMovimientos
               intervalos={agruparMovimientos(

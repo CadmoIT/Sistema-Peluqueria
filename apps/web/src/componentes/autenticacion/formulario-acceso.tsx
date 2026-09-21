@@ -2,15 +2,18 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { LogoTurnosRapidos } from "@/componentes/layout/logo-turnos-rapidos";
 import { clienteAutenticacion } from "@/lib/cliente-autenticacion";
+import { useCargaAplicacion } from "@/componentes/carga/proveedor-carga";
 
 export function FormularioAcceso() {
   const parametros = useSearchParams();
+  const router = useRouter();
+  const { iniciarIngreso, cancelarIngreso } = useCargaAplicacion();
   const registro = parametros.get("modo") !== "ingreso";
   const [verContrasena, setVerContrasena] = useState(false);
   const [verRepeticion, setVerRepeticion] = useState(false);
@@ -48,40 +51,50 @@ export function FormularioAcceso() {
     }
 
     setCargando(true);
+    if (!registro) iniciarIngreso();
 
-    const resultado = registro
-      ? await clienteAutenticacion.signUp.email({
-          name: nombre,
-          email,
-          password,
-          callbackURL: "/primeros-pasos",
-        })
-      : await clienteAutenticacion.signIn.email({
-          email,
-          password,
-          rememberMe: true,
-        });
+    try {
+      const resultado = registro
+        ? await clienteAutenticacion.signUp.email({
+            name: nombre,
+            email,
+            password,
+            callbackURL: "/primeros-pasos",
+          })
+        : await clienteAutenticacion.signIn.email({
+            email,
+            password,
+            rememberMe: true,
+          });
 
-    setCargando(false);
-    if (resultado.error) {
-      if (resultado.error.code === "EMAIL_NOT_VERIFIED") {
-        setEmailVerificacion(email);
+      setCargando(false);
+      if (resultado.error) {
+        if (!registro) cancelarIngreso();
+        if (resultado.error.code === "EMAIL_NOT_VERIFIED") {
+          setEmailVerificacion(email);
+        }
+        setMensaje(
+          resultado.error.message ?? "No pudimos completar la operación.",
+        );
+        return;
       }
-      setMensaje(
-        resultado.error.message ?? "No pudimos completar la operación.",
-      );
-      return;
-    }
 
-    if (registro) {
-      setEmailVerificacion(email);
-      setMensaje(
-        "Te enviamos un enlace para verificar tu email. Revisá tu bandeja de entrada para continuar.",
-      );
-      return;
-    }
+      if (registro) {
+        setEmailVerificacion(email);
+        setMensaje(
+          "Te enviamos un enlace para verificar tu email. Revisá tu bandeja de entrada para continuar.",
+        );
+        return;
+      }
 
-    window.location.assign("/primeros-pasos");
+      router.push("/primeros-pasos");
+    } catch {
+      setCargando(false);
+      cancelarIngreso();
+      setMensaje(
+        "No pudimos conectarnos. Revisá tu conexión e intentá de nuevo.",
+      );
+    }
   }
 
   async function ingresarConGoogle() {
@@ -94,10 +107,22 @@ export function FormularioAcceso() {
       return;
     }
 
-    await clienteAutenticacion.signIn.social({
-      provider: "google",
-      callbackURL: "/primeros-pasos",
-    });
+    iniciarIngreso();
+    try {
+      const resultado = await clienteAutenticacion.signIn.social({
+        provider: "google",
+        callbackURL: "/primeros-pasos",
+      });
+      if (resultado.error) {
+        cancelarIngreso();
+        setMensaje(
+          resultado.error.message ?? "No pudimos ingresar con Google.",
+        );
+      }
+    } catch {
+      cancelarIngreso();
+      setMensaje("No pudimos conectarnos con Google. Intentá de nuevo.");
+    }
   }
 
   async function reenviarVerificacion() {

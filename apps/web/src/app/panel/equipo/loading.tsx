@@ -1,3 +1,5 @@
-/** Mantiene estable el equipo mientras se cargan profesionales. */
-import { CargandoModulo } from "@/componentes/panel/cargando-modulo";
-export default function CargandoEquipo() { return <CargandoModulo nombre="equipo" />; }
+/** Comparte el skeleton de equipo con la navegación inmediata del panel. */
+import { SkeletonPanel } from "@/componentes/panel/skeleton-panel";
+export default function CargandoVista() {
+  return <SkeletonPanel ruta="/panel/equipo" />;
+}

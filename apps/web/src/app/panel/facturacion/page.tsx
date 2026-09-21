@@ -3,10 +3,18 @@ import {
   CircleAlert,
   CircleCheck,
   CreditCard,
+  Check,
   ReceiptText,
 } from "lucide-react";
-import { formatearPesos, nombrePlan, PLANES, PLAN_GRATIS, PLAN_PRO } from "@turnos/config";
+import {
+  formatearPesos,
+  nombrePlan,
+  PLANES,
+  PLAN_GRATIS,
+  PLAN_PRO,
+} from "@turnos/config";
 import { obtenerFacturacion } from "@/servicios/panel-datos.service";
+import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 
 export const metadata = { title: "Pagos y Facturación" };
 
@@ -16,18 +24,20 @@ export default async function PaginaFacturacion() {
   const mercadoPagoDisponible = Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN);
 
   return (
-    <div className="panel-contenido">
-      <header className="cabecera-seccion">
+    <div className="panel-contenido facturacion-pantalla">
+      <VistaPanelLista ruta="/panel/facturacion" />
+      <header className="cabecera-seccion facturacion-cabecera">
         <div>
+          <span className="facturacion-sobrelinea">PLANES Y PAGOS</span>
           <h1>Pagos y Facturación</h1>
-          <p>Revisá tu plan y los cobros de TurnosRápidos.</p>
+          <p>Elegí el plan que mejor acompaña a tu negocio y revisá tus pagos en un solo lugar.</p>
         </div>
       </header>
-      <section className="estado-plan">
+      <section className="estado-plan facturacion-resumen">
         <div>
           {suscripcion?.estado === "ACTIVA" ? <CircleCheck /> : <CircleAlert />}
           <span>
-            <small>ESTADO ACTUAL</small>
+            <small>TU PLAN ACTUAL</small>
             <strong>
               {suscripcion?.estado === "ACTIVA"
                 ? `Plan activo · ${nombrePlan(suscripcion.plan)}`
@@ -51,32 +61,42 @@ export default async function PaginaFacturacion() {
           </div>
         </aside>
       )}
-      <section className="planes-panel" aria-label="Planes disponibles">
+      <section className="planes-grid planes-grid--panel" aria-label="Planes disponibles">
         {[PLAN_GRATIS, ...PLANES, PLAN_PRO].map((plan) => (
           <article
             key={plan.id}
-            className={suscripcion?.plan === plan.id ? "actual" : ""}
+            className={`plan-card plan-card--${plan.id.toLowerCase()}${plan.destacado ? " destacado" : ""}${suscripcion?.plan === plan.id ? " actual" : ""}`}
           >
-            <small>
-              {suscripcion?.plan === plan.id ? "TU PLAN" : "PLAN MENSUAL"}
-            </small>
+            {plan.destacado && <span className="recomendado">MÁS ELEGIDO</span>}
             <h2>{plan.nombre}</h2>
             <p>{plan.descripcion}</p>
-            <strong>
-              {plan.precioMensual === null ? "Precio a definir" : formatearPesos(plan.precioMensual)}
-              {plan.precioMensual !== null && plan.id !== "PRUEBA" && <span>/mes</span>}
-            </strong>
+            <div className={`precio precio--${plan.id.toLowerCase()}`}>
+              <strong>
+                {plan.precioMensual === 0
+                  ? "Gratis"
+                  : plan.precioMensual === null
+                    ? "A definir"
+                    : formatearPesos(plan.precioMensual)}
+              </strong>
+              {plan.precioMensual !== null && plan.precioMensual !== 0 && (
+                <span className="precio__moneda">ARS</span>
+              )}
+            </div>
             <ul>
               {plan.beneficios.map((beneficio) => (
-                <li key={beneficio}>{beneficio}</li>
+                <li key={beneficio}><Check aria-hidden="true" />{beneficio}</li>
               ))}
             </ul>
             {plan.id === "PRUEBA" ? (
               <button className="boton boton--secundario" disabled>
-                {suscripcion?.estado === "CONFIGURACION_GRATUITA" ? "Prueba en curso" : "Prueba de siete días"}
+                {suscripcion?.estado === "CONFIGURACION_GRATUITA"
+                  ? "Prueba en curso"
+                  : "Prueba de siete días"}
               </button>
             ) : plan.id === "pro" ? (
-              <button className="boton boton--secundario" disabled>Próximamente</button>
+              <button className="boton boton--secundario" disabled>
+                Próximamente
+              </button>
             ) : suscripcion?.estado === "ACTIVA" || suscripcion?.proveedorId ? (
               <button className="boton boton--secundario" disabled>
                 {suscripcion.estado === "ACTIVA"

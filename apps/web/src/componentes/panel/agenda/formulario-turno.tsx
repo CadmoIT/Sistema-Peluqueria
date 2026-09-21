@@ -113,6 +113,15 @@ export function FormularioTurno({
           <input name="clienteNombre" />
         </label>
       )}
+      <label>
+        Observación <small>(opcional)</small>
+        <textarea
+          name="observacion"
+          rows={3}
+          maxLength={500}
+          placeholder="Agregá un detalle para este turno"
+        />
+      </label>
       {!resultado.ok && <p role="alert">{resultado.mensaje}</p>}
       <BotonEnvio pendiente="Guardando turno…">Guardar turno</BotonEnvio>
     </form>

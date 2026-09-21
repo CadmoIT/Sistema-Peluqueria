@@ -53,6 +53,7 @@ export function TablaInventario({
   libres: ColumnaLibre[];
 }) {
   const [buscar, cambiar] = useState("");
+  const [local, cambiarLocal] = useState(sedes[0]?.id ?? "");
   const [pendientes, cambiarPendientes] = useState<Record<string, number>>({});
   const pendientesRef = useRef<Record<string, number>>({});
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,6 +65,11 @@ export function TablaInventario({
     },
     [],
   );
+  useEffect(() => {
+    if (local && !sedes.some((sede) => sede.id === local)) {
+      cambiarLocal(sedes[0]?.id ?? "");
+    }
+  }, [local, sedes]);
 
   async function enviarPendientes() {
     const lote = pendientesRef.current;
@@ -144,6 +150,9 @@ export function TablaInventario({
   const visibles = productos.filter((p) =>
     normalizar(`${p.nombre} ${p.sku ?? ""}`).includes(normalizar(buscar)),
   );
+  const sedesVisibles = local
+    ? sedes.filter((sede) => sede.id === local)
+    : sedes;
 
   return (
     <>
@@ -157,6 +166,23 @@ export function TablaInventario({
             onChange={(e) => cambiar(e.target.value)}
           />
         </label>
+        {sedes.length > 1 && (
+          <label className="filtro-discreto">
+            Local
+            <select
+              aria-label="Filtrar inventario por local"
+              value={local}
+              onChange={(e) => cambiarLocal(e.target.value)}
+            >
+              <option value="">Todos los locales</option>
+              {sedes.map((sede) => (
+                <option value={sede.id} key={sede.id}>
+                  {sede.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <EditorTablaInventario
           columnas={columnas}
           libres={libres}
@@ -176,7 +202,7 @@ export function TablaInventario({
           </thead>
           <tbody>
             {visibles.flatMap((p) =>
-              sedes.map((s) => {
+              sedesVisibles.map((s) => {
                 const cantidad =
                   p.existencias.find((e) => e.sedeId === s.id)?.cantidad ?? 0;
                 const clave = claveStock(p.id, s.id);

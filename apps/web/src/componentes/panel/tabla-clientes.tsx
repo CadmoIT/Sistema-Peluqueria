@@ -13,6 +13,7 @@ import {
 import { coincideCliente, type DatosCliente } from "@/lib/clientes-archivo";
 import { CamposCliente } from "./campos-cliente";
 import { ImportadorClientes } from "./importador-clientes";
+import { FormularioAccion } from "./formulario-accion";
 export type ClienteFila = DatosCliente & {
   id: string;
   ultimoTurno: string | null;
@@ -22,13 +23,11 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
   const router = useRouter();
   const [guardando, iniciar] = useTransition();
   const [busqueda, setBusqueda] = useState("");
-  const [editando, setEditando] = useState<ClienteFila | null>(null);
   const [archivando, setArchivando] = useState<ClienteFila | null>(null);
   const [error, setError] = useState("");
   const dialogo = useRef<HTMLDialogElement>(null);
-  const visible = Boolean(editando || archivando);
+  const visible = Boolean(archivando);
   function cerrar() {
-    setEditando(null);
     setArchivando(null);
     setError("");
   }
@@ -118,18 +117,24 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
             </span>
             <span role="cell">{cliente.visitas}</span>
             <div className="acciones-tabla" role="cell">
-              <button
-                type="button"
-                className="accion-icono accion-icono--editar"
-                aria-label="Editar cliente"
-                disabled={guardando}
-                onClick={() => {
-                  setError("");
-                  setEditando(cliente);
-                }}
-              >
-                <Edit3 />
-              </button>
+              <details className="desplegable-accion cliente-edicion">
+                <summary
+                  className="accion-icono accion-icono--editar"
+                  aria-label={`Editar ${cliente.nombre || "cliente"}`}
+                  title={`Editar ${cliente.nombre || "cliente"}`}
+                >
+                  <Edit3 />
+                </summary>
+                <FormularioAccion
+                  accion={actualizarCliente}
+                  texto="Guardar cambios"
+                  className="formulario-flotante formulario-cliente"
+                >
+                  <h2>Editar información</h2>
+                  <input type="hidden" name="id" value={cliente.id} />
+                  <CamposCliente cliente={cliente} />
+                </FormularioAccion>
+              </details>
               <button
                 type="button"
                 className="accion-icono accion-icono--eliminar"
@@ -162,60 +167,40 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
           onClose={cerrar}
         >
           <header>
-            <h2 id="cliente-dialogo-titulo">
-              {editando ? "Editar información" : "¿Eliminar cliente?"}
-            </h2>
+            <h2 id="cliente-dialogo-titulo">¿Eliminar cliente?</h2>
             <button
               className="accion-icono"
               type="button"
               onClick={cerrar}
-              aria-label={editando ? "Cerrar edición" : "Cerrar confirmación"}
+              aria-label="Cerrar confirmación"
             >
               <X />
             </button>
           </header>
-          {editando ? (
-            <form
-              className="formulario-dialogo formulario-cliente"
-              action={(datos) => realizar(actualizarCliente, datos)}
-            >
-              <input type="hidden" name="id" value={editando.id} />
-              <CamposCliente cliente={editando} />
-              {error && <p role="alert">{error}</p>}
+          <form action={(datos) => realizar(eliminarCliente, datos)}>
+            <input type="hidden" name="id" value={archivando!.id} />
+            <p>
+              Se perderán definitivamente el nombre, contacto y demás datos de
+              esta ficha.
+            </p>
+            {error && <p role="alert">{error}</p>}
+            <footer>
               <button
-                className="boton boton--primario"
+                type="button"
+                className="boton boton--secundario"
+                onClick={cerrar}
+              >
+                Cancelar
+              </button>
+              <button
+                className="boton boton--peligro"
                 disabled={guardando}
                 aria-busy={guardando}
               >
-                {guardando ? "Guardando…" : "Guardar cambios"}
+                {guardando ? "Eliminando…" : "Eliminar cliente"}
               </button>
-            </form>
-          ) : (
-            <form action={(datos) => realizar(eliminarCliente, datos)}>
-              <input type="hidden" name="id" value={archivando!.id} />
-              <p>
-                Se perderán definitivamente el nombre, contacto y demás datos de
-                esta ficha.
-              </p>
-              {error && <p role="alert">{error}</p>}
-              <footer>
-                <button
-                  type="button"
-                  className="boton boton--secundario"
-                  onClick={cerrar}
-                >
-                  Cancelar
-                </button>
-                <button
-                  className="boton boton--peligro"
-                  disabled={guardando}
-                  aria-busy={guardando}
-                >
-                  {guardando ? "Eliminando…" : "Eliminar cliente"}
-                </button>
-              </footer>
-            </form>
-          )}
+            </footer>
+          </form>
         </dialog>
       )}
     </>

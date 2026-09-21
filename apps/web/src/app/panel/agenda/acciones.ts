@@ -56,6 +56,9 @@ async function guardarReservaPanel(datos: FormData) {
   const sedeId = leerTexto(datos, "sedeId");
   const servicioId = leerTexto(datos, "servicioId");
   const fechaHoraLocal = leerTexto(datos, "inicio");
+  const observacion = textoOpcional(
+    leerTexto(datos, "observacion").slice(0, 500),
+  );
   const inicio = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(fechaHoraLocal)
     ? fechaLocalAUtc(
         fechaHoraLocal.slice(0, 10),
@@ -164,6 +167,7 @@ async function guardarReservaPanel(datos: FormData) {
           fin,
           total: servicio.precio,
           sena: 0,
+          notas: observacion,
           servicios: {
             create: {
               servicioId,

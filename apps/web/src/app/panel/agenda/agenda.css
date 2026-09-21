@@ -5,6 +5,9 @@
   margin: 0;
   padding-left: var(--agenda-margen-izquierdo);
 }
+.panel-contenido--agenda .cabecera-seccion {
+  padding-right: 76px;
+}
 .panel-contenido--agenda .cabecera-seccion h1 {
   margin: 0 0 0 calc(clamp(20px, 3vw, 48px) - var(--agenda-margen-izquierdo) + max(0px, (100vw - var(--panel-sidebar-ancho, 248px) - 1420px) / 2));
 }
@@ -17,14 +20,24 @@
 .formulario-turno label,
 .formulario-turno input,
 .formulario-turno select,
+.formulario-turno textarea,
 .formulario-turno .boton {
   font-size: 18px;
 }
+.formulario-turno textarea {
+  min-height: 76px;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid #d8dde0;
+  border-radius: 7px;
+  background: #fff;
+  color: #111;
+}
 .agenda-diaria {
   display: grid;
-  grid-template-columns: 214px minmax(0, 1fr);
+  grid-template-columns: 250px minmax(0, 1fr);
   gap: 40px;
-  column-gap: 64px;
+  column-gap: 56px;
   min-width: 0;
 }
 .agenda-lateral {
@@ -301,13 +314,14 @@
 .agenda-detalle {
   width: min(480px, calc(100vw - 32px));
   padding: 24px;
-  border: 1px solid #ddd;
-  border-radius: 14px;
-  box-shadow: 0 16px 48px #0002;
+  border: 1px solid rgba(14, 54, 70, 0.12);
+  border-radius: 22px;
+  box-shadow: 0 22px 64px rgba(14, 33, 40, 0.16);
   color: #111;
 }
 .agenda-detalle::backdrop {
-  background: #0004;
+  background: rgba(17, 24, 29, 0.28);
+  backdrop-filter: blur(5px);
 }
 .agenda-detalle header {
   display: flex;
@@ -382,6 +396,9 @@
 @media (max-width: 900px) {
   .panel-contenido--agenda {
     --agenda-margen-izquierdo: 14px;
+  }
+  .panel-contenido--agenda .cabecera-seccion {
+    padding-right: 0;
   }
   .agenda-diaria {
     grid-template-columns: minmax(0, 1fr);

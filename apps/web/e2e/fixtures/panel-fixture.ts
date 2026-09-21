@@ -12,6 +12,9 @@ export const test = base.extend<{}, { sesionDemo: EstadoSesion }>({
       await page.getByRole("button", { name: "Ingresar", exact: true }).click();
       await expect(page).toHaveURL(/\/panel\/resumen$/, { timeout: 60000 });
       await page.waitForLoadState("load");
+      await expect(page.getByTestId("carga-aplicacion")).toHaveCount(0, {
+        timeout: 30_000,
+      });
       await expect(
         page.getByRole("heading", { name: "Estudio Aurora" }),
       ).toBeVisible();

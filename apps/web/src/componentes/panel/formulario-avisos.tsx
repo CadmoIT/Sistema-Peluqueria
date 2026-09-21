@@ -16,76 +16,120 @@ type Configuracion = {
   whatsappRecordatorioActivo: boolean;
 };
 
-const ejemplos: Record<string, string> = {
+const ejemplosBase: Record<string, string> = {
   nombre: "Ana",
   negocio: "Tu negocio",
-  servicio: "Corte de cabello",
-  fecha: "15 de septiembre",
-  hora: "13:00",
+  servicio: "Corte y peinado",
+  fecha: "viernes 20 de septiembre",
+  hora: "10:30",
   enlace: "https://turnosrapidos.com.ar/mi-turno",
 };
 
-function vistaPrevia(texto: string) {
-  return texto.replace(/\{(nombre|negocio|servicio|fecha|hora|enlace)\}/g, (_, clave: string) => ejemplos[clave] ?? "");
+function vistaPrevia(texto: string, negocio: string) {
+  const ejemplos: Record<string, string> = { ...ejemplosBase, negocio: negocio || "Tu negocio" };
+  return texto.replace(/(?:\{|\()(nombre|negocio|servicio|fecha|hora|enlace)(?:\}|\))/g, (_, clave: string) => ejemplos[clave] ?? "");
+}
+
+function normalizarPlantilla(texto: string, negocio: string) {
+  return texto
+    .replace(/\{negocio\}|\(negocio\)/g, negocio || "Tu negocio")
+    .replace(/\{(nombre|servicio|fecha|hora|enlace)\}/g, "($1)");
 }
 
 export function FormularioAvisos({
   inicial,
-  emailConfigurado,
+  nombreNegocio,
   proActivo,
 }: {
   inicial: Configuracion;
-  emailConfigurado: boolean;
+  nombreNegocio: string;
   proActivo: boolean;
 }) {
-  const [asuntoConfirmacion, setAsuntoConfirmacion] = useState(inicial.emailAsuntoConfirmacion);
-  const [textoConfirmacion, setTextoConfirmacion] = useState(inicial.emailTextoConfirmacion);
-  const [asuntoRecordatorio, setAsuntoRecordatorio] = useState(inicial.emailAsuntoRecordatorio);
-  const [textoRecordatorio, setTextoRecordatorio] = useState(inicial.emailTextoRecordatorio);
+  const [asuntoConfirmacion, setAsuntoConfirmacion] = useState(normalizarPlantilla(inicial.emailAsuntoConfirmacion, nombreNegocio));
+  const [textoConfirmacion, setTextoConfirmacion] = useState(normalizarPlantilla(inicial.emailTextoConfirmacion, nombreNegocio));
+  const [asuntoRecordatorio, setAsuntoRecordatorio] = useState(normalizarPlantilla(inicial.emailAsuntoRecordatorio, nombreNegocio));
+  const [textoRecordatorio, setTextoRecordatorio] = useState(normalizarPlantilla(inicial.emailTextoRecordatorio, nombreNegocio));
   const [vista, setVista] = useState<"confirmacion" | "recordatorio">("confirmacion");
 
   return (
     <form action={guardarConfiguracionAvisos} className="ajustes-campos avisos-formulario">
-      <p className="aviso-ajustes">
-        {emailConfigurado
-          ? "El correo está listo para enviar avisos."
-          : "El correo todavía no está configurado. Podés preparar los mensajes, pero no se enviarán hasta que TurnosRápidos active el remitente."}
-      </p>
-      <div className="avisos-opciones">
-        <label><input type="checkbox" name="emailConfirmacionActivo" defaultChecked={inicial.emailConfirmacionActivo} /> Enviar confirmación por email</label>
-        <label><input type="checkbox" name="emailRecordatorioActivo" defaultChecked={inicial.emailRecordatorioActivo} /> Recordar el turno por email 24 horas antes</label>
-      </div>
-      <p className="ayuda-ajustes">Para personalizar, usá: {"{nombre}"}, {"{negocio}"}, {"{servicio}"}, {"{fecha}"}, {"{hora}"} o {"{enlace}"}.</p>
-      <label>Asunto de confirmación
-        <input name="emailAsuntoConfirmacion" maxLength={140} required value={asuntoConfirmacion} onChange={(evento) => setAsuntoConfirmacion(evento.target.value)} />
-      </label>
-      <label>Mensaje de confirmación
-        <textarea name="emailTextoConfirmacion" rows={3} maxLength={1000} required value={textoConfirmacion} onChange={(evento) => setTextoConfirmacion(evento.target.value)} />
-      </label>
-      <label>Asunto del recordatorio
-        <input name="emailAsuntoRecordatorio" maxLength={140} required value={asuntoRecordatorio} onChange={(evento) => setAsuntoRecordatorio(evento.target.value)} />
-      </label>
-      <label>Mensaje del recordatorio
-        <textarea name="emailTextoRecordatorio" rows={3} maxLength={1000} required value={textoRecordatorio} onChange={(evento) => setTextoRecordatorio(evento.target.value)} />
-      </label>
-      <div className="avisos-vista">
-        <label>Vista previa
-          <select value={vista} onChange={(evento) => setVista(evento.target.value as "confirmacion" | "recordatorio")}>
+      <section className="avisos-bloque">
+        <div className="avisos-bloque__encabezado">
+          <div>
+            <h3>Confirmación de turno</h3>
+            <p>Se envía apenas el turno queda reservado.</p>
+          </div>
+          <label className="avisos-interruptor">
+            <input type="checkbox" name="emailConfirmacionActivo" defaultChecked={inicial.emailConfirmacionActivo} />
+            <span>Activar</span>
+          </label>
+        </div>
+        <label><span>Asunto</span>
+          <input name="emailAsuntoConfirmacion" maxLength={140} required value={asuntoConfirmacion} onChange={(evento) => setAsuntoConfirmacion(evento.target.value)} />
+        </label>
+        <label><span>Mensaje para tu cliente</span>
+          <textarea name="emailTextoConfirmacion" rows={6} maxLength={1000} required value={textoConfirmacion} onChange={(evento) => setTextoConfirmacion(evento.target.value)} />
+        </label>
+      </section>
+
+      <section className="avisos-bloque">
+        <div className="avisos-bloque__encabezado">
+          <div>
+            <h3>Recordatorio</h3>
+            <p>Ayudá a que nadie se olvide de su turno. Se envía 24 horas antes.</p>
+          </div>
+          <label className="avisos-interruptor">
+            <input type="checkbox" name="emailRecordatorioActivo" defaultChecked={inicial.emailRecordatorioActivo} />
+            <span>Activar</span>
+          </label>
+        </div>
+        <label><span>Asunto</span>
+          <input name="emailAsuntoRecordatorio" maxLength={140} required value={asuntoRecordatorio} onChange={(evento) => setAsuntoRecordatorio(evento.target.value)} />
+        </label>
+        <label><span>Mensaje para tu cliente</span>
+          <textarea name="emailTextoRecordatorio" rows={6} maxLength={1000} required value={textoRecordatorio} onChange={(evento) => setTextoRecordatorio(evento.target.value)} />
+        </label>
+      </section>
+
+      <section className="avisos-vista">
+        <div className="avisos-vista__encabezado">
+          <div>
+            <h3>Así lo verá tu cliente</h3>
+          </div>
+          <select aria-label="Mensaje de la vista previa" value={vista} onChange={(evento) => setVista(evento.target.value as "confirmacion" | "recordatorio")}>
             <option value="confirmacion">Confirmación</option>
             <option value="recordatorio">Recordatorio</option>
           </select>
-        </label>
-        <strong>{vistaPrevia(vista === "confirmacion" ? asuntoConfirmacion : asuntoRecordatorio)}</strong>
-        <p>{vistaPrevia(vista === "confirmacion" ? textoConfirmacion : textoRecordatorio)}</p>
-      </div>
-      <div className="avisos-opciones">
-        <strong>WhatsApp automático · PRO</strong>
-        <p>El botón para contactar al negocio desde tu página sigue disponible en todos los planes. Los mensajes automáticos necesitan PRO y plantillas aprobadas.</p>
-        <label><input type="checkbox" name="whatsappConfirmacionActivo" defaultChecked={inicial.whatsappConfirmacionActivo} disabled={!proActivo} /> Confirmación por WhatsApp</label>
-        <label><input type="checkbox" name="whatsappRecordatorioActivo" defaultChecked={inicial.whatsappRecordatorioActivo} disabled={!proActivo} /> Recordatorio por WhatsApp 24 horas antes</label>
-        {!proActivo && <small>PRO estará disponible cuando definamos su precio y cupo de mensajes.</small>}
-      </div>
-      <BotonEnvio pendiente="Guardando avisos…">Guardar mensajes</BotonEnvio>
+        </div>
+        <div className="avisos-vista__correo">
+          <small>Para: Ana · {nombreNegocio}</small>
+          <strong>{vistaPrevia(vista === "confirmacion" ? asuntoConfirmacion : asuntoRecordatorio, nombreNegocio)}</strong>
+          <p>{vistaPrevia(vista === "confirmacion" ? textoConfirmacion : textoRecordatorio, nombreNegocio)}</p>
+        </div>
+      </section>
+
+      <section className="avisos-bloque avisos-whatsapp">
+        <div className="avisos-bloque__encabezado">
+          <div>
+            <h3>WhatsApp</h3>
+            <p>También podés enviar confirmaciones y recordatorios por WhatsApp.</p>
+          </div>
+          <span className="avisos-plan">PRO</span>
+        </div>
+        <div className="avisos-whatsapp__mensajes">
+          <article>
+            <label className="avisos-checkline"><input type="checkbox" name="whatsappConfirmacionActivo" defaultChecked={inicial.whatsappConfirmacionActivo} disabled={!proActivo} /> Confirmación por WhatsApp</label>
+            <p>{vistaPrevia(textoConfirmacion, nombreNegocio)}</p>
+          </article>
+          <article>
+            <label className="avisos-checkline"><input type="checkbox" name="whatsappRecordatorioActivo" defaultChecked={inicial.whatsappRecordatorioActivo} disabled={!proActivo} /> Recordatorio por WhatsApp · 24 horas antes</label>
+            <p>{vistaPrevia(textoRecordatorio, nombreNegocio)}</p>
+          </article>
+        </div>
+        <small>{proActivo ? "Las plantillas se enviarán según la configuración de tu cuenta." : "Esta opción estará disponible con el plan PRO y plantillas aprobadas."}</small>
+      </section>
+
+      <BotonEnvio pendiente="Guardando cambios…">Guardar cambios</BotonEnvio>
     </form>
   );
 }

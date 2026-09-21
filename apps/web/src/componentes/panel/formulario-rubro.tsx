@@ -30,7 +30,7 @@ export function FormularioRubro({
   return (
     <form action={enviar} className="ajustes-campos formulario-rubro">
       <label>
-        Tipo de negocio
+        <span>Tipo de negocio</span>
         <select
           key={tipoNegocio}
           name="tipoNegocio"
@@ -49,10 +49,6 @@ export function FormularioRubro({
           ))}
         </select>
       </label>
-      <small>
-        Cambia los iconos y ejemplos del panel. No borra servicios, clientes ni
-        turnos.
-      </small>
       {editable ? (
         <BotonEnvio pendiente="Guardando tipo de negocio…">
           Guardar tipo de negocio

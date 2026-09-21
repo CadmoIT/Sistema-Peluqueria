@@ -329,6 +329,16 @@ export async function obtenerInventario() {
   return { negocio, productos, sedes, libres };
 }
 
+export async function obtenerCompras() {
+  const { negocio } = await requerirContextoPanel();
+  const [sedes, productos, compras] = await Promise.all([
+    prisma.sede.findMany({ where: { negocioId: negocio.id, activa: true }, select: { id: true, nombre: true }, orderBy: { nombre: "asc" } }),
+    prisma.producto.findMany({ where: { negocioId: negocio.id, activo: true }, select: { id: true, nombre: true, sku: true, precio: true }, orderBy: { nombre: "asc" } }),
+    prisma.compra.findMany({ where: { negocioId: negocio.id }, include: { sede: { select: { nombre: true } }, items: { select: { id: true, nombre: true, cantidad: true } } }, orderBy: { creadoEn: "desc" }, take: 100 }),
+  ]);
+  return { negocio, sedes, productos, compras };
+}
+
 export async function obtenerCaja() {
   const { negocio } = await requerirContextoPanel();
   const inicio = inicioDelDia(new Date(), negocio.zonaHoraria);

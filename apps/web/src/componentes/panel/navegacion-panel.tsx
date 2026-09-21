@@ -1,18 +1,17 @@
 /** Renderiza la navegación real del panel y marca la ruta activa. */
 "use client";
 
-import Link from "next/link";
+import { EnlacePanel as Link } from "./navegacion-carga-panel";
 import { usePathname } from "next/navigation";
+import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
 import {
   BarChart3,
   CalendarDays,
-  ChevronLeft,
   ContactRound,
-  CreditCard,
   LayoutDashboard,
   Menu,
   Package,
-  Settings,
+  ShoppingCart,
   Store,
   UsersRound,
   WalletCards,
@@ -33,6 +32,7 @@ export const enlacesPanel = [
   },
   { texto: "Equipo", href: "/panel/equipo", icono: UsersRound },
   { texto: "Inventario", href: "/panel/inventario", icono: Package },
+  { texto: "Compras", href: "/panel/compras", icono: ShoppingCart },
   { texto: "Caja", href: "/panel/caja", icono: WalletCards },
   { texto: "Reportes", href: "/panel/reportes", icono: BarChart3 },
   { texto: "Mi sitio", href: "/panel/mi-sitio", icono: Store },
@@ -47,17 +47,19 @@ export function obtenerEnlacesPanel(perfil: PerfilNegocio) {
 }
 
 export function NavegacionPanel({
-  nombreUsuario = "Mi cuenta",
   contraido = false,
   movil = false,
   onAlternar,
   onNavegar,
+  onAnchoChange,
+  anchoSidebar = 248,
 }: {
-  nombreUsuario?: string;
   contraido?: boolean;
   movil?: boolean;
   onAlternar?: () => void;
   onNavegar?: () => void;
+  onAnchoChange?: (ancho: number) => void;
+  anchoSidebar?: number;
 }) {
   const ruta = usePathname();
   const enlaces = obtenerEnlacesPanel(usePerfilNegocio());
@@ -65,25 +67,39 @@ export function NavegacionPanel({
     <aside
       className={contraido ? "nav-panel nav-panel--contraido" : "nav-panel"}
     >
-      {contraido && !movil ? (
-        <button
-          className="nav-panel__alternar-arriba"
-          onClick={onAlternar}
-          aria-label="Expandir menú"
-          title="Expandir menú"
-        >
-          <Menu size={22} />
-        </button>
-      ) : (
-        <Link
-          className="nav-panel__marca"
-          href="/panel/resumen"
-          aria-label="Ir al resumen"
-          onClick={onNavegar}
-        >
-          <LogoTurnosRapidos />
-        </Link>
-      )}
+      <div className="nav-panel__cabecera">
+        {contraido && !movil ? (
+          <button
+            className="nav-panel__alternar-arriba"
+            onClick={onAlternar}
+            aria-label="Expandir menú"
+            title="Expandir menú"
+          >
+            <Menu size={22} />
+          </button>
+        ) : (
+          <>
+            <Link
+              className="nav-panel__marca"
+              href="/panel/resumen"
+              aria-label="Ir al resumen"
+              onClick={onNavegar}
+            >
+              <LogoTurnosRapidos />
+            </Link>
+            {!movil && (
+              <button
+                className="nav-panel__plegar"
+                onClick={onAlternar}
+                aria-label="Contraer menú"
+                title="Contraer menú"
+              >
+                <KeyboardDoubleArrowLeftIcon />
+              </button>
+            )}
+          </>
+        )}
+      </div>
       <nav aria-label="Panel de gestión">
         {enlaces.map(({ texto, href, icono: Icono }) => {
           const activo = ruta === href || ruta.startsWith(href + "/");
@@ -103,67 +119,46 @@ export function NavegacionPanel({
           );
         })}
       </nav>
-      <details
-        className="nav-panel__configuracion"
-        open={
-          ruta.startsWith("/panel/configuracion") ||
-          ruta.startsWith("/panel/facturacion")
-        }
-      >
-        <summary
-          title={contraido ? "Configuración" : undefined}
-          aria-label={contraido ? "Configuración" : undefined}
-        >
-          <Settings size={20} />
-          <span>Configuración</span>
-        </summary>
-        <div>
-          <Link
-            href="/panel/configuracion"
-            className={ruta.startsWith("/panel/configuracion") ? "activo" : ""}
-            onClick={onNavegar}
-          >
-            <Settings size={18} />
-            <span>Configuraciones</span>
-          </Link>
-          <Link
-            href="/panel/facturacion"
-            className={ruta.startsWith("/panel/facturacion") ? "activo" : ""}
-            onClick={onNavegar}
-          >
-            <CreditCard size={18} />
-            <span>Pagos y Facturación</span>
-          </Link>
-        </div>
-      </details>
-      <div className="nav-panel__usuario">
-        <span>{iniciales(nombreUsuario)}</span>
-        <div>
-          <strong>{nombreUsuario}</strong>
-          <small>Mi cuenta</small>
-        </div>
-      </div>
-      {!movil && !contraido && (
-        <button
-          className="nav-panel__plegar"
-          onClick={onAlternar}
-          aria-label="Contraer menú"
-        >
-          <ChevronLeft />
-        </button>
+      {!movil && (
+        <div
+            className="nav-panel__redimensionar"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Cambiar ancho del sidebar"
+            aria-valuemin={76}
+            aria-valuemax={380}
+            aria-valuenow={anchoSidebar}
+            tabIndex={0}
+            onKeyDown={(evento) => {
+              if (evento.key === "ArrowLeft") {
+                evento.preventDefault();
+                onAnchoChange?.(anchoSidebar - 8);
+              }
+              if (evento.key === "ArrowRight") {
+                evento.preventDefault();
+                onAnchoChange?.(anchoSidebar + 8);
+              }
+            }}
+            onPointerDown={(evento) => {
+              evento.preventDefault();
+              const inicioX = evento.clientX;
+              const inicioAncho = anchoSidebar;
+              const mover = (movimiento: PointerEvent) => {
+                onAnchoChange?.(inicioAncho + movimiento.clientX - inicioX);
+              };
+              const terminar = () => {
+                window.removeEventListener("pointermove", mover);
+                window.removeEventListener("pointerup", terminar);
+                document.body.style.cursor = "";
+                document.body.style.userSelect = "";
+              };
+              document.body.style.cursor = "col-resize";
+              document.body.style.userSelect = "none";
+              window.addEventListener("pointermove", mover);
+              window.addEventListener("pointerup", terminar, { once: true });
+            }}
+          />
       )}
     </aside>
-  );
-}
-
-function iniciales(nombre: string) {
-  return (
-    nombre
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((parte) => parte[0])
-      .join("")
-      .toUpperCase() || "TR"
   );
 }

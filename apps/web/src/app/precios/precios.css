@@ -29,7 +29,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 46px;
-  padding-block: 18px 24px;
+  padding-block: 100px 24px;
 }
 .planes-grid article {
   --plan-relleno: 28px;
@@ -45,7 +45,8 @@
   min-width: 0;
   min-height: 560px;
   filter: none;
-  transition: transform 300ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  will-change: transform;
+  transition: transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
   transform-origin: center;
 }
 .planes-grid article::before {
@@ -215,6 +216,12 @@
   color: #17a96b;
   flex: 0 0 auto;
 }
+.planes-grid li.no-incluido {
+  color: #68747a;
+}
+.planes-grid li.no-incluido svg {
+  color: #d62d20;
+}
 
 .planes-grid article:hover {
   z-index: 3;
@@ -240,11 +247,11 @@
     width: min(400px, calc(100% - 68px));
     grid-template-columns: 1fr;
     gap: 46px;
+    padding-top: 70px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .planes-grid article,
   .precio,
   .planes-grid .boton {
     transition: none;
@@ -322,21 +329,62 @@
   text-align: center;
   color: #111;
   font: 500 44px var(--fuente-editorial);
+  margin-bottom: 34px;
 }
-.faq-precios details {
-  border-bottom: 1px solid var(--borde);
-  padding: 18px 0;
+.faq-precios__item {
+  border-bottom: 1px solid #222;
 }
-.faq-precios summary {
+.faq-precios__pregunta {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 0;
+  border: 0;
+  background: transparent;
   color: #111;
-  font-size: 18px;
-  font-weight: 750;
+  font: inherit;
+  font-size: 19px;
+  font-weight: 700;
+  text-align: left;
   cursor: pointer;
 }
-.faq-precios p {
+.faq-precios__pregunta:hover {
+  color: #000;
+}
+.faq-precios__flecha {
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1;
+  transition: transform 220ms ease;
+}
+.faq-precios__item.abierta .faq-precios__flecha {
+  transform: rotate(180deg);
+}
+.faq-precios__respuesta {
+  display: grid;
+  grid-template-rows: 0fr;
+  padding: 0 42px 0 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    grid-template-rows 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 220ms ease,
+    padding 320ms ease;
+}
+.faq-precios__item.abierta .faq-precios__respuesta {
+  grid-template-rows: 1fr;
+  padding-bottom: 22px;
+  opacity: 1;
+}
+.faq-precios__respuesta p {
   color: #111;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.5;
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 @media (max-width: 700px) {
   .precios-hero {

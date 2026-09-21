@@ -166,6 +166,12 @@ export function ColumnasAgenda({
                       "aria-label",
                       `${info.timeText}, ${info.event.title}, ${grupoEstado(String(info.event.extendedProps.estado)).nombre}`,
                     );
+                    const observacion = String(
+                      info.event.extendedProps.observacion ?? "",
+                    ).trim();
+                    if (observacion) {
+                      info.el.setAttribute("title", `Observación: ${observacion}`);
+                    }
                   }
                 }}
                 now={fechaVisual(new Date().toISOString(), zona)}

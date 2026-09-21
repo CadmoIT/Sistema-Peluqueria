@@ -10,6 +10,7 @@ import { ProveedorPerfilNegocio } from "@/componentes/panel/perfil-negocio-conte
 import "./panel.css";
 import "./panel-sobrio.css";
 import "./panel-configuracion.css";
+import "../precios/precios.css";
 import "./panel-facturacion.css";
 import "./panel-mi-sitio.css";
 import "./panel-responsive.css";
@@ -27,11 +28,23 @@ export default async function LayoutPanel({
   if (!sesion) redirect("/acceder?modo=ingreso");
   const membresia = await buscarNegocioDelUsuario(sesion.user.id);
   if (!membresia) redirect("/primeros-pasos");
-  const nombreUsuario = sesion.user.name;
+  const configuracion =
+    membresia.negocio.configuracion &&
+    typeof membresia.negocio.configuracion === "object"
+      ? (membresia.negocio.configuracion as Record<string, unknown>)
+      : {};
+  const imagenNegocio =
+    typeof configuracion.imagenPerfil === "string"
+      ? configuracion.imagenPerfil
+      : "";
   const perfil = obtenerPerfilNegocio(membresia.negocio.configuracion);
   return (
     <ProveedorPerfilNegocio tipoNegocio={perfil.tipoNegocio}>
-      <EstructuraPanel nombreUsuario={nombreUsuario}>
+      <EstructuraPanel
+        nombreNegocio={membresia.negocio.nombre}
+        emailUsuario={sesion.user.email}
+        imagenNegocio={imagenNegocio}
+      >
         {children}
         <Toaster
           position="bottom-right"

@@ -4,6 +4,7 @@ import {
   type BorradorSitio,
 } from "@/componentes/panel/editor-sitio";
 import { obtenerSitioEditable } from "@/servicios/panel-datos.service";
+import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 
 export const metadata = { title: "Mi sitio" };
 
@@ -37,6 +38,7 @@ export default async function PaginaMiSitio() {
   };
   return (
     <div className="panel-contenido panel-contenido--editor">
+      <VistaPanelLista ruta="/panel/mi-sitio" />
       <header className="cabecera-seccion">
         <div>
           <h1>Mi sitio</h1>

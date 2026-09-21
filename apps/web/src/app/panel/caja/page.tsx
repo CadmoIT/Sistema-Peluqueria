@@ -1,5 +1,6 @@
-/** Registra ingresos y egresos operativos y resume el movimiento del día. */
+/** Registra movimientos operativos y resume el movimiento del día. */
 import { Plus } from "lucide-react";
+import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 import { registrarMovimientoCaja } from "./acciones";
 import { PuntoVenta } from "@/componentes/panel/punto-venta";
 import { FormularioAccion } from "@/componentes/panel/formulario-accion";
@@ -17,6 +18,7 @@ export default async function PaginaCaja() {
     .reduce((s, m) => s + Number(m.monto), 0);
   return (
     <div className="panel-contenido">
+      <VistaPanelLista ruta="/panel/caja" />
       <header className="cabecera-seccion">
         <div>
           <h1>Caja</h1>
@@ -78,9 +80,9 @@ export default async function PaginaCaja() {
         </details>
       </header>
       <MetricasOperativas
+        className="metricas-operativas metricas-operativas--dos"
         datos={[
           { etiqueta: "Ingresos de hoy", valor: ingresos },
-          { etiqueta: "Egresos de hoy", valor: egresos },
           { etiqueta: "Saldo del día", valor: ingresos - egresos },
         ]}
       />

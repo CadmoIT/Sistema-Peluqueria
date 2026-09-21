@@ -1,3 +1,5 @@
-/** Mantiene estable la caja mientras se cargan sus movimientos. */
-import { CargandoModulo } from "@/componentes/panel/cargando-modulo";
-export default function CargandoCaja() { return <CargandoModulo nombre="caja" />; }
+/** Comparte el skeleton de caja con la navegación inmediata del panel. */
+import { SkeletonPanel } from "@/componentes/panel/skeleton-panel";
+export default function CargandoVista() {
+  return <SkeletonPanel ruta="/panel/caja" />;
+}

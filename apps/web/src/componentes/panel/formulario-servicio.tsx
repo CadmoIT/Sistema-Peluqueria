@@ -24,6 +24,7 @@ export type ServicioEditable = {
 function useResultado(
   resultado: ResultadoServicio,
   formulario?: React.RefObject<HTMLFormElement | null>,
+  alGuardar?: () => void,
 ) {
   const router = useRouter();
   useEffect(() => {
@@ -33,19 +34,24 @@ function useResultado(
       return;
     }
     toast.success(resultado.mensaje);
-    const desplegable = formulario?.current?.closest("details");
-    if (desplegable) desplegable.open = false;
+    if (alGuardar) alGuardar();
+    else {
+      const desplegable = formulario?.current?.closest("details");
+      if (desplegable) desplegable.open = false;
+    }
     router.refresh();
-  }, [resultado, router, formulario]);
+  }, [resultado, router, formulario, alGuardar]);
 }
 export function FormularioServicio({
   profesionales,
   sedes,
   servicio,
+  alGuardar,
 }: {
   profesionales: Opcion[];
   sedes: Opcion[];
   servicio?: ServicioEditable;
+  alGuardar?: () => void;
 }) {
   const formulario = useRef<HTMLFormElement>(null);
   const perfil = usePerfilNegocio();
@@ -53,14 +59,18 @@ export function FormularioServicio({
     ok: true,
     mensaje: "",
   });
-  useResultado(resultado, formulario);
+  useResultado(resultado, formulario, alGuardar);
   return (
     <form
       ref={formulario}
       action={enviar}
-      className="formulario-flotante formulario-servicio"
+      className={`${
+        alGuardar ? "formulario-dialogo" : "formulario-flotante"
+      } formulario-servicio`}
     >
-      <h2>{servicio ? "Editar servicio" : "Nuevo servicio"}</h2>
+      {!alGuardar && (
+        <h2>{servicio ? "Editar servicio" : "Nuevo servicio"}</h2>
+      )}
       <CamposApilados>
         {servicio && <input type="hidden" name="id" value={servicio.id} />}
         <label>

@@ -51,6 +51,22 @@ const mensajes: Record<
     tipo: "success",
     texto: "Los datos del local quedaron guardados.",
   },
+  "configuracion-local-creado": {
+    tipo: "success",
+    texto: "El nuevo local quedó agregado.",
+  },
+  "configuracion-local-duplicado": {
+    tipo: "error",
+    texto: "Ya existe un local con ese nombre.",
+  },
+  "configuracion-local-error": {
+    tipo: "error",
+    texto: "Completá un nombre válido para el local.",
+  },
+  "configuracion-local-sin-permiso": {
+    tipo: "error",
+    texto: "Sólo el dueño o un administrador puede agregar locales.",
+  },
   "configuracion-google-actualizado": {
     tipo: "success",
     texto: "La puntuación de Google fue actualizada.",

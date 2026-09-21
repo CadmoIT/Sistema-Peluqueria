@@ -9,6 +9,22 @@
   background: white;
   padding: 20px;
 }
+.reportes-filtros .filtro-select-control {
+  position: relative;
+  display: inline-flex;
+}
+.reportes-filtros .filtro-select-control select {
+  appearance: none;
+  padding-right: 38px;
+}
+.reportes-filtros .filtro-select-control > svg {
+  position: absolute;
+  right: 11px;
+  top: calc(50% + 2px);
+  transform: translateY(-50%);
+  color: #4f6269;
+  pointer-events: none;
+}
 .reportes-grafico {
   margin-block: 30px;
 }
@@ -29,6 +45,9 @@
   margin-right: 8px;
   border-radius: 3px;
   background: #126783;
+}
+.reportes-leyenda .reporte-leyenda-egreso:before {
+  background: #ef8c79;
 }
 .grafico-con-eje-y {
   display: flex;
@@ -95,6 +114,9 @@
 }
 .barra-ingreso {
   background: #126783;
+}
+.barra-egreso {
+  background: #ef8c79;
 }
 .grafico-etiqueta {
   display: block;

@@ -17,6 +17,7 @@ type Entrada = {
   email?: string;
   telefono?: string;
   aceptaWhatsapp?: boolean;
+  observacion?: string;
 };
 
 export async function POST(solicitud: Request) {
@@ -51,6 +52,7 @@ export async function POST(solicitud: Request) {
   const email = limpiar(entrada.email)?.toLowerCase() ?? null;
   const telefono = limpiar(entrada.telefono)?.replace(/[^+\d]/g, "") ?? null;
   const aceptaWhatsapp = entrada.aceptaWhatsapp === true && Boolean(telefono);
+  const observacion = limpiar(entrada.observacion)?.slice(0, 500) ?? null;
   if (negocio.politicaContacto === "EMAIL" && !email)
     return respuesta("Ingresá tu correo para reservar.", 400);
   if (negocio.politicaContacto === "TELEFONO" && !telefono)
@@ -202,6 +204,7 @@ export async function POST(solicitud: Request) {
             fin,
             total: servicio.precio,
             sena: new Prisma.Decimal(0),
+            notas: observacion,
             servicios: {
               create: {
                 servicioId: servicio.id,

@@ -46,6 +46,7 @@ export function FlujoReserva({
   const [codigo, setCodigo] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [observacion, setObservacion] = useState("");
   const servicio = useMemo(
     () => servicios.find((item) => item.id === servicioId)!,
     [servicioId, servicios],
@@ -131,6 +132,7 @@ export function FlujoReserva({
         email: formulario.get("email"),
         telefono: formulario.get("telefono"),
         aceptaWhatsapp: formulario.get("aceptaWhatsapp") === "on",
+        observacion: formulario.get("observacion"),
       }),
     });
     const resultado = (await respuesta.json()) as {
@@ -327,6 +329,17 @@ export function FlujoReserva({
               <label className="consentimiento-whatsapp">
                 <input name="aceptaWhatsapp" type="checkbox" />
                 Acepto recibir confirmaciones y recordatorios de este negocio por WhatsApp. Es opcional y puedo pedir que dejen de enviármelos.
+              </label>
+              <label>
+                Observación <small>(opcional)</small>
+                <textarea
+                  name="observacion"
+                  rows={3}
+                  maxLength={500}
+                  value={observacion}
+                  onChange={(e) => setObservacion(e.target.value)}
+                  placeholder="¿Querés dejar algún detalle para el negocio?"
+                />
               </label>
               {mensaje && (
                 <p className="error-reserva" role="alert">

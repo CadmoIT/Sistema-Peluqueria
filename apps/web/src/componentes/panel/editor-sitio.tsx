@@ -414,7 +414,7 @@ export function EditorSitio({
               </span>
             </div>
             {!locales.length && (
-              <a href="/panel/configuracion#locales">
+              <a href="/panel/configuracion/locales">
                 Completar datos del local
               </a>
             )}

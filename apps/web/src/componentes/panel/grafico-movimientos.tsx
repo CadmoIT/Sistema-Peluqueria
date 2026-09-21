@@ -16,7 +16,7 @@ export function GraficoMovimientos({
   const [listo, habilitar] = useState(false);
   useEffect(() => habilitar(true), []);
   const [activo, seleccionar] = useState<string | null>(null),
-    maximo = Math.max(1, ...intervalos.map((i) => i.ingresos));
+    maximo = Math.max(1, ...intervalos.flatMap((i) => [i.ingresos, i.egresos]));
   const divisiones = 4;
   const escala = Array.from(
     { length: divisiones + 1 },
@@ -45,7 +45,7 @@ export function GraficoMovimientos({
               type="button"
               disabled={!listo}
               className="grafico-intervalo__barra"
-              aria-label={`${i.etiqueta}. Ingresos ${pesos(i.ingresos)}, saldo ${pesos(i.saldo)}`}
+              aria-label={`${i.etiqueta}. Ingresos ${pesos(i.ingresos)}, egresos ${pesos(i.egresos)}, saldo ${pesos(i.saldo)}`}
               aria-describedby={
                 activo === i.clave ? `importe-${i.clave}` : undefined
               }
@@ -62,6 +62,10 @@ export function GraficoMovimientos({
                 className="barra-ingreso"
                 style={{ height: `${(i.ingresos / maximo) * 100}%` }}
               />
+              <span
+                className="barra-egreso"
+                style={{ height: `${(i.egresos / maximo) * 100}%` }}
+              />
             </button>
             <span className="grafico-etiqueta">{i.etiqueta}</span>
             {activo === i.clave && (
@@ -72,6 +76,7 @@ export function GraficoMovimientos({
               >
                 <strong>{i.etiqueta}</strong>
                 <span>Ingresos: {pesos(i.ingresos)}</span>
+                <span>Egresos: {pesos(i.egresos)}</span>
                 <span>Saldo: {pesos(i.saldo)}</span>
               </div>
             )}

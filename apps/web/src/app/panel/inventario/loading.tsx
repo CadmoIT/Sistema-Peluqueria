@@ -1,3 +1,5 @@
-/** Mantiene estable el inventario mientras se cargan productos. */
-import { CargandoModulo } from "@/componentes/panel/cargando-modulo";
-export default function CargandoInventario() { return <CargandoModulo nombre="inventario" />; }
+/** Comparte el skeleton de inventario con la navegación inmediata del panel. */
+import { SkeletonPanel } from "@/componentes/panel/skeleton-panel";
+export default function CargandoVista() {
+  return <SkeletonPanel ruta="/panel/inventario" />;
+}

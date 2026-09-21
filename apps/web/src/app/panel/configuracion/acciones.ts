@@ -69,74 +69,255 @@ export async function actualizarConfiguracionNegocio(datos: FormData) {
   });
 
   revalidatePath("/panel", "layout");
-  redirect("/panel/configuracion?configuracion=guardada");
+  redirect("/panel/configuracion/negocio?configuracion=guardada");
+}
+
+export async function actualizarImagenPerfil(datos: FormData) {
+  const { negocio, membresia } = await requerirContextoPanel();
+  if (!puedeCambiarTipoNegocio(membresia.rol)) {
+    redirect("/panel/configuracion/negocio?configuracion=imagen-sin-permiso");
+  }
+  const imagen = textoOpcional(leerTexto(datos, "imagenPerfil").slice(0, 2000));
+  if (imagen && !imagen.startsWith("/") && !/^https?:\/\//i.test(imagen)) {
+    redirect("/panel/configuracion/negocio?configuracion=imagen-invalida");
+  }
+  const anterior =
+    negocio.configuracion && typeof negocio.configuracion === "object"
+      ? (negocio.configuracion as Record<string, unknown>)
+      : {};
+  await prisma.negocio.update({
+    where: { id: negocio.id },
+    data: { configuracion: { ...anterior, imagenPerfil: imagen ?? "" } },
+  });
+  revalidatePath("/panel", "layout");
+  revalidatePath("/panel/configuracion/negocio");
+  redirect("/panel/configuracion/negocio?configuracion=imagen-guardada");
 }
 
 export async function actualizarSede(datos: FormData) {
   const { negocio } = await requerirContextoPanel();
   const id = leerTexto(datos, "id");
+  const googleMapsUrl = textoOpcional(
+    leerTexto(datos, "googleMapsUrl").slice(0, 500),
+  );
+  const lugarGoogle = await resolverLugarGoogleMaps(googleMapsUrl);
+  const consultaGoogle = extraerConsultaGoogleMaps(googleMapsUrl);
 
   await prisma.sede.updateMany({
     where: { id, negocioId: negocio.id },
     data: {
       nombre: leerTexto(datos, "nombre"),
-      direccion: leerTexto(datos, "direccion"),
+      direccion: leerTexto(datos, "direccion") || lugarGoogle?.direccion || consultaGoogle || "",
       telefono: textoOpcional(leerTexto(datos, "telefono")),
-      googlePlaceId: textoOpcional(leerTexto(datos, "googlePlaceId")),
-      googleMapsUrl: textoOpcional(leerTexto(datos, "googleMapsUrl")),
+      googlePlaceId: googleMapsUrl ? lugarGoogle?.id : null,
+      googleMapsUrl,
+      ...(lugarGoogle
+        ? {
+            latitud: lugarGoogle.latitud,
+            longitud: lugarGoogle.longitud,
+            googlePuntaje: lugarGoogle.puntaje,
+            googleResenas: lugarGoogle.resenas,
+            googleActualizadoEn: new Date(),
+          }
+        : googleMapsUrl
+          ? {}
+          : {
+              latitud: null,
+              longitud: null,
+              googlePuntaje: null,
+              googleResenas: null,
+              googleActualizadoEn: null,
+            }),
     },
   });
 
-  revalidatePath("/panel/configuracion");
+  revalidatePath("/panel/configuracion/locales");
   revalidatePath(`/sitio/${negocio.slug}`);
-  redirect("/panel/configuracion?configuracion=local-guardado");
+  redirect("/panel/configuracion/locales?configuracion=local-guardado");
 }
 
-export async function actualizarPuntajeGoogle(datos: FormData) {
-  const { negocio } = await requerirContextoPanel();
-  const id = leerTexto(datos, "id");
+/** Actualiza los horarios generales de una sede, sin modificar los horarios de profesionales. */
+export async function actualizarHorariosSede(datos: FormData) {
+  const { negocio, membresia } = await requerirContextoPanel();
+  if (!puedeCambiarTipoNegocio(membresia.rol)) {
+    redirect("/panel/configuracion/horarios?configuracion=horarios-sin-permiso");
+  }
+
+  const sedeId = leerTexto(datos, "sedeId");
   const sede = await prisma.sede.findFirst({
-    where: { id, negocioId: negocio.id },
+    where: { id: sedeId, negocioId: negocio.id, activa: true },
+    select: { id: true },
   });
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!sede) {
+    redirect("/panel/configuracion/horarios?configuracion=horarios-error");
+  }
 
-  if (!sede?.googlePlaceId || !apiKey) return;
-
-  const respuesta = await fetch(
-    `https://places.googleapis.com/v1/places/${encodeURIComponent(sede.googlePlaceId)}`,
-    {
-      headers: {
-        "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask": "rating,userRatingCount,googleMapsUri",
-      },
-      cache: "no-store",
-    },
-  );
-
-  if (!respuesta.ok) return;
-
-  const lugar = (await respuesta.json()) as {
-    rating?: number;
-    userRatingCount?: number;
-    googleMapsUri?: string;
-  };
-
-  await prisma.sede.update({
-    where: { id: sede.id },
-    data: {
-      googlePuntaje: lugar.rating,
-      googleResenas: lugar.userRatingCount,
-      googleMapsUrl: elegirEnlaceGoogle(
-        lugar.googleMapsUri,
-        sede.googleMapsUrl,
-      ),
-      googleActualizadoEn: new Date(),
-    },
+  const horarios = Array.from({ length: 7 }, (_, diaSemana) => {
+    const activo = datos.get(`activo-${diaSemana}`) === "on";
+    const abre = horaConfiguracionValida(
+      leerTexto(datos, `abre-${diaSemana}`),
+      "09:00",
+    );
+    const cierra = horaConfiguracionValida(
+      leerTexto(datos, `cierra-${diaSemana}`),
+      "18:00",
+    );
+    return { diaSemana, activo, abre, cierra };
   });
 
-  revalidatePath("/panel/configuracion");
+  if (horarios.some((horario) => horario.activo && horario.abre >= horario.cierra)) {
+    redirect("/panel/configuracion/horarios?configuracion=horarios-error");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    for (const horario of horarios) {
+      const existente = await tx.horarioSede.findFirst({
+        where: { sedeId: sede.id, negocioId: negocio.id, diaSemana: horario.diaSemana },
+        select: { id: true },
+      });
+      if (existente) {
+        await tx.horarioSede.update({
+          where: { id: existente.id },
+          data: { abre: horario.abre, cierra: horario.cierra, activo: horario.activo },
+        });
+      } else {
+        await tx.horarioSede.create({
+          data: { negocioId: negocio.id, sedeId: sede.id, ...horario },
+        });
+      }
+    }
+  });
+
+  revalidatePath("/panel/configuracion/horarios");
+  revalidatePath("/panel/agenda");
   revalidatePath(`/sitio/${negocio.slug}`);
-  redirect("/panel/configuracion?configuracion=google-actualizado");
+  redirect("/panel/configuracion/horarios?configuracion=horarios-guardados");
+}
+
+function horaConfiguracionValida(valor: string, alternativa: string) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(valor) ? valor : alternativa;
+}
+
+export async function crearSede(datos: FormData) {
+  const { negocio, membresia } = await requerirContextoPanel();
+  if (!puedeCambiarTipoNegocio(membresia.rol)) {
+    redirect("/panel/configuracion/locales?configuracion=local-sin-permiso");
+  }
+
+  const nombre = leerTexto(datos, "nombre").slice(0, 100);
+  const direccionIngresada = leerTexto(datos, "direccion").slice(0, 240);
+  const telefono = textoOpcional(
+    leerTexto(datos, "telefono").slice(0, 50),
+  );
+  const googleMapsUrl = textoOpcional(
+    leerTexto(datos, "googleMapsUrl").slice(0, 500),
+  );
+  const lugarGoogle = await resolverLugarGoogleMaps(googleMapsUrl);
+  const consultaGoogle = extraerConsultaGoogleMaps(googleMapsUrl);
+
+  if (nombre.length < 2) {
+    redirect("/panel/configuracion/locales?configuracion=local-error");
+  }
+
+  const existente = await prisma.sede.findFirst({
+    where: { negocioId: negocio.id, nombre },
+    select: { id: true },
+  });
+  if (existente) {
+    redirect("/panel/configuracion/locales?configuracion=local-duplicado");
+  }
+
+  await prisma.sede.create({
+    data: {
+      negocioId: negocio.id,
+      nombre,
+      direccion: direccionIngresada || lugarGoogle?.direccion || consultaGoogle || "",
+      telefono,
+      googleMapsUrl,
+      ...(lugarGoogle
+        ? {
+            googlePlaceId: lugarGoogle.id,
+            latitud: lugarGoogle.latitud,
+            longitud: lugarGoogle.longitud,
+            googlePuntaje: lugarGoogle.puntaje,
+            googleResenas: lugarGoogle.resenas,
+            googleActualizadoEn: new Date(),
+          }
+        : {}),
+    },
+  });
+
+  revalidatePath("/panel/configuracion/locales");
+  revalidatePath("/panel", "layout");
+  revalidatePath(`/sitio/${negocio.slug}`);
+  redirect("/panel/configuracion/locales?configuracion=local-creado");
+}
+
+type LugarGoogle = {
+  id: string;
+  direccion: string;
+  latitud: number;
+  longitud: number;
+  puntaje: number | null;
+  resenas: number | null;
+};
+
+/** Resuelve el enlace compartido de Maps con Places API, sin pedir un Place ID técnico. */
+async function resolverLugarGoogleMaps(enlace: string | null): Promise<LugarGoogle | null> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  const consulta = extraerConsultaGoogleMaps(enlace);
+  if (!apiKey || !consulta) return null;
+
+  try {
+    const respuesta = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": "places.id,places.formattedAddress,places.location,places.rating,places.userRatingCount",
+      },
+      body: JSON.stringify({ textQuery: consulta, languageCode: "es", regionCode: "AR", maxResultCount: 1 }),
+      cache: "no-store",
+    });
+    if (!respuesta.ok) return null;
+    const datos = (await respuesta.json()) as {
+      places?: Array<{
+        id?: string;
+        formattedAddress?: string;
+        location?: { latitude?: number; longitude?: number };
+        rating?: number;
+        userRatingCount?: number;
+      }>;
+    };
+    const lugar = datos.places?.[0];
+    if (!lugar?.id || lugar.location?.latitude == null || lugar.location.longitude == null) return null;
+    return {
+      id: lugar.id,
+      direccion: lugar.formattedAddress ?? "",
+      latitud: lugar.location.latitude,
+      longitud: lugar.location.longitude,
+      puntaje: lugar.rating ?? null,
+      resenas: lugar.userRatingCount ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function extraerConsultaGoogleMaps(enlace: string | null) {
+  if (!enlace) return null;
+  try {
+    const url = new URL(enlace);
+    const host = url.hostname.toLowerCase();
+    const esGoogle = host === "maps.app.goo.gl" || host.endsWith(".google.com") || host.endsWith(".google.com.ar") || host === "google.com" || host.endsWith(".goo.gl");
+    if (!esGoogle) return null;
+    const consulta = url.searchParams.get("query") ?? url.searchParams.get("q");
+    if (consulta?.trim()) return consulta.trim();
+    const lugar = url.pathname.match(/\/place\/([^/]+)/i)?.[1];
+    return lugar ? decodeURIComponent(lugar).replace(/\+/g, " ").trim() : null;
+  } catch {
+    return null;
+  }
 }
 
 const variablesAviso = new Set([
@@ -165,13 +346,13 @@ export async function guardarConfiguracionAvisos(datos: FormData) {
     return (
       valor.length > 0 &&
       valor.length <= maximo &&
-      Array.from(valor.matchAll(/\{([^}]+)\}/g)).every((grupo) =>
-        variablesAviso.has(grupo[1] ?? ""),
+      Array.from(valor.matchAll(/\{([^}]+)\}|\(([^)]+)\)/g)).every((grupo) =>
+        variablesAviso.has(grupo[1] ?? grupo[2] ?? ""),
       )
     );
   });
   if (!validos)
-    redirect("/panel/configuracion?configuracion=avisos-error#avisos");
+    redirect("/panel/configuracion/avisos?configuracion=avisos-error");
 
   await prisma.configuracionAvisos.upsert({
     where: { negocioId: negocio.id },
@@ -201,13 +382,6 @@ export async function guardarConfiguracionAvisos(datos: FormData) {
       emailTextoRecordatorio: textos.emailTextoRecordatorio!,
     },
   });
-  revalidatePath("/panel/configuracion");
-  redirect("/panel/configuracion?configuracion=avisos-guardados#avisos");
-}
-
-function elegirEnlaceGoogle(valor?: string, existente?: string | null) {
-  const esUrlGoogle =
-    valor?.startsWith("https://www.google.") ||
-    valor?.startsWith("https://maps.google.");
-  return esUrlGoogle ? valor : (existente ?? null);
+  revalidatePath("/panel/configuracion/avisos");
+  redirect("/panel/configuracion/avisos?configuracion=avisos-guardados");
 }

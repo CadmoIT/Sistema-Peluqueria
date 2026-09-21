@@ -1,3 +1,5 @@
-/** Mantiene estable el reporte mientras se calculan sus cifras. */
-import { CargandoModulo } from "@/componentes/panel/cargando-modulo";
-export default function CargandoReportes() { return <CargandoModulo nombre="reportes" />; }
+/** Comparte el skeleton de reportes con la navegación inmediata del panel. */
+import { SkeletonPanel } from "@/componentes/panel/skeleton-panel";
+export default function CargandoVista() {
+  return <SkeletonPanel ruta="/panel/reportes" />;
+}

@@ -1,28 +1,44 @@
 /** Expone planes, paquetes de mensajeria y reglas comerciales transparentes. */
 import Link from "next/link";
 import DoneIcon from "@mui/icons-material/Done";
+import CloseIcon from "@mui/icons-material/Close";
 import { PLANES, PLAN_GRATIS, PLAN_PRO } from "@turnos/config";
 import { CabeceraPublica } from "../../componentes/layout/cabecera-publica";
 import { EstilosPrecios } from "@/componentes/precios/estilos-precios";
+import { PreguntasFrecuentes } from "@/componentes/precios/preguntas-frecuentes";
 import "./precios.css";
 export const metadata = { title: "Precios" };
+
+const caracteristicas = [
+  {
+    texto: "Siete días de prueba",
+    incluye: (id: string) => id === "PRUEBA",
+  },
+  { texto: "Sitio de reservas", incluye: () => true },
+  { texto: "Avisos por email", incluye: () => true },
+  {
+    texto: "Sedes y profesionales ilimitados",
+    incluye: () => true,
+  },
+  {
+    texto: "Confirmaciones y recordatorios por email",
+    incluye: () => true,
+  },
+  {
+    texto: "Mercado Pago y reportes",
+    incluye: () => true,
+  },
+  {
+    texto: "Recordatorios por WhatsApp",
+    incluye: (id: string) => id !== "autogestionado",
+  },
+];
+
 export default function PaginaPrecios() {
   return (
     <>
       <CabeceraPublica />
       <main className="precios">
-        <section className="precios-hero">
-          <span className="sobrelinea">PRECIOS CLAROS</span>
-          <h1>
-            Todo lo que necesitas.
-            <br />
-            <em>Sin letra chica.</em>
-          </h1>
-          <p>
-            Probá tu agenda y tu sitio gratis durante siete días. Después elegí
-            el plan que acompañe tu negocio.
-          </p>
-        </section>
         <EstilosPrecios>
           <section className="planes-grid">
             {[PLAN_GRATIS, ...PLANES, PLAN_PRO].map((plan) => (
@@ -47,23 +63,31 @@ export default function PaginaPrecios() {
                     <span className="precio__moneda">ARS</span>
                   )}
                 </div>
-                <ul>
-                  {plan.beneficios.map((b) => (
-                    <li key={b}>
-                      <DoneIcon aria-hidden="true" /> {b}
-                    </li>
-                  ))}
-                  {plan.id !== "pro" && (
-                    <>
-                      <li>
-                        <DoneIcon aria-hidden="true" /> Reservas, sedes y equipo
-                        ilimitados
-                      </li>
-                      <li>
-                        <DoneIcon aria-hidden="true" /> Mercado Pago y reportes
-                      </li>
-                    </>
-                  )}
+                <ul aria-label={`Características del plan ${plan.nombre}`}>
+                  {caracteristicas
+                    .filter(({ texto }) =>
+                      plan.id === "PRUEBA"
+                        ? texto === "Siete días de prueba"
+                        : plan.id === "autogestionado"
+                          ? texto !== "Siete días de prueba"
+                          : texto !== "Siete días de prueba",
+                    )
+                    .map(({ texto, incluye }) => {
+                      const disponible = incluye(plan.id);
+                      return (
+                        <li
+                          className={disponible ? "incluido" : "no-incluido"}
+                          key={texto}
+                        >
+                          {disponible ? (
+                            <DoneIcon aria-hidden="true" />
+                          ) : (
+                            <CloseIcon aria-hidden="true" />
+                          )}
+                          {texto}
+                        </li>
+                      );
+                    })}
                 </ul>
                 {plan.id === "pro" ? (
                   <span
@@ -84,27 +108,7 @@ export default function PaginaPrecios() {
             ))}
           </section>
         </EstilosPrecios>
-        <section className="faq-precios">
-          <h2>Preguntas frecuentes</h2>
-          <details>
-            <summary>¿Puedo probarlo sin pagar?</summary>
-            <p>
-              Sí. El plan Gratis permite usar la agenda y el sitio durante siete
-              días, sin tarjeta.
-            </p>
-          </details>
-          <details>
-            <summary>¿Cobran por sucursal o profesional?</summary>
-            <p>No. Las sedes, profesionales y reservas no cambian tu plan.</p>
-          </details>
-          <details>
-            <summary>¿Que pasa si ya tengo dominio?</summary>
-            <p>
-              El plan Plus permite conectarlo sin costo adicional y mantiene
-              disponible tu subdominio.
-            </p>
-          </details>
-        </section>
+        <PreguntasFrecuentes />
       </main>
     </>
   );

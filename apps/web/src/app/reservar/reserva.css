@@ -241,6 +241,18 @@
   padding: 0 13px;
   outline: 0;
 }
+.datos-cliente textarea {
+  min-height: 82px;
+  border: 1px solid var(--borde);
+  background: #fff;
+  padding: 12px 13px;
+  resize: vertical;
+  outline: 0;
+  font: inherit;
+}
+.datos-cliente textarea:focus {
+  border-color: var(--verde);
+}
 .datos-cliente input:focus {
   border-color: var(--verde);
 }

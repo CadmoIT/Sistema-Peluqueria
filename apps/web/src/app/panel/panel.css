@@ -1,10 +1,15 @@
 /** Define la identidad visual responsive del panel administrativo. */
+html:has(.panel-shell) {
+  scrollbar-gutter: stable;
+}
+
 .panel-shell {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
   background: #fff;
   color: #111;
+  scrollbar-gutter: stable;
 }
 .nav-panel {
   position: sticky;
@@ -525,8 +530,10 @@
   top: calc(100% + 10px);
   right: 0;
   width: min(460px, calc(100vw - 32px));
-  max-height: calc(100vh - 110px);
+  max-height: min(720px, calc(100dvh - 110px));
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 24px;
   border: 1px solid #cad5da;
   border-radius: 20px;
@@ -769,10 +776,15 @@
 .dialogo-turno {
   width: min(520px, 100%);
   padding: 26px;
-  border-radius: 22px;
+  border: 1px solid rgba(14, 54, 70, 0.12);
+  border-radius: 24px;
   background: #fff;
   color: #111;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 22px 64px rgba(14, 33, 40, 0.16);
+}
+.dialogo-turno::backdrop {
+  background: rgba(17, 24, 29, 0.28);
+  backdrop-filter: blur(5px);
 }
 .dialogo-turno header,
 .dialogo-turno footer {
@@ -1453,7 +1465,8 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.48);
+  background: rgba(17, 24, 29, 0.28);
+  backdrop-filter: blur(5px);
 }
 
 .dialogo-importacion {
@@ -1461,10 +1474,11 @@
   max-height: calc(100vh - 40px);
   overflow: auto;
   padding: 26px;
-  border-radius: 22px;
+  border: 1px solid rgba(14, 54, 70, 0.12);
+  border-radius: 24px;
   background: #fff;
   color: #111;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 22px 64px rgba(14, 33, 40, 0.16);
 }
 
 .dialogo-importacion > header,

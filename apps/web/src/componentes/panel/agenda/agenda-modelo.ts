@@ -11,6 +11,7 @@ export type EventoAgenda = {
   estado: string;
   cliente: string;
   servicio: string;
+  observacion: string | null;
   profesionalId: string;
   profesional: string;
   sedeId: string;

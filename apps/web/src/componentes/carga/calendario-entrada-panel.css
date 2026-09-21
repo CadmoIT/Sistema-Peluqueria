@@ -1,0 +1,134 @@
+/** Da profundidad al papel curvado desde la esquina, con trayectoria 3D compartida con el SVG. */
+.entrada-calendario {
+  position: relative;
+  width: min(460px, 65svh, calc(100vw - 48px));
+  aspect-ratio: 1;
+  perspective: 1100px;
+  transform: none;
+  animation: entrada-calendario-aparece 120ms ease-out both;
+}
+.entrada-calendario__base,
+.entrada-calendario__aros,
+.entrada-calendario__check {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.entrada-calendario__aros {
+  z-index: 4;
+}
+.entrada-calendario__hojas {
+  position: absolute;
+  top: 15%;
+  left: 17.5%;
+  width: 65%;
+  height: 68%;
+  perspective: 1100px;
+  z-index: 2;
+}
+.entrada-hoja {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 8px;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  border-radius: 12px;
+}
+.entrada-hoja svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  font-family: var(--fuente-preguntas), sans-serif;
+  overflow: visible;
+  filter: drop-shadow(0 5px 5px #08324f26);
+}
+.entrada-hoja--vuelo {
+  will-change: transform;
+}
+.entrada-calendario--esperando {
+  animation: entrada-calendario-espera 1400ms ease-in-out infinite;
+}
+.entrada-calendario--confirmado {
+  animation: entrada-calendario-confirma 280ms cubic-bezier(0.16, 1, 0.3, 1)
+    both;
+}
+.entrada-calendario__check {
+  z-index: 5;
+}
+.entrada-calendario__check path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: entrada-calendario-trazo 260ms ease-out forwards;
+}
+.entrada-calendario__check circle {
+  animation: entrada-calendario-halo 280ms ease-out both;
+}
+.entrada-hoja__dia-elegido rect {
+  stroke: #08324f;
+  stroke-width: 1.5;
+}
+.carga-pantalla--panel .carga-pantalla__marca {
+  margin-top: 6px;
+  font-size: 32px;
+}
+.carga-pantalla--panel .carga-pantalla__mensaje {
+  font-size: 16px;
+}
+.carga-pantalla.carga-pantalla--panel {
+  transition: opacity 140ms ease;
+}
+@keyframes entrada-calendario-aparece {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes entrada-calendario-espera {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+@keyframes entrada-calendario-confirma {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes entrada-calendario-trazo {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes entrada-calendario-halo {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+    transform-origin: center;
+  }
+  to {
+    opacity: 0.93;
+    transform: scale(1);
+    transform-origin: center;
+  }
+}
+@media (max-width: 600px) {
+  .entrada-calendario {
+    width: min(340px, 55svh, calc(100vw - 32px));
+  }
+}

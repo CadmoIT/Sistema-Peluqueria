@@ -1,5 +1,8 @@
 /** Presenta el resumen operativo real del negocio autenticado. */
-import Link from "next/link";
+import {
+  EnlacePanel as Link,
+  VistaPanelLista,
+} from "@/componentes/panel/navegacion-carga-panel";
 import {
   BarChart3,
   CalendarDays,
@@ -47,9 +50,13 @@ export default async function PaginaPanel() {
       suscripcion.graciaHasta &&
       suscripcion.graciaHasta.getTime() < ahora
     );
+  const proximoTurno = datos.proximo
+    ? formatoProximoTurno(datos.proximo.inicio, datos.negocio.zonaHoraria)
+    : null;
 
   return (
     <div className="panel-contenido resumen-pagina">
+      <VistaPanelLista ruta="/panel/resumen" />
       <section className="panel-bienvenida">
         <div className="resumen-pagina__cabecera">
           <h1>{datos.negocio.nombre}</h1>
@@ -81,8 +88,22 @@ export default async function PaginaPanel() {
         <Metrica
           etiqueta="Próximo turno"
           valor={
-            datos.proximo
-              ? hora(datos.proximo.inicio, datos.negocio.zonaHoraria)
+            proximoTurno ? (
+              <>
+                {proximoTurno.dia && (
+                  <small className="resumen-metrica__dia">
+                    {proximoTurno.dia}
+                  </small>
+                )}
+                {proximoTurno.hora}
+              </>
+            ) : (
+              "—"
+            )
+          }
+          ariaValor={
+            proximoTurno
+              ? [proximoTurno.dia, proximoTurno.hora].filter(Boolean).join(" ")
               : "—"
           }
           href="/panel/agenda"
@@ -129,7 +150,9 @@ export default async function PaginaPanel() {
                     {turno.servicios[0]?.servicio.nombre ?? "Sin servicio"}
                   </span>
                   {datos.profesionales > 1 && (
-                    <span>{turno.profesional?.nombre ?? "Profesional eliminado"}</span>
+                    <span>
+                      {turno.profesional?.nombre ?? "Profesional eliminado"}
+                    </span>
                   )}
                   <b className="resumen-estado">
                     {etiquetaEstado(turno.estado)}
@@ -191,16 +214,18 @@ function Metrica({
   etiqueta,
   valor,
   href,
+  ariaValor,
 }: {
   etiqueta: string;
-  valor: string;
+  valor: React.ReactNode;
   href: string;
+  ariaValor?: string;
 }) {
   return (
     <Link
       className="resumen-metrica"
       href={href}
-      aria-label={`${etiqueta}: ${valor}`}
+      aria-label={`${etiqueta}: ${ariaValor ?? String(valor)}`}
     >
       <span>{etiqueta}</span>
       <strong>{valor}</strong>
@@ -241,6 +266,35 @@ function hora(fecha: Date, zonaHoraria: string) {
     hourCycle: "h23",
   }).format(fecha);
 }
+function formatoProximoTurno(fecha: Date, zonaHoraria: string) {
+  const partes = new Intl.DateTimeFormat("es-AR", {
+    timeZone: zonaHoraria,
+    weekday: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(fecha);
+  const obtener = (tipo: Intl.DateTimeFormatPartTypes) =>
+    partes.find((parte) => parte.type === tipo)?.value ?? "";
+  const fechaTurno = `${obtener("year")}-${obtener("month")}-${obtener("day")}`;
+  const hoy = new Intl.DateTimeFormat("es-AR", {
+    timeZone: zonaHoraria,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const obtenerHoy = (tipo: Intl.DateTimeFormatPartTypes) =>
+    hoy.find((parte) => parte.type === tipo)?.value ?? "";
+  const fechaHoy = `${obtenerHoy("year")}-${obtenerHoy("month")}-${obtenerHoy("day")}`;
+  if (fechaTurno === fechaHoy)
+    return { dia: null, hora: hora(fecha, zonaHoraria) };
+  const dia = obtener("weekday")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(".", "")
+    .toUpperCase();
+  return { dia, hora: hora(fecha, zonaHoraria) };
+}
 function etiquetaEstado(estado: string) {
   const etiquetas: Record<string, string> = {
     BORRADOR: "Pendiente",
@@ -254,12 +308,14 @@ function etiquetaEstado(estado: string) {
   };
   return etiquetas[estado] ?? estado.toLowerCase();
 }
-function nombreCliente(cliente: {
-  nombre: string | null;
-  apellido: string | null;
-  email: string | null;
-  telefono: string | null;
-} | null) {
+function nombreCliente(
+  cliente: {
+    nombre: string | null;
+    apellido: string | null;
+    email: string | null;
+    telefono: string | null;
+  } | null,
+) {
   if (!cliente) return "Cliente eliminado";
   return (
     [cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||

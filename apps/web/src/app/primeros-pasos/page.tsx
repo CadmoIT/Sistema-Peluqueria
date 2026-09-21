@@ -5,6 +5,7 @@ import { FormularioConfiguracionInicial } from "@/componentes/panel/formulario-c
 import { autenticacion } from "@/lib/autenticacion";
 import { buscarNegocioDelUsuario } from "@/servicios/configuracion-inicial.service";
 import { esRubroValido } from "@/lib/registro-inicial";
+import { VistaCargaLista } from "@/componentes/carga/proveedor-carga";
 import "./primeros-pasos.css";
 
 export const metadata = { title: "Configurá tu negocio" };
@@ -28,5 +29,10 @@ export default async function PaginaPrimerosPasos({
       ? parametros.tipoNegocio
       : "";
 
-  return <FormularioConfiguracionInicial tipoNegocioInicial={tipoNegocio} />;
+  return (
+    <>
+      <VistaCargaLista ruta="/primeros-pasos" />
+      <FormularioConfiguracionInicial tipoNegocioInicial={tipoNegocio} />
+    </>
+  );
 }

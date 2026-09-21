@@ -49,13 +49,22 @@
   border-radius: 14px;
   background: #fff;
   color: #111;
-  transition: background 150ms ease, transform 150ms ease;
+  transition:
+    background 150ms ease,
+    transform 150ms ease;
 }
 .resumen-metrica span {
   font: 18px/1.25 var(--fuente-marca);
 }
 .resumen-metrica strong {
   font: 34px/1.1 var(--fuente-marca);
+}
+.resumen-metrica__dia {
+  display: inline-block;
+  margin-right: 0.35em;
+  font-size: 0.62em;
+  font-weight: 650;
+  vertical-align: 0.12em;
 }
 .resumen-pagina .panel-grilla {
   gap: 32px;
@@ -76,7 +85,10 @@
 }
 .resumen-pagina .tabla-turnos__cabecera,
 .resumen-pagina .tabla-turnos__fila {
-  grid-template-columns: 72px minmax(100px, 1.3fr) minmax(100px, 1.2fr) minmax(95px, 1fr) 110px;
+  grid-template-columns: 72px minmax(100px, 1.3fr) minmax(100px, 1.2fr) minmax(
+      95px,
+      1fr
+    ) 110px;
   gap: 13px;
 }
 .resumen-pagina .tabla-turnos--sin-profesional .tabla-turnos__cabecera,

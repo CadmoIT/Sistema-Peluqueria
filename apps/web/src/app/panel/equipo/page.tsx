@@ -1,6 +1,7 @@
 /** Gestiona profesionales, presentación, disponibilidad e integración de calendario. */
 /* eslint-disable @next/next/no-img-element -- Las imágenes remotas configurables se migrarán al adaptador R2. */
 import { CalendarSync, Edit3, Plus, UserRound } from "lucide-react";
+import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 import {
   actualizarProfesional,
   eliminarProfesional,
@@ -17,6 +18,7 @@ export default async function PaginaEquipo() {
   const { profesionales, conexiones, sedes, servicios } = await obtenerEquipo();
   return (
     <div className="panel-contenido">
+      <VistaPanelLista ruta="/panel/equipo" />
       <header className="cabecera-seccion">
         <div>
           <h1>Equipo</h1>
