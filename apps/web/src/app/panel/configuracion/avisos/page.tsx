@@ -1,3 +1,4 @@
+/** Pantalla de configuración de mensajes automáticos para clientes. */
 import { obtenerConfiguracionNegocio } from "@/servicios/panel-datos.service";
 import { MarcoConfiguracion } from "../marco-configuracion";
 import { ContenidoAvisos } from "../contenido-configuracion";

@@ -32,7 +32,15 @@ export async function POST(solicitud: Request) {
     return respuesta("Faltan datos para crear el turno.", 400);
   const negocio = await prisma.negocio.findUnique({
     where: { slug: entrada.slug },
-    include: { suscripcion: true },
+    select: {
+      id: true,
+      publicado: true,
+      politicaContacto: true,
+      zonaHoraria: true,
+      suscripcion: {
+        select: { estado: true, pruebaFinalizaEn: true, graciaHasta: true },
+      },
+    },
   });
   if (!negocio || !negocio.publicado)
     return respuesta("Este sitio no está disponible.", 404);
@@ -59,30 +67,43 @@ export async function POST(solicitud: Request) {
     return respuesta("Ingresá tu teléfono para reservar.", 400);
   if (negocio.politicaContacto === "CUALQUIERA" && !email && !telefono)
     return respuesta("Ingresá un correo o teléfono para reservar.", 400);
-  const servicio = await prisma.servicio.findFirst({
-    where: {
-      id: entrada.servicioId,
-      negocioId: negocio.id,
-      activo: true,
-      sedes: { some: { sedeId: entrada.sedeId } },
-      profesionales: { some: { profesionalId: entrada.profesionalId } },
-    },
-  });
-  const profesional = await prisma.profesional.findFirst({
-    where: {
-      id: entrada.profesionalId,
-      negocioId: negocio.id,
-      activo: true,
-      sedes: { some: { sedeId: entrada.sedeId } },
-      servicios: { some: { servicioId: entrada.servicioId } },
-    },
-    include: {
-      horarios: { where: { sedeId: entrada.sedeId } },
-    },
-  });
-  const sede = await prisma.sede.findFirst({
-    where: { id: entrada.sedeId, negocioId: negocio.id, activa: true },
-  });
+  const [servicio, profesional, sede] = await Promise.all([
+    prisma.servicio.findFirst({
+      where: {
+        id: entrada.servicioId,
+        negocioId: negocio.id,
+        activo: true,
+        sedes: { some: { sedeId: entrada.sedeId } },
+        profesionales: { some: { profesionalId: entrada.profesionalId } },
+      },
+      select: {
+        id: true,
+        duracionMinutos: true,
+        bufferMinutos: true,
+        precio: true,
+      },
+    }),
+    prisma.profesional.findFirst({
+      where: {
+        id: entrada.profesionalId,
+        negocioId: negocio.id,
+        activo: true,
+        sedes: { some: { sedeId: entrada.sedeId } },
+        servicios: { some: { servicioId: entrada.servicioId } },
+      },
+      select: {
+        id: true,
+        horarios: {
+          where: { sedeId: entrada.sedeId },
+          select: { diaSemana: true, comienza: true, termina: true },
+        },
+      },
+    }),
+    prisma.sede.findFirst({
+      where: { id: entrada.sedeId, negocioId: negocio.id, activa: true },
+      select: { id: true },
+    }),
+  ]);
   const inicio = new Date(entrada.inicio);
   if (
     !servicio ||
@@ -173,7 +194,6 @@ export async function POST(solicitud: Request) {
               where: { id: existente.id },
               data: {
                 nombre: nombre ?? existente.nombre,
-                
                 apellido: apellido ?? existente.apellido,
                 email: email ?? existente.email,
                 telefono: telefono ?? existente.telefono,

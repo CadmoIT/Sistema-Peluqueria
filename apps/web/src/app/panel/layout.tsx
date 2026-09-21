@@ -1,9 +1,6 @@
 /** Protege el panel con sesión válida y carga sus estilos específicos. */
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { Toaster } from "sonner";
-import { autenticacion } from "@/lib/autenticacion";
-import { buscarNegocioDelUsuario } from "@/servicios/configuracion-inicial.service";
+import { requerirContextoPanel } from "@/servicios/panel-datos.service";
 import { EstructuraPanel } from "@/componentes/panel/estructura-panel";
 import { obtenerPerfilNegocio } from "@/lib/perfiles-negocio";
 import { ProveedorPerfilNegocio } from "@/componentes/panel/perfil-negocio-contexto";
@@ -22,12 +19,7 @@ export default async function LayoutPanel({
 }: {
   children: React.ReactNode;
 }) {
-  const sesion = await autenticacion.api.getSession({
-    headers: await headers(),
-  });
-  if (!sesion) redirect("/acceder?modo=ingreso");
-  const membresia = await buscarNegocioDelUsuario(sesion.user.id);
-  if (!membresia) redirect("/primeros-pasos");
+  const { usuario, membresia } = await requerirContextoPanel();
   const configuracion =
     membresia.negocio.configuracion &&
     typeof membresia.negocio.configuracion === "object"
@@ -42,7 +34,7 @@ export default async function LayoutPanel({
     <ProveedorPerfilNegocio tipoNegocio={perfil.tipoNegocio}>
       <EstructuraPanel
         nombreNegocio={membresia.negocio.nombre}
-        emailUsuario={sesion.user.email}
+        emailUsuario={usuario.email}
         imagenNegocio={imagenNegocio}
       >
         {children}

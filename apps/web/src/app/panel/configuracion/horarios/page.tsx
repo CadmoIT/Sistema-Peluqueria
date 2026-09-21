@@ -1,3 +1,4 @@
+/** Pantalla de configuración de horarios generales del negocio. */
 import { obtenerConfiguracionNegocio } from "@/servicios/panel-datos.service";
 import { MarcoConfiguracion } from "../marco-configuracion";
 import { ContenidoHorarios } from "../contenido-configuracion";

@@ -1,3 +1,4 @@
+/** Pantalla de administración de locales y sus datos públicos. */
 import { obtenerConfiguracionNegocio } from "@/servicios/panel-datos.service";
 import { MarcoConfiguracion } from "../marco-configuracion";
 import { ContenidoLocales } from "../contenido-configuracion";

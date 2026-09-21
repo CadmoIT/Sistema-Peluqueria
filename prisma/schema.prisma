@@ -410,6 +410,7 @@ model Cliente {
   @@index([negocioId, telefono])
   @@index([negocioId, email])
   @@index([negocioId, archivadoEn])
+  @@index([negocioId, creadoEn])
 }
 
 model Reserva {
@@ -438,6 +439,7 @@ model Reserva {
 
   @@unique([negocioId, codigo])
   @@index([negocioId, sedeId, inicio])
+  @@index([negocioId, inicio])
   @@index([negocioId, profesionalId, inicio, fin])
 }
 
@@ -516,6 +518,7 @@ model Compra {
   items     CompraItem[]
 
   @@index([negocioId, sedeId, creadoEn])
+  @@index([negocioId, creadoEn])
 }
 
 model CompraItem {
@@ -583,6 +586,8 @@ model MovimientoCaja {
 
   @@index([negocioId, sedeId, creadoEn])
   @@index([negocioId, profesionalId, creadoEn])
+  @@index([negocioId, tipo, creadoEn])
+  @@index([negocioId, creadoEn])
 }
 
 model Comision {

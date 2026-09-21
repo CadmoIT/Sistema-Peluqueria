@@ -1,3 +1,4 @@
+/** Pantalla de datos principales y tipo de negocio. */
 import { obtenerConfiguracionNegocio } from "@/servicios/panel-datos.service";
 import { MarcoConfiguracion } from "../marco-configuracion";
 import { ContenidoNegocio } from "../contenido-configuracion";

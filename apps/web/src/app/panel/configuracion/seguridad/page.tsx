@@ -1,3 +1,4 @@
+/** Pantalla de seguridad, sesiones y datos de la cuenta. */
 import { requerirContextoPanel } from "@/servicios/panel-datos.service";
 import { MarcoConfiguracion } from "../marco-configuracion";
 import { ContenidoSeguridad } from "../contenido-configuracion";

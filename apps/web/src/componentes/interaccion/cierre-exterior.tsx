@@ -25,14 +25,28 @@ export function useCierreExterior<T extends HTMLElement>(
     if (!activo) return;
     function tocar(evento: PointerEvent) {
       const elemento = referencia.current;
-      const superior = [...document.querySelectorAll<HTMLDialogElement>("dialog[open]")].at(-1);
-      if (elemento instanceof HTMLDialogElement && superior && superior !== elemento) return;
+      const superior = [
+        ...document.querySelectorAll<HTMLDialogElement>("dialog[open]"),
+      ].at(-1);
+      if (
+        elemento instanceof HTMLDialogElement &&
+        superior &&
+        superior !== elemento
+      )
+        return;
       if (elemento && !estaDentro(elemento, evento)) cerrar();
     }
     function teclado(evento: KeyboardEvent) {
       if (evento.key === "Escape") {
-        const superior = [...document.querySelectorAll<HTMLDialogElement>("dialog[open]")].at(-1);
-        if (referencia.current instanceof HTMLDialogElement && superior && superior !== referencia.current) return;
+        const superior = [
+          ...document.querySelectorAll<HTMLDialogElement>("dialog[open]"),
+        ].at(-1);
+        if (
+          referencia.current instanceof HTMLDialogElement &&
+          superior &&
+          superior !== referencia.current
+        )
+          return;
         evento.preventDefault();
         cerrar();
       }
@@ -49,7 +63,6 @@ export function useCierreExterior<T extends HTMLElement>(
 const SELECTOR = [
   "details.desplegable-accion[open]",
   "details.selector-color[open]",
-  "details.nav-panel__configuracion[open]",
   "details.agenda-filtros-movil[open]",
   "details[data-cierre-exterior][open]",
 ].join(",");

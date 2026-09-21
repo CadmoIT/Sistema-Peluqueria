@@ -22,9 +22,6 @@ export default async function PaginaPanel() {
   const IconoServicios = obtenerIconoServicios(
     obtenerPerfilNegocio(datos.negocio.configuracion).iconoServicios,
   );
-  const activas = datos.reservas.filter(
-    (reserva) => !["CANCELADA", "VENCIDA"].includes(reserva.estado),
-  );
   const diasPrueba = datos.negocio.suscripcion?.pruebaFinalizaEn
     ? Math.max(
         0,
@@ -82,7 +79,7 @@ export default async function PaginaPanel() {
       <section className="metricas-panel">
         <Metrica
           etiqueta="Turnos de hoy"
-          valor={String(activas.length)}
+          valor={String(datos.turnosHoy)}
           href="/panel/agenda"
         />
         <Metrica

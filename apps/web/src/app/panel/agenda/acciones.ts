@@ -198,6 +198,7 @@ export async function moverReserva(
   const fin = new Date(finIso);
   const reserva = await prisma.reserva.findFirst({
     where: { id, negocioId: negocio.id },
+    select: { id: true, profesionalId: true, sedeId: true, clienteId: true },
   });
 
   if (
@@ -208,7 +209,10 @@ export async function moverReserva(
   ) {
     throw new Error("El turno o las fechas no son válidos.");
   }
-  if (!reserva.profesionalId || !reserva.clienteId) throw new Error("Este turno conserva una ficha eliminada y no puede reprogramarse.");
+  if (!reserva.profesionalId || !reserva.clienteId)
+    throw new Error(
+      "Este turno conserva una ficha eliminada y no puede reprogramarse.",
+    );
   await validarHorarioLaboral({
     negocioId: negocio.id,
     sedeId: reserva.sedeId,
@@ -217,21 +221,6 @@ export async function moverReserva(
     fin,
     zonaHoraria: negocio.zonaHoraria,
   });
-
-  const superpuesta = await prisma.reserva.findFirst({
-    where: {
-      negocioId: negocio.id,
-      profesionalId: reserva.profesionalId,
-      id: { not: id },
-      estado: { notIn: ["CANCELADA", "VENCIDA"] },
-      inicio: { lt: fin },
-      fin: { gt: inicio },
-    },
-  });
-
-  if (superpuesta) {
-    throw new Error("El nuevo horario se superpone con otro turno.");
-  }
 
   const bloqueoGoogle = await prisma.eventoCalendarioExterno.findFirst({
     where: {

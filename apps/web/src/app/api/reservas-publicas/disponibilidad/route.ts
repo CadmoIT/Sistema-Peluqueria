@@ -30,7 +30,14 @@ export async function GET(solicitud: Request) {
 
   const negocio = await prisma.negocio.findUnique({
     where: { slug },
-    include: { suscripcion: true },
+    select: {
+      id: true,
+      publicado: true,
+      zonaHoraria: true,
+      suscripcion: {
+        select: { estado: true, pruebaFinalizaEn: true, graciaHasta: true },
+      },
+    },
   });
   if (!negocio || !negocio.publicado || pruebaVencida(negocio.suscripcion)) {
     return NextResponse.json(
@@ -48,6 +55,7 @@ export async function GET(solicitud: Request) {
         sedes: { some: { sedeId } },
         profesionales: { some: { profesionalId } },
       },
+      select: { duracionMinutos: true, bufferMinutos: true },
     }),
     prisma.profesional.findFirst({
       where: {
@@ -57,11 +65,20 @@ export async function GET(solicitud: Request) {
         sedes: { some: { sedeId } },
         servicios: { some: { servicioId } },
       },
-      include: { horarios: { where: { sedeId } } },
+      select: {
+        horarios: {
+          where: { sedeId },
+          select: { diaSemana: true, comienza: true, termina: true },
+        },
+      },
     }),
     prisma.sede.findFirst({
       where: { id: sedeId, negocioId: negocio.id, activa: true },
-      include: { horarios: true },
+      select: {
+        horarios: {
+          select: { diaSemana: true, abre: true, cierra: true, activo: true },
+        },
+      },
     }),
   ]);
 
@@ -112,7 +129,11 @@ export async function GET(solicitud: Request) {
         cancelado: false,
         conexion: {
           negocioId: negocio.id,
-          OR: [{ profesionalId }, { profesionalId: null, sedeId }, { profesionalId: null, sedeId: null }],
+          OR: [
+            { profesionalId },
+            { profesionalId: null, sedeId },
+            { profesionalId: null, sedeId: null },
+          ],
         },
         inicio: { lt: finDia },
         fin: { gt: inicioDia },

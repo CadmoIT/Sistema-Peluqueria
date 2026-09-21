@@ -2,7 +2,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@turnos/ui", "@turnos/config", "@turnos/contratos"],
+  transpilePackages: ["@turnos/config"],
 };
 
 export default nextConfig;

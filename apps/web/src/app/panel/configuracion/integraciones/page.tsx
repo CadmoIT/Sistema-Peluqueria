@@ -1,3 +1,4 @@
+/** Pantalla de configuración de integraciones externas. */
 import { obtenerConfiguracionNegocio } from "@/servicios/panel-datos.service";
 import { MarcoConfiguracion } from "../marco-configuracion";
 import { ContenidoIntegraciones } from "../contenido-configuracion";

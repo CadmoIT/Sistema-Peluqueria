@@ -808,11 +808,6 @@
   font-size: 13px !important;
   line-height: 1.45 !important;
 }
-.ayuda-google-local {
-  margin-top: -4px;
-  color: #526b7c;
-  font: 13px/1.45 var(--fuente-preguntas);
-}
 .horario-sede-formulario > .boton {
   justify-self: start;
 }

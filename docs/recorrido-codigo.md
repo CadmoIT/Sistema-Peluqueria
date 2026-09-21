@@ -72,7 +72,6 @@ pg-boss usa PostgreSQL como cola. Si no existe `DATABASE_URL`, el proceso inform
 
 - `packages/config`: precios, planes y reglas configurables compartidas.
 - `packages/contratos`: tipos comunes entre frontend y API.
-- `packages/ui`: componentes visuales reutilizables.
 
 Sus carpetas `dist` se generan porque Node ejecuta JavaScript, no TypeScript directamente en producción. Se eliminan con la limpieza y se regeneran antes del desarrollo mediante `predev`.
 
