@@ -2,25 +2,22 @@
 /* eslint-disable @next/next/no-img-element -- El origen de las imágenes pertenece a cada negocio y luego será R2. */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import {
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Clock3,
-  ExternalLink,
   MapPin,
-  MessageCircle,
-  Phone,
   Search,
   Star,
 } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa6";
 
 export type DatosSitioPublico = {
   slug: string;
   nombre: string;
   descripcion: string;
+  politicaContacto: "EMAIL" | "TELEFONO" | "CUALQUIERA" | "NINGUNO";
   configuracion: {
     titulo: string;
     descripcion: string;
@@ -28,6 +25,7 @@ export type DatosSitioPublico = {
     colorFondo: string;
     colorTexto: string;
     logoUrl: string;
+    heroAlineacion: "izquierda" | "centro" | "derecha";
     whatsapp: string;
     instagram: string;
     hero: Array<{ url: string; alt: string; focoX: number; focoY: number }>;
@@ -38,6 +36,7 @@ export type DatosSitioPublico = {
   sedes: Array<{
     id: string;
     nombre: string;
+    subdominio: string | null;
     direccion: string;
     telefono: string | null;
     latitud: number | null;
@@ -45,6 +44,12 @@ export type DatosSitioPublico = {
     googlePuntaje: number | null;
     googleResenas: number | null;
     googleMapsUrl: string | null;
+    horarios: Array<{
+      diaSemana: number;
+      abre: string;
+      cierra: string;
+      activo: boolean;
+    }>;
   }>;
   servicios: Array<{
     id: string;
@@ -54,6 +59,8 @@ export type DatosSitioPublico = {
     duracionMinutos: number;
     precio: number;
     imagen: string | null;
+    sedeIds: string[];
+    profesionalIds: string[];
   }>;
   profesionales: Array<{
     id: string;
@@ -62,14 +69,16 @@ export type DatosSitioPublico = {
     especialidad: string | null;
     biografia: string | null;
     foto: string | null;
+    sedeIds: string[];
+    servicioIds: string[];
   }>;
 };
 
 export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
   const [imagen, setImagen] = useState(0);
   const [busqueda, setBusqueda] = useState("");
-  const [servicioElegido, setServicioElegido] = useState<string | null>(null);
-  const [categoriasAbiertas, setCategoriasAbiertas] = useState<string[]>([]);
+  const [serviciosElegidos, setServiciosElegidos] = useState<string[]>([]);
+  const [categoriaAbierta, setCategoriaAbierta] = useState<string | null>(null);
   const hero = datos.configuracion.hero.filter((imagen) => imagen.url);
   useEffect(() => {
     if (!datos.configuracion.carruselAutomatico || hero.length < 2) return;
@@ -107,26 +116,34 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
     [categorias],
   );
   useEffect(() => {
-    if (busqueda) {
-      setCategoriasAbiertas(nombresCategorias);
-      return;
-    }
-    setCategoriasAbiertas((actuales) =>
-      actuales.length ? actuales : nombresCategorias.slice(0, 1),
+    setCategoriaAbierta((actual) =>
+      busqueda
+        ? (nombresCategorias[0] ?? null)
+        : actual && nombresCategorias.includes(actual)
+          ? actual
+          : (nombresCategorias[0] ?? null),
     );
   }, [busqueda, nombresCategorias]);
+  const serviciosSeleccionados = datos.servicios.filter((servicio) =>
+    serviciosElegidos.includes(servicio.id),
+  );
+  const [mostrarReserva, setMostrarReserva] = useState(false);
+  const totalSeleccionado = serviciosSeleccionados.reduce(
+    (total, servicio) => total + servicio.precio,
+    0,
+  );
   const estilo = {
     "--sitio-principal": datos.configuracion.colorPrincipal,
     "--sitio-fondo": datos.configuracion.colorFondo,
     "--sitio-texto": datos.configuracion.colorTexto,
   } as React.CSSProperties;
-  const sedePrincipal = datos.sedes[0];
+  const sedePrincipal = datos.sedes[0]!;
 
   return (
     <div className="publico-sitio" style={estilo}>
       <main>
         <section
-          className={`publico-hero ${hero.length ? "con-imagen" : ""}`}
+          className={`publico-hero publico-hero--${datos.configuracion.heroAlineacion} ${hero.length ? "con-imagen" : ""}`}
           aria-label={hero[imagen]?.alt || undefined}
           style={
             hero[imagen]
@@ -138,20 +155,10 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
           }
         >
           <div className="publico-hero__velo" />
-          {datos.configuracion.logoUrl && (
-            <img
-              className="publico-logo-portada"
-              src={datos.configuracion.logoUrl}
-              alt={datos.configuracion.titulo}
-            />
-          )}
           <div className="publico-hero__contenido">
             <small>RESERVAS ONLINE</small>
             <h1>{datos.configuracion.titulo}</h1>
             <p>{datos.configuracion.descripcion || datos.descripcion}</p>
-            <Link className="publico-boton" href={`/reservar/${datos.slug}`}>
-              Elegir día y horario
-            </Link>
           </div>
           {hero.length > 1 && (
             <div className="hero-controles">
@@ -176,59 +183,54 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
           )}
         </section>
         {datos.configuracion.secciones.includes("servicios") && (
-          <section
-            className="publico-seccion"
-            id="servicios"
-            style={{
-              order: datos.configuracion.secciones.indexOf("servicios"),
-            }}
-          >
-            <div className="publico-titulo">
-              <small>SERVICIOS</small>
-              <h2>Elegí tu próximo turno</h2>
-              <p>Consultá duración y precio antes de reservar.</p>
-            </div>
-            <label className="publico-buscador">
-              <Search />
-              <input
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar un servicio"
-              />
-            </label>
-            <div className="publico-catalogo">
-              <aside aria-label="Categorías de servicios">
+          <section className="publico-experiencia" id="servicios">
+            <div className="publico-catalogo-col">
+              <div className="publico-titulo">
+                <small>SERVICIOS</small>
+                <h2>Elegí tu próximo turno</h2>
+                <p>Consultá duración y precio antes de reservar.</p>
+              </div>
+              <label className="publico-buscador">
+                <Search />
+                <input
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar un servicio (ej. corte, uñas, masaje...)"
+                />
+              </label>
+              <nav
+                className="publico-categorias-nav"
+                aria-label="Categorías de servicios"
+              >
                 {nombresCategorias.map((categoria) => (
                   <button
                     type="button"
                     key={categoria}
-                    onClick={() =>
+                    onClick={() => {
+                      setCategoriaAbierta(categoria);
                       document
                         .getElementById("categoria-" + categoria)
                         ?.scrollIntoView({
                           behavior: "smooth",
                           block: "center",
-                        })
-                    }
+                        });
+                    }}
                   >
                     {categoria}
                   </button>
                 ))}
-              </aside>
+              </nav>
               <div className="publico-categorias">
                 {Object.entries(categorias).map(([categoria, items]) => {
-                  const abierta = categoriasAbiertas.includes(categoria);
+                  const abierta = categoriaAbierta === categoria;
                   return (
                     <details
                       id={"categoria-" + categoria}
                       key={categoria}
                       open={abierta}
                       onToggle={(evento) => {
-                        const mostrar = evento.currentTarget.open;
-                        setCategoriasAbiertas((actuales) =>
-                          mostrar
-                            ? Array.from(new Set([...actuales, categoria]))
-                            : actuales.filter((item) => item !== categoria),
+                        setCategoriaAbierta(
+                          evento.currentTarget.open ? categoria : null,
                         );
                       }}
                     >
@@ -241,7 +243,9 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
                           <article
                             key={servicio.id}
                             className={
-                              servicioElegido === servicio.id ? "elegido" : ""
+                              serviciosElegidos.includes(servicio.id)
+                                ? "elegido"
+                                : ""
                             }
                           >
                             <small>{servicio.duracionMinutos} min</small>
@@ -255,23 +259,24 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
                               <button
                                 type="button"
                                 className="publico-seleccionar"
-                                aria-pressed={servicioElegido === servicio.id}
-                                onClick={() => setServicioElegido(servicio.id)}
-                              >
-                                {servicioElegido === servicio.id
-                                  ? "Seleccionado"
-                                  : "Seleccionar"}
-                              </button>
-                              <Link
-                                href={
-                                  "/reservar/" +
-                                  datos.slug +
-                                  "?servicios=" +
-                                  servicio.id
+                                aria-label={`${serviciosElegidos.includes(servicio.id) ? "Quitar" : "Agregar"} ${servicio.nombre}`}
+                                aria-pressed={serviciosElegidos.includes(
+                                  servicio.id,
+                                )}
+                                onClick={() =>
+                                  setServiciosElegidos((actuales) =>
+                                    actuales.includes(servicio.id)
+                                      ? actuales.filter(
+                                          (id) => id !== servicio.id,
+                                        )
+                                      : [...actuales, servicio.id],
+                                  )
                                 }
                               >
-                                Reservar
-                              </Link>
+                                {serviciosElegidos.includes(servicio.id)
+                                  ? "Quitar"
+                                  : "Reservar"}
+                              </button>
                             </footer>
                           </article>
                         ))}
@@ -286,116 +291,372 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
                 No encontramos servicios con ese nombre.
               </p>
             )}
-          </section>
-        )}
-        {!!datos.profesionales.length &&
-          datos.configuracion.secciones.includes("equipo") && (
-            <section
-              className="publico-seccion publico-equipo"
-              id="equipo"
-              style={{ order: datos.configuracion.secciones.indexOf("equipo") }}
+            <aside
+              className="publico-lateral"
+              aria-label="Información del local"
             >
-              <div className="publico-titulo">
-                <small>EQUIPO</small>
-                <h2>Conocé a quienes te van a atender</h2>
-              </div>
-              <div>
-                {datos.profesionales.map((profesional) => (
-                  <article key={profesional.id}>
-                    {profesional.foto ? (
-                      <img
-                        src={profesional.foto}
-                        alt={`${profesional.nombre} ${profesional.apellido ?? ""}`}
-                      />
-                    ) : (
-                      <i>
-                        {iniciales(profesional.nombre, profesional.apellido)}
-                      </i>
-                    )}
-                    <h3>
-                      {profesional.nombre} {profesional.apellido}
-                    </h3>
-                    <p>
-                      {profesional.especialidad ||
-                        profesional.biografia ||
-                        "Profesional del equipo"}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
-        {!!datos.sedes.length &&
-          datos.configuracion.secciones.includes("ubicacion") && (
-            <section
-              className="publico-ubicacion"
-              id="ubicacion"
-              style={{
-                order: datos.configuracion.secciones.indexOf("ubicacion"),
-              }}
-            >
-              <div className="publico-ubicacion__datos">
-                <small>ENCONTRANOS</small>
-                <h2>
-                  {datos.sedes.length === 1 ? "Te esperamos" : "Elegí tu sede"}
-                </h2>
-                {datos.sedes.map((sede) => (
-                  <article key={sede.id}>
-                    <h3>{sede.nombre}</h3>
+              {sedePrincipal && (
+                <div className="publico-lateral__local">
+                  <div className="publico-lateral__mapa">
+                    <iframe
+                      title={`Mapa de ${sedePrincipal.nombre}`}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.google.com/maps?q=${encodeURIComponent(sedePrincipal.direccion || datos.nombre)}&output=embed`}
+                    />
+                  </div>
+                  <div className="publico-lateral__datos">
+                    <strong>{sedePrincipal.nombre}</strong>
                     <span>
-                      <MapPin /> {sede.direccion || "Dirección pendiente"}
+                      <MapPin />{" "}
+                      {sedePrincipal.direccion || "Dirección pendiente"}
                     </span>
-                    {sede.telefono && (
-                      <a href={`tel:${sede.telefono}`}>
-                        <Phone /> {sede.telefono}
-                      </a>
-                    )}
-                    {sede.googlePuntaje !== null && sede.googleMapsUrl && (
+                    {sedePrincipal.telefono && (
                       <a
-                        href={sede.googleMapsUrl}
+                        href={`https://wa.me/${sedePrincipal.telefono.replace(/\D/g, "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Star fill="currentColor" /> {sede.googlePuntaje} ·{" "}
-                        {sede.googleResenas ?? 0} valoraciones <ExternalLink />
+                        <FaWhatsapp /> {sedePrincipal.telefono}
                       </a>
                     )}
-                  </article>
-                ))}
-              </div>
-              {sedePrincipal && (
-                <iframe
-                  title={`Mapa de ${sedePrincipal.nombre}`}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps?q=${encodeURIComponent(sedePrincipal.direccion || datos.nombre)}&output=embed`}
-                />
+                    <details className="publico-horarios">
+                      <summary>Horarios</summary>
+                      <div role="tooltip">
+                        {sedePrincipal.horarios
+                          .filter((horario) => horario.activo)
+                          .map((horario) => (
+                            <span key={horario.diaSemana}>
+                              {nombreDia(horario.diaSemana)} · {horario.abre} a{" "}
+                              {horario.cierra}
+                            </span>
+                          ))}
+                      </div>
+                    </details>
+                    {sedePrincipal.googlePuntaje !== null && (
+                      <span>
+                        <Star fill="currentColor" />{" "}
+                        {sedePrincipal.googlePuntaje} ·{" "}
+                        {sedePrincipal.googleResenas ?? 0} valoraciones
+                      </span>
+                    )}
+                  </div>
+                </div>
               )}
-            </section>
-          )}
+              <section className="publico-equipo-minimal">
+                <div className="publico-lateral__titulo">
+                  <h2>Nuestro equipo</h2>
+                  <span>Profesionales que te cuidan</span>
+                </div>
+                <div className="publico-equipo-grid">
+                  {datos.profesionales.map((profesional) => (
+                    <article
+                      key={profesional.id}
+                      title={`${profesional.nombre} ${profesional.apellido ?? ""}`.trim()}
+                    >
+                      {profesional.foto ? (
+                        <img src={profesional.foto} alt="" />
+                      ) : (
+                        <i>
+                          {iniciales(profesional.nombre, profesional.apellido)}
+                        </i>
+                      )}
+                      <strong>{profesional.nombre}</strong>
+                      <small>{profesional.especialidad ?? "Profesional"}</small>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </aside>
+          </section>
+        )}
       </main>
-      <footer className="publico-footer">
-        <strong>{datos.configuracion.titulo}</strong>
-        <span>Reservas impulsadas por TurnosRápidos</span>
-      </footer>
-      {datos.configuracion.whatsapp.replace(/\D/g, "").length >= 8 && (
-        <a
-          className="whatsapp-flotante"
-          href={`https://wa.me/${datos.configuracion.whatsapp.replace(/\D/g, "")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Contactar por WhatsApp"
+      {serviciosSeleccionados.length > 0 && (
+        <aside
+          className="resumen-servicios"
+          aria-label="Servicios seleccionados"
         >
-          <MessageCircle />
-        </a>
+          <div>
+            <small>Tu selección</small>
+            {serviciosSeleccionados.map((servicio) => (
+              <span key={servicio.id}>
+                {servicio.nombre}
+                <b>{pesos(servicio.precio)}</b>
+              </span>
+            ))}
+            <strong>
+              Total <b>{pesos(totalSeleccionado)}</b>
+            </strong>
+          </div>
+          {!mostrarReserva ? (
+            <button
+              type="button"
+              className="publico-boton"
+              onClick={() => setMostrarReserva(true)}
+            >
+              Continuar con fecha y horario
+            </button>
+          ) : sedePrincipal ? (
+            <ReservaIntegrada
+              slug={datos.slug}
+              nombreNegocio={datos.configuracion.titulo}
+              politicaContacto={datos.politicaContacto}
+              servicios={serviciosSeleccionados}
+              profesionales={datos.profesionales}
+              sede={sedePrincipal}
+            />
+          ) : null}
+        </aside>
       )}
-      {servicioElegido && (
-        <Link
-          className="reserva-movil-persistente"
-          href={"/reservar/" + datos.slug + "?servicios=" + servicioElegido}
-        >
-          <CalendarDays /> Reservar servicio
-        </Link>
+    </div>
+  );
+}
+
+function ReservaIntegrada({
+  slug,
+  nombreNegocio,
+  politicaContacto,
+  servicios,
+  profesionales,
+  sede,
+}: {
+  slug: string;
+  nombreNegocio: string;
+  politicaContacto: DatosSitioPublico["politicaContacto"];
+  servicios: DatosSitioPublico["servicios"];
+  profesionales: DatosSitioPublico["profesionales"];
+  sede: DatosSitioPublico["sedes"][number];
+}) {
+  const [profesionalId, setProfesionalId] = useState("");
+  const [fecha, setFecha] = useState(minimoFecha());
+  const [inicio, setInicio] = useState("");
+  const [horarios, setHorarios] = useState<
+    Array<{ inicio: string; etiqueta: string }>
+  >([]);
+  const [cargando, setCargando] = useState(false);
+  const [paso, setPaso] = useState<"profesional" | "horario" | "datos">(
+    "profesional",
+  );
+  const [guardando, setGuardando] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const profesionalesDisponibles = profesionales.filter(
+    (profesional) =>
+      profesional.sedeIds.includes(sede.id) &&
+      servicios.every((servicio) =>
+        profesional.servicioIds.includes(servicio.id),
+      ),
+  );
+
+  useEffect(() => {
+    if (!profesionalId || !fecha) {
+      setHorarios([]);
+      setInicio("");
+      return;
+    }
+    const controlador = new AbortController();
+    const parametros = new URLSearchParams({
+      slug,
+      servicioIds: servicios.map((servicio) => servicio.id).join(","),
+      sedeId: sede.id,
+      profesionalId,
+      fecha,
+    });
+    setCargando(true);
+    setInicio("");
+    fetch(`/api/reservas-publicas/disponibilidad?${parametros}`, {
+      signal: controlador.signal,
+    })
+      .then((respuesta) => respuesta.json())
+      .then(
+        (contenido: {
+          horarios?: Array<{ inicio: string; etiqueta: string }>;
+        }) => {
+          setHorarios(contenido.horarios ?? []);
+        },
+      )
+      .catch((error) => {
+        if (error instanceof Error && error.name !== "AbortError")
+          setHorarios([]);
+      })
+      .finally(() => setCargando(false));
+    return () => controlador.abort();
+  }, [fecha, profesionalId, servicios, sede.id, slug]);
+
+  async function confirmar(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (!inicio || !profesionalId) return;
+    setGuardando(true);
+    setMensaje("");
+    const formulario = new FormData(evento.currentTarget);
+    const respuesta = await fetch("/api/reservas-publicas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug,
+        servicioIds: servicios.map((servicio) => servicio.id),
+        profesionalId,
+        sedeId: sede.id,
+        inicio: new Date(inicio).toISOString(),
+        nombre: formulario.get("nombre"),
+        apellido: formulario.get("apellido"),
+        email: formulario.get("email"),
+        telefono: formulario.get("telefono"),
+        aceptaWhatsapp: formulario.get("aceptaWhatsapp") === "on",
+      }),
+    });
+    const resultado = (await respuesta.json()) as {
+      codigo?: string;
+      mensaje?: string;
+    };
+    if (respuesta.ok && resultado.codigo) setCodigo(resultado.codigo);
+    else setMensaje(resultado.mensaje ?? "No pudimos confirmar el turno.");
+    setGuardando(false);
+  }
+
+  if (codigo) {
+    return (
+      <div className="reserva-integrada__exito">
+        <strong>Turno confirmado</strong>
+        <span>
+          {nombreNegocio} · Código {codigo}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="reserva-integrada">
+      <div className="reserva-integrada__pasos">
+        <span className={paso === "profesional" ? "activo" : ""}>
+          1 Profesional
+        </span>
+        <span className={paso === "horario" ? "activo" : ""}>
+          2 Fecha y hora
+        </span>
+        <span className={paso === "datos" ? "activo" : ""}>3 Confirmación</span>
+      </div>
+      {paso === "profesional" && (
+        <div className="reserva-integrada__bloque">
+          <strong>Elegí primero tu profesional</strong>
+          <div className="reserva-integrada__opciones">
+            {profesionalesDisponibles.map((profesional) => (
+              <button
+                type="button"
+                key={profesional.id}
+                className={profesionalId === profesional.id ? "activo" : ""}
+                onClick={() => {
+                  setProfesionalId(profesional.id);
+                  setPaso("horario");
+                }}
+              >
+                {profesional.foto ? (
+                  <img src={profesional.foto} alt="" />
+                ) : (
+                  <i>{iniciales(profesional.nombre, profesional.apellido)}</i>
+                )}
+                <span>{profesional.nombre}</span>
+              </button>
+            ))}
+          </div>
+          {!profesionalesDisponibles.length && (
+            <small>
+              No hay un profesional disponible para estos servicios.
+            </small>
+          )}
+        </div>
+      )}
+      {paso === "horario" && (
+        <div className="reserva-integrada__bloque">
+          <label>
+            Fecha
+            <input
+              type="date"
+              min={minimoFecha()}
+              value={fecha}
+              onChange={(evento) => setFecha(evento.target.value)}
+            />
+          </label>
+          <strong>Horarios disponibles</strong>
+          {cargando ? (
+            <small>Buscando horarios...</small>
+          ) : horarios.length ? (
+            <div className="reserva-integrada__horarios">
+              {horarios.map((horario) => (
+                <button
+                  type="button"
+                  key={horario.inicio}
+                  className={inicio === horario.inicio ? "activo" : ""}
+                  onClick={() => {
+                    setInicio(horario.inicio);
+                    setPaso("datos");
+                  }}
+                >
+                  {horario.etiqueta}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <small>No hay horarios libres para esta fecha.</small>
+          )}
+          <button
+            type="button"
+            className="reserva-integrada__volver"
+            onClick={() => setPaso("profesional")}
+          >
+            Cambiar profesional
+          </button>
+        </div>
+      )}
+      {paso === "datos" && (
+        <form className="reserva-integrada__bloque" onSubmit={confirmar}>
+          <strong>Confirmá tus datos</strong>
+          <label>
+            Nombre
+            <input name="nombre" required />
+          </label>
+          <label>
+            Apellido
+            <input name="apellido" />
+          </label>
+          {(politicaContacto === "EMAIL" ||
+            politicaContacto === "CUALQUIERA") && (
+            <label>
+              Correo
+              <input
+                name="email"
+                type="email"
+                required={politicaContacto === "EMAIL"}
+              />
+            </label>
+          )}
+          {(politicaContacto === "TELEFONO" ||
+            politicaContacto === "CUALQUIERA") && (
+            <label>
+              Teléfono
+              <input
+                name="telefono"
+                type="tel"
+                required={politicaContacto === "TELEFONO"}
+              />
+            </label>
+          )}
+          <label className="reserva-integrada__check">
+            <input name="aceptaWhatsapp" type="checkbox" /> Acepto recibir
+            avisos por WhatsApp.
+          </label>
+          {mensaje && <small role="alert">{mensaje}</small>}
+          <button className="publico-boton" disabled={guardando}>
+            {guardando ? "Confirmando..." : "Confirmar turno"}
+          </button>
+          <button
+            type="button"
+            className="reserva-integrada__volver"
+            onClick={() => setPaso("horario")}
+          >
+            Cambiar horario
+          </button>
+        </form>
       )}
     </div>
   );
@@ -446,7 +707,22 @@ function iniciales(nombre: string, apellido: string | null) {
   return `${nombre[0] ?? ""}${apellido?.[0] ?? ""}`.toUpperCase();
 }
 
+function nombreDia(diaSemana: number) {
+  return (
+    ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"][
+      diaSemana
+    ] ?? "Día"
+  );
+}
+
 function posicionDestacado(id: string, destacados: string[]) {
   const posicion = destacados.indexOf(id);
   return posicion === -1 ? Number.MAX_SAFE_INTEGER : posicion;
+}
+
+function minimoFecha() {
+  const fecha = new Date(Date.now() + 30 * 60_000);
+  return new Date(fecha.getTime() - fecha.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 10);
 }

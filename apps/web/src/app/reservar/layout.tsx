@@ -1,5 +1,4 @@
-/** Carga los estilos aislados del proceso publico de reserva. */
-import "./reserva.css";
+/** Mantiene el segmento de enlaces antiguos sin agregar una pantalla de reserva independiente. */
 export default function LayoutReserva({
   children,
 }: {

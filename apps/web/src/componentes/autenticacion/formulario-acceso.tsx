@@ -59,7 +59,7 @@ export function FormularioAcceso() {
             name: nombre,
             email,
             password,
-            callbackURL: "/primeros-pasos",
+            callbackURL: "/panel",
           })
         : await clienteAutenticacion.signIn.email({
             email,
@@ -87,7 +87,7 @@ export function FormularioAcceso() {
         return;
       }
 
-      router.push("/primeros-pasos");
+      router.push("/panel");
     } catch {
       setCargando(false);
       cancelarIngreso();
@@ -111,7 +111,7 @@ export function FormularioAcceso() {
     try {
       const resultado = await clienteAutenticacion.signIn.social({
         provider: "google",
-        callbackURL: "/primeros-pasos",
+        callbackURL: "/panel",
       });
       if (resultado.error) {
         cancelarIngreso();
@@ -129,7 +129,7 @@ export function FormularioAcceso() {
     setCargando(true);
     const resultado = await clienteAutenticacion.sendVerificationEmail({
       email: emailVerificacion,
-      callbackURL: "/primeros-pasos",
+      callbackURL: "/panel",
     });
     setCargando(false);
 

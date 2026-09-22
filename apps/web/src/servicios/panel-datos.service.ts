@@ -532,8 +532,13 @@ export async function obtenerReportes(
 export const obtenerSitioPublico = cache(async function obtenerSitioPublico(
   slug: string,
 ) {
-  return prisma.negocio.findUnique({
-    where: { slug },
+  return prisma.negocio.findFirst({
+    where: {
+      OR: [
+        { slug },
+        { sedes: { some: { subdominio: slug, activa: true } } },
+      ],
+    },
     select: {
       id: true,
       slug: true,
@@ -551,6 +556,7 @@ export const obtenerSitioPublico = cache(async function obtenerSitioPublico(
         select: {
           id: true,
           nombre: true,
+          subdominio: true,
           direccion: true,
           telefono: true,
           latitud: true,
@@ -558,6 +564,10 @@ export const obtenerSitioPublico = cache(async function obtenerSitioPublico(
           googlePuntaje: true,
           googleResenas: true,
           googleMapsUrl: true,
+          horarios: {
+            orderBy: { diaSemana: "asc" },
+            select: { diaSemana: true, abre: true, cierra: true, activo: true },
+          },
         },
       },
       servicios: {

@@ -198,6 +198,18 @@ function horaConfiguracionValida(valor: string, alternativa: string) {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(valor) ? valor : alternativa;
 }
 
+function normalizarSlug(valor: string) {
+  return (
+    valor
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 36) || "local"
+  );
+}
+
 export async function crearSede(datos: FormData) {
   const { negocio, membresia } = await requerirContextoPanel();
   if (!puedeCambiarTipoNegocio(membresia.rol)) {
@@ -227,7 +239,7 @@ export async function crearSede(datos: FormData) {
     redirect("/panel/configuracion/locales?configuracion=local-duplicado");
   }
 
-  await prisma.sede.create({
+  const sedeCreada = await prisma.sede.create({
     data: {
       negocioId: negocio.id,
       nombre,
@@ -244,6 +256,13 @@ export async function crearSede(datos: FormData) {
             googleActualizadoEn: new Date(),
           }
         : {}),
+    },
+    select: { id: true },
+  });
+  await prisma.sede.update({
+    where: { id: sedeCreada.id },
+    data: {
+      subdominio: `${negocio.slug}-${normalizarSlug(nombre)}-${sedeCreada.id.slice(0, 6)}`,
     },
   });
 

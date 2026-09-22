@@ -9,6 +9,7 @@ import { estaDentroDelHorario } from "@/servicios/disponibilidad.service";
 type Entrada = {
   slug?: string;
   servicioId?: string;
+  servicioIds?: string[];
   sedeId?: string;
   profesionalId?: string;
   inicio?: string;
@@ -22,16 +23,31 @@ type Entrada = {
 
 export async function POST(solicitud: Request) {
   const entrada = (await solicitud.json().catch(() => null)) as Entrada | null;
+  const servicioIds = Array.from(
+    new Set(
+      (entrada?.servicioIds?.length
+        ? entrada.servicioIds
+        : entrada?.servicioId
+          ? [entrada.servicioId]
+          : []
+      ).filter(Boolean),
+    ),
+  );
   if (
     !entrada?.slug ||
-    !entrada.servicioId ||
+    !servicioIds.length ||
     !entrada.sedeId ||
     !entrada.profesionalId ||
     !entrada.inicio
   )
     return respuesta("Faltan datos para crear el turno.", 400);
-  const negocio = await prisma.negocio.findUnique({
-    where: { slug: entrada.slug },
+  const negocio = await prisma.negocio.findFirst({
+    where: {
+      OR: [
+        { slug: entrada.slug },
+        { sedes: { some: { subdominio: entrada.slug, activa: true } } },
+      ],
+    },
     select: {
       id: true,
       publicado: true,
@@ -67,10 +83,10 @@ export async function POST(solicitud: Request) {
     return respuesta("Ingresá tu teléfono para reservar.", 400);
   if (negocio.politicaContacto === "CUALQUIERA" && !email && !telefono)
     return respuesta("Ingresá un correo o teléfono para reservar.", 400);
-  const [servicio, profesional, sede] = await Promise.all([
-    prisma.servicio.findFirst({
+  const [servicios, profesional, sede] = await Promise.all([
+    prisma.servicio.findMany({
       where: {
-        id: entrada.servicioId,
+        id: { in: servicioIds },
         negocioId: negocio.id,
         activo: true,
         sedes: { some: { sedeId: entrada.sedeId } },
@@ -89,7 +105,7 @@ export async function POST(solicitud: Request) {
         negocioId: negocio.id,
         activo: true,
         sedes: { some: { sedeId: entrada.sedeId } },
-        servicios: { some: { servicioId: entrada.servicioId } },
+        servicios: { some: { servicioId: { in: servicioIds } } },
       },
       select: {
         id: true,
@@ -106,7 +122,7 @@ export async function POST(solicitud: Request) {
   ]);
   const inicio = new Date(entrada.inicio);
   if (
-    !servicio ||
+    servicios.length !== servicioIds.length ||
     !profesional ||
     !sede ||
     Number.isNaN(inicio.getTime()) ||
@@ -115,7 +131,12 @@ export async function POST(solicitud: Request) {
     return respuesta("La selección ya no está disponible.", 400);
   const fin = new Date(
     inicio.getTime() +
-      (servicio.duracionMinutos + servicio.bufferMinutos) * 60_000,
+      servicios.reduce(
+        (total, servicio) =>
+          total + servicio.duracionMinutos + servicio.bufferMinutos,
+        0,
+      ) *
+        60_000,
   );
   if (
     !estaDentroDelHorario(
@@ -222,16 +243,19 @@ export async function POST(solicitud: Request) {
             estado: "CONFIRMADA",
             inicio,
             fin,
-            total: servicio.precio,
+            total: servicios.reduce(
+              (total, servicio) => total + Number(servicio.precio),
+              0,
+            ),
             sena: new Prisma.Decimal(0),
             notas: observacion,
             servicios: {
-              create: {
+              create: servicios.map((servicio, indice) => ({
                 servicioId: servicio.id,
-                orden: 1,
+                orden: indice + 1,
                 precio: servicio.precio,
                 duracionMinutos: servicio.duracionMinutos,
-              },
+              })),
             },
           },
           select: { id: true, codigo: true },

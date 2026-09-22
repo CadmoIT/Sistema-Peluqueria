@@ -7,7 +7,6 @@ import {
   ArrowDown,
   ArrowUp,
   Eye,
-  Globe2,
   MapPin,
   MessageCircle,
   Palette,
@@ -28,6 +27,7 @@ export type BorradorSitio = {
   colorFondo: string;
   colorTexto: string;
   logoUrl: string;
+  heroAlineacion: "izquierda" | "centro" | "derecha";
   whatsapp: string;
   instagram: string;
   hero: Array<{ url: string; alt: string; focoX: number; focoY: number }>;
@@ -39,6 +39,7 @@ export type BorradorSitio = {
 type LocalSitio = {
   id: string;
   nombre: string;
+  subdominio?: string | null;
   direccion: string;
   telefono: string | null;
   googlePuntaje: number | null;
@@ -64,12 +65,14 @@ const coloresFrecuentes = [
 export function EditorSitio({
   inicial,
   slug,
+  localId,
   servicios,
   profesionales,
   locales,
 }: {
   inicial: BorradorSitio;
   slug: string;
+  localId: string;
   servicios: Array<{
     id: string;
     nombre: string;
@@ -83,7 +86,16 @@ export function EditorSitio({
     foto: string | null;
     especialidad: string | null;
   }>;
-  locales: LocalSitio[];
+  locales: Array<
+    LocalSitio & {
+      horarios?: Array<{
+        diaSemana: number;
+        abre: string;
+        cierra: string;
+        activo: boolean;
+      }>;
+    }
+  >;
 }) {
   const [datos, setDatos] = useState(inicial);
   const cambiar = (campo: keyof BorradorSitio, valor: string | boolean) =>
@@ -157,12 +169,18 @@ export function EditorSitio({
   return (
     <div className="editor-sitio editor-sitio--simple">
       <form action={guardarBorradorSitio} className="editor-controles">
+        <input type="hidden" name="localId" value={localId} />
         <div className="editor-controles__titulo">
           <div>
-            <small>BORRADOR</small>
-            <h2>Diseño de tu página</h2>
+            <h2>
+              Configuración de{" "}
+              {locales.find((local) => local.id === localId)?.nombre ??
+                "tu local"}
+            </h2>
           </div>
-          <Save />
+          <BotonEnvio pendiente="Guardando…">
+            <Save /> Guardar borrador
+          </BotonEnvio>
         </div>
 
         <details className="grupo-editor" open>
@@ -226,6 +244,23 @@ export function EditorSitio({
         <details className="grupo-editor">
           <summary>Portada</summary>
           <div>
+            <label>
+              Posición del texto en la portada
+              <select
+                name="heroAlineacion"
+                value={datos.heroAlineacion}
+                onChange={(evento) =>
+                  cambiar(
+                    "heroAlineacion",
+                    evento.target.value as BorradorSitio["heroAlineacion"],
+                  )
+                }
+              >
+                <option value="izquierda">Izquierda</option>
+                <option value="centro">Centrada</option>
+                <option value="derecha">Derecha</option>
+              </select>
+            </label>
             {[0, 1, 2].map((indice) => (
               <div className="imagen-editor" key={indice}>
                 <div>
@@ -391,7 +426,10 @@ export function EditorSitio({
                 />
               </label>
               {!datos.whatsapp.trim() && (
-                <p className="aviso-ajustes">Agregá un teléfono para mostrar el botón de contacto en tu página. También podés cargarlo en Datos del local.</p>
+                <p className="aviso-ajustes">
+                  Agregá un teléfono para mostrar el botón de contacto en tu
+                  página. También podés cargarlo en Datos del local.
+                </p>
               )}
               <label>
                 Instagram
@@ -420,10 +458,6 @@ export function EditorSitio({
             )}
           </div>
         </details>
-
-        <BotonEnvio pendiente="Guardando borrador…">
-          <Save /> Guardar borrador
-        </BotonEnvio>
       </form>
 
       <section className="editor-preview">
@@ -431,7 +465,14 @@ export function EditorSitio({
           <span>
             <Eye /> Vista previa
           </span>
-          <a href={"/sitio/" + slug} target="_blank">
+          <a
+            href={
+              "/sitio/" +
+              (locales.find((local) => local.id === localId)?.subdominio ??
+                slug)
+            }
+            target="_blank"
+          >
             Abrir sitio
           </a>
         </div>
@@ -443,16 +484,7 @@ export function EditorSitio({
         />
       </section>
 
-      <form action={publicarSitio} className="barra-publicar">
-        <div>
-          <Globe2 />
-          <span>
-            <strong>¿Todo listo?</strong>
-            <small>
-              Publicá el borrador para que tus clientes vean los cambios.
-            </small>
-          </span>
-        </div>
+      <form action={publicarSitio} className="editor-publicar">
         <BotonEnvio pendiente="Publicando…">Publicar cambios</BotonEnvio>
       </form>
     </div>
@@ -586,7 +618,7 @@ function VistaPrevia({
   return (
     <div className="mini-sitio mini-sitio--nuevo" style={estilo}>
       <div
-        className="mini-hero"
+        className={`mini-hero mini-hero--${datos.heroAlineacion}`}
         style={
           datos.hero[0]?.url
             ? {
@@ -597,13 +629,36 @@ function VistaPrevia({
             : undefined
         }
       >
-        {datos.logoUrl && (
-          <img className="mini-logo" src={datos.logoUrl} alt="" />
-        )}
         <div>
           <h1>{datos.titulo}</h1>
           <p>{datos.descripcion}</p>
         </div>
+      </div>
+      <div className="mini-identidad">
+        {datos.logoUrl ? (
+          <img className="mini-logo-identidad" src={datos.logoUrl} alt="" />
+        ) : (
+          <i className="mini-logo-identidad">{iniciales(datos.titulo)}</i>
+        )}
+        <strong>{datos.titulo}</strong>
+        <p>{datos.descripcion}</p>
+        <div className="mini-avatar-group">
+          {profesionales.slice(0, 5).map((profesional) => (
+            <span key={profesional.id} title={profesional.nombre}>
+              {profesional.foto ? (
+                <img src={profesional.foto} alt="" />
+              ) : (
+                iniciales(`${profesional.nombre} ${profesional.apellido ?? ""}`)
+              )}
+            </span>
+          ))}
+        </div>
+        {locales[0] && (
+          <small>
+            <MapPin /> {locales[0].nombre} ·{" "}
+            {locales[0].direccion || "Dirección pendiente"}
+          </small>
+        )}
       </div>
       <section>
         <small>SERVICIOS</small>
@@ -631,19 +686,6 @@ function VistaPrevia({
           </div>
         </div>
       </section>
-      {datos.secciones.includes("equipo") && (
-        <section>
-          <small>PROFESIONALES</small>
-          <div className="mini-equipo">
-            {profesionales.slice(0, 4).map((profesional) => (
-              <span key={profesional.id}>
-                <i>{profesional.nombre[0]}</i>
-                <b>{profesional.nombre}</b>
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
       {datos.secciones.includes("ubicacion") && locales[0] && (
         <section className="mini-ubicacion">
           <MapPin />
@@ -680,4 +722,14 @@ function pesos(valor: number) {
     currency: "ARS",
     maximumFractionDigits: 0,
   }).format(valor);
+}
+
+function iniciales(valor: string) {
+  return valor
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((parte) => parte[0])
+    .join("")
+    .toUpperCase();
 }

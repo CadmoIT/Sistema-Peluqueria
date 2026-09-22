@@ -11,9 +11,9 @@ export function middleware(solicitud: NextRequest) {
   const sufijo = ".site.turnosrapidos.com.ar";
   if (host.endsWith(sufijo)) {
     const slug = host.slice(0, -sufijo.length);
-    if (slug && !solicitud.nextUrl.pathname.startsWith("/sitio/")) {
+    if (slug && solicitud.nextUrl.pathname === "/") {
       const destino = solicitud.nextUrl.clone();
-      destino.pathname = `/sitio/${slug}${solicitud.nextUrl.pathname === "/" ? "" : solicitud.nextUrl.pathname}`;
+      destino.pathname = `/sitio/${slug}`;
       return NextResponse.rewrite(destino);
     }
   }

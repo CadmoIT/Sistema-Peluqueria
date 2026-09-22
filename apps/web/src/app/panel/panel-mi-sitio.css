@@ -1,5 +1,7 @@
 /** Organiza los controles y la vista previa del editor del micrositio. */
-.mini-sitio--nuevo { position: relative; }
+.mini-sitio--nuevo {
+  position: relative;
+}
 .mini-whatsapp {
   position: absolute;
   left: 18px;
@@ -12,11 +14,45 @@
   background: #111;
   color: #fff;
 }
-.mini-whatsapp svg { width: 23px; height: 23px; }
+.mini-whatsapp svg {
+  width: 23px;
+  height: 23px;
+}
 .editor-sitio--simple .editor-controles {
-  padding: 18px;
-  border-color: var(--panel-borde);
+  padding: 0 18px 18px;
+  border: 0;
   box-shadow: none;
+}
+.selector-local-sitio {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #111;
+  font: 13px var(--fuente-marca);
+}
+.selector-local-sitio label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.selector-local-sitio button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid #111;
+  border-radius: 8px;
+  color: #fff;
+  background: #111;
+  font: inherit;
+  cursor: pointer;
+}
+.selector-local-sitio select {
+  min-height: 38px;
+  padding: 0 32px 0 12px;
+  border: 1px solid #111;
+  border-radius: 8px;
+  color: #111;
+  background: #fff;
+  font: inherit;
 }
 .grupo-editor {
   border-top: 1px solid var(--panel-borde);
@@ -175,6 +211,16 @@
 }
 .mini-sitio--nuevo .mini-hero {
   position: relative;
+  min-height: 220px;
+  padding: 24px;
+}
+.mini-sitio--nuevo .mini-hero--centro {
+  justify-content: center;
+  text-align: center;
+}
+.mini-sitio--nuevo .mini-hero--derecha {
+  justify-content: flex-end;
+  text-align: right;
 }
 .mini-logo {
   position: absolute;
@@ -226,4 +272,63 @@
 }
 .mini-ubicacion p {
   margin: 3px 0;
+}
+.mini-identidad {
+  padding: 20px 34px 12px;
+  display: grid;
+  gap: 6px;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--sitio-texto) 14%, transparent);
+}
+.mini-logo-identidad {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  object-fit: cover;
+  color: #fff;
+  background: var(--sitio-principal);
+  font: 14px var(--fuente-marca);
+  font-style: normal;
+}
+.mini-identidad > strong {
+  font: 18px var(--fuente-marca);
+}
+.mini-identidad > p {
+  margin: 0;
+  font-size: 11px;
+}
+.mini-identidad > small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+}
+.mini-identidad > small svg {
+  width: 12px;
+}
+.mini-avatar-group {
+  display: flex;
+  padding-left: 8px;
+  margin: 6px 0;
+}
+.mini-avatar-group span {
+  width: 25px;
+  height: 25px;
+  margin-left: -8px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--sitio-fondo);
+  border-radius: 50%;
+  color: #fff;
+  background: var(--sitio-principal);
+  font-size: 8px;
+  overflow: hidden;
+}
+.mini-avatar-group img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }

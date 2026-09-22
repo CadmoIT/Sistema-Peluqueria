@@ -10,14 +10,21 @@ import {
 export async function GET(solicitud: Request) {
   const parametros = new URL(solicitud.url).searchParams;
   const slug = parametros.get("slug") ?? "";
-  const servicioId = parametros.get("servicioId") ?? "";
+  const servicioIds = (
+    parametros.get("servicioIds") ??
+    parametros.get("servicioId") ??
+    ""
+  )
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
   const sedeId = parametros.get("sedeId") ?? "";
   const profesionalId = parametros.get("profesionalId") ?? "";
   const fecha = parametros.get("fecha") ?? "";
 
   if (
     !slug ||
-    !servicioId ||
+    !servicioIds.length ||
     !sedeId ||
     !profesionalId ||
     !/^\d{4}-\d{2}-\d{2}$/.test(fecha)
@@ -28,8 +35,10 @@ export async function GET(solicitud: Request) {
     );
   }
 
-  const negocio = await prisma.negocio.findUnique({
-    where: { slug },
+  const negocio = await prisma.negocio.findFirst({
+    where: {
+      OR: [{ slug }, { sedes: { some: { subdominio: slug, activa: true } } }],
+    },
     select: {
       id: true,
       publicado: true,
@@ -46,16 +55,16 @@ export async function GET(solicitud: Request) {
     );
   }
 
-  const [servicio, profesional, sede] = await Promise.all([
-    prisma.servicio.findFirst({
+  const [servicios, profesional, sede] = await Promise.all([
+    prisma.servicio.findMany({
       where: {
-        id: servicioId,
+        id: { in: servicioIds },
         negocioId: negocio.id,
         activo: true,
         sedes: { some: { sedeId } },
         profesionales: { some: { profesionalId } },
       },
-      select: { duracionMinutos: true, bufferMinutos: true },
+      select: { id: true, duracionMinutos: true, bufferMinutos: true },
     }),
     prisma.profesional.findFirst({
       where: {
@@ -63,7 +72,7 @@ export async function GET(solicitud: Request) {
         negocioId: negocio.id,
         activo: true,
         sedes: { some: { sedeId } },
-        servicios: { some: { servicioId } },
+        servicios: { some: { servicioId: { in: servicioIds } } },
       },
       select: {
         horarios: {
@@ -82,7 +91,7 @@ export async function GET(solicitud: Request) {
     }),
   ]);
 
-  if (!servicio || !profesional || !sede) {
+  if (servicios.length !== servicioIds.length || !profesional || !sede) {
     return NextResponse.json(
       { mensaje: "La selección no está disponible." },
       { status: 400 },
@@ -142,7 +151,11 @@ export async function GET(solicitud: Request) {
     }),
   ]);
   const ocupaciones = [...reservas, ...bloqueos, ...externos];
-  const duracion = servicio.duracionMinutos + servicio.bufferMinutos;
+  const duracion = servicios.reduce(
+    (total, servicio) =>
+      total + servicio.duracionMinutos + servicio.bufferMinutos,
+    0,
+  );
   const horarios: Array<{ inicio: string; etiqueta: string }> = [];
 
   for (const jornada of jornadasProfesional) {

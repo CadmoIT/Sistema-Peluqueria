@@ -218,6 +218,7 @@ model Sede {
   id              String            @id @default(cuid())
   negocioId       String
   nombre          String
+  subdominio      String?           @unique
   direccion       String
   telefono        String?
   latitud         Decimal?          @db.Decimal(10, 7)

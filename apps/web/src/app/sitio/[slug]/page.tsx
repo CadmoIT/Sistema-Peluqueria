@@ -57,10 +57,22 @@ export default async function PaginaSitio({
     );
   }
 
-  const publicada = (negocio.configuracionSitio?.publicada ?? {}) as Record<
+  const publicadaBase = (negocio.configuracionSitio?.publicada ?? {}) as Record<
     string,
     unknown
   >;
+  const sedeDelSubdominio = negocio.sedes.find(
+    (sede) => sede.subdominio === slug,
+  );
+  const configuracionesPorLocal = esMapa(publicadaBase.locales)
+    ? publicadaBase.locales
+    : {};
+  const publicada = sedeDelSubdominio
+    ? {
+        ...publicadaBase,
+        ...(configuracionesPorLocal[sedeDelSubdominio.id] ?? {}),
+      }
+    : publicadaBase;
   const cadena = (campo: string, alternativa = "") =>
     typeof publicada[campo] === "string"
       ? String(publicada[campo])
@@ -73,18 +85,20 @@ export default async function PaginaSitio({
       )
     : [];
   const datos: DatosSitioPublico = {
-    slug: negocio.slug,
+    slug,
     nombre: negocio.nombre,
     descripcion:
       negocio.descripcion ??
       "Reservá tu próximo turno de forma simple y rápida.",
+    politicaContacto: negocio.politicaContacto,
     configuracion: {
       titulo: cadena("titulo", negocio.nombre),
       descripcion: cadena("descripcion", negocio.descripcion ?? ""),
-      colorPrincipal: cadena("colorPrincipal", "#126783"),
+      colorPrincipal: cadena("colorPrincipal", "#111111"),
       colorFondo: cadena("colorFondo", "#ffffff"),
       colorTexto: cadena("colorTexto", "#111111"),
       logoUrl: cadena("logoUrl"),
+      heroAlineacion: normalizarAlineacion(publicada.heroAlineacion),
       whatsapp:
         cadena("whatsapp").trim() ||
         negocio.telefono?.trim() ||
@@ -96,36 +110,68 @@ export default async function PaginaSitio({
       secciones,
       serviciosDestacados,
     },
-    sedes: negocio.sedes.map((sede) => ({
-      id: sede.id,
-      nombre: sede.nombre,
-      direccion: sede.direccion,
-      telefono: sede.telefono,
-      latitud: sede.latitud ? Number(sede.latitud) : null,
-      longitud: sede.longitud ? Number(sede.longitud) : null,
-      googlePuntaje: sede.googlePuntaje ? Number(sede.googlePuntaje) : null,
-      googleResenas: sede.googleResenas,
-      googleMapsUrl: sede.googleMapsUrl,
-    })),
-    servicios: negocio.servicios.map((servicio) => ({
-      id: servicio.id,
-      nombre: servicio.nombre,
-      descripcion: servicio.descripcion,
-      categoria: servicio.categoria?.nombre ?? "General",
-      duracionMinutos: servicio.duracionMinutos,
-      precio: Number(servicio.precio),
-      imagen: servicio.imagen,
-    })),
-    profesionales: negocio.profesionales.map((profesional) => ({
-      id: profesional.id,
-      nombre: profesional.nombre,
-      apellido: profesional.apellido,
-      especialidad: profesional.especialidad,
-      biografia: profesional.biografia,
-      foto: profesional.foto,
-    })),
+    sedes: (sedeDelSubdominio ? [sedeDelSubdominio] : negocio.sedes).map(
+      (sede) => ({
+        id: sede.id,
+        nombre: sede.nombre,
+        subdominio: sede.subdominio,
+        direccion: sede.direccion,
+        telefono: sede.telefono,
+        latitud: sede.latitud ? Number(sede.latitud) : null,
+        longitud: sede.longitud ? Number(sede.longitud) : null,
+        googlePuntaje: sede.googlePuntaje ? Number(sede.googlePuntaje) : null,
+        googleResenas: sede.googleResenas,
+        googleMapsUrl: sede.googleMapsUrl,
+        horarios: sede.horarios,
+      }),
+    ),
+    servicios: negocio.servicios
+      .filter(
+        (servicio) =>
+          !sedeDelSubdominio ||
+          servicio.sedes.some((sede) => sede.sedeId === sedeDelSubdominio.id),
+      )
+      .map((servicio) => ({
+        id: servicio.id,
+        nombre: servicio.nombre,
+        descripcion: servicio.descripcion,
+        categoria: servicio.categoria?.nombre ?? "General",
+        duracionMinutos: servicio.duracionMinutos,
+        precio: Number(servicio.precio),
+        imagen: servicio.imagen,
+        sedeIds: servicio.sedes.map((asignacion) => asignacion.sedeId),
+        profesionalIds: servicio.profesionales.map(
+          (asignacion) => asignacion.profesionalId,
+        ),
+      })),
+    profesionales: negocio.profesionales
+      .filter(
+        (profesional) =>
+          !sedeDelSubdominio ||
+          profesional.sedes.some(
+            (sede) => sede.sedeId === sedeDelSubdominio.id,
+          ),
+      )
+      .map((profesional) => ({
+        id: profesional.id,
+        nombre: profesional.nombre,
+        apellido: profesional.apellido,
+        especialidad: profesional.especialidad,
+        biografia: profesional.biografia,
+        foto: profesional.foto,
+        sedeIds: profesional.sedes.map((asignacion) => asignacion.sedeId),
+        servicioIds: profesional.servicios.map(
+          (asignacion) => asignacion.servicioId,
+        ),
+      })),
   };
   return <SitioPublico datos={datos} />;
+}
+
+function esMapa(
+  valor: unknown,
+): valor is Record<string, Record<string, unknown>> {
+  return Boolean(valor && typeof valor === "object" && !Array.isArray(valor));
 }
 
 function normalizarHero(
@@ -164,4 +210,10 @@ function normalizarSecciones(
       typeof seccion === "string" &&
       permitidas.includes(seccion as (typeof permitidas)[number]),
   );
+}
+
+function normalizarAlineacion(
+  valor: unknown,
+): "izquierda" | "centro" | "derecha" {
+  return valor === "centro" || valor === "derecha" ? valor : "izquierda";
 }

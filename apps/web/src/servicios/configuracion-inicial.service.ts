@@ -79,6 +79,7 @@ export async function crearConfiguracionInicial(
             datos.cantidadLocales === 1
               ? "Local principal"
               : `Local ${indice + 1}`,
+          subdominio: `${slug}-local-${indice + 1}`,
           direccion: "",
         })),
       },
@@ -91,10 +92,11 @@ function configuracionSitioInicial(nombreNegocio: string) {
   return {
     titulo: nombreNegocio,
     descripcion: "Reservá tu próximo turno de forma simple y rápida.",
-    colorPrincipal: "#126783",
+    colorPrincipal: "#111111",
     colorFondo: "#ffffff",
     colorTexto: "#111111",
     logoUrl: "",
+    heroAlineacion: "izquierda",
     whatsapp: "",
     instagram: "",
     hero: [],

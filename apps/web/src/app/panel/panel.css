@@ -995,10 +995,14 @@ html:has(.panel-shell) {
   position: relative;
   padding-bottom: 88px;
 }
+.editor-sitio--simple {
+  padding-top: 8px;
+}
 .editor-controles {
   padding: 22px;
-  border: 1px solid #d9e1e4;
-  border-radius: 20px;
+  border: 0;
+  border-right: 1px solid #d9e1e4;
+  border-radius: 0;
 }
 .editor-controles__titulo {
   display: flex;
@@ -1006,13 +1010,13 @@ html:has(.panel-shell) {
   align-items: center;
   margin-bottom: 22px;
 }
-.editor-controles__titulo small {
-  color: #126783;
-  font: 10px var(--fuente-marca);
-}
 .editor-controles__titulo h2 {
   margin: 4px 0 0;
   font: 18px var(--fuente-marca);
+}
+.editor-controles__titulo .boton {
+  min-height: 38px;
+  padding: 0 14px;
 }
 .editor-controles fieldset {
   margin: 18px 0;
@@ -1092,8 +1096,9 @@ html:has(.panel-shell) {
 }
 .editor-preview {
   min-width: 0;
-  border: 1px solid #d9e1e4;
-  border-radius: 20px;
+  border: 0;
+  border-radius: 0;
+  border-left: 1px solid #d9e1e4;
   overflow: hidden;
   background: #eef2f3;
 }
@@ -1201,35 +1206,10 @@ html:has(.panel-shell) {
   background: var(--sitio-principal);
   font-style: normal;
 }
-.barra-publicar {
-  position: fixed;
-  z-index: 19;
-  left: 248px;
+.editor-publicar {
+  position: absolute;
+  top: -56px;
   right: 0;
-  bottom: 0;
-  min-height: 72px;
-  padding: 10px 30px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #fff;
-  background: #0b465d;
-}
-.barra-publicar > div {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.barra-publicar span strong,
-.barra-publicar span small {
-  display: block;
-}
-.barra-publicar span strong {
-  font: 13px var(--fuente-marca);
-}
-.barra-publicar span small {
-  margin-top: 3px;
-  opacity: 0.75;
 }
 @media (max-width: 1050px) {
   .metricas-panel {
@@ -1423,13 +1403,10 @@ html:has(.panel-shell) {
   .editor-preview {
     margin-top: 18px;
   }
-  .barra-publicar {
-    left: 0;
-    bottom: 84px;
-    padding: 10px 14px;
-  }
-  .barra-publicar span small {
-    display: none;
+  .editor-publicar {
+    top: auto;
+    right: 14px;
+    bottom: 24px;
   }
   .mini-servicios {
     grid-template-columns: 1fr;

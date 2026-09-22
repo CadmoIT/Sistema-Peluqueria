@@ -8,19 +8,40 @@ import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 
 export const metadata = { title: "Mi sitio" };
 
-export default async function PaginaMiSitio() {
+export default async function PaginaMiSitio({
+  searchParams,
+}: {
+  searchParams: Promise<{ local?: string }>;
+}) {
   const datos = await obtenerSitioEditable();
-  const base = (datos.configuracion?.borrador ?? {}) as Partial<BorradorSitio>;
+  const parametros = await searchParams;
+  const localSeleccionado =
+    datos.sedes.find((sede) => sede.id === parametros.local) ?? datos.sedes[0];
+  const bruto = (datos.configuracion?.borrador ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const borradoresPorLocal = esMapa(bruto.locales) ? bruto.locales : {};
+  const base = {
+    ...bruto,
+    ...(localSeleccionado
+      ? borradoresPorLocal[localSeleccionado.id]
+      : undefined),
+  } as Partial<BorradorSitio>;
   const inicial: BorradorSitio = {
     titulo: base.titulo ?? datos.negocio.nombre,
     descripcion:
       base.descripcion ??
       datos.negocio.descripcion ??
       "Reservá tu próximo turno de forma simple y rápida.",
-    colorPrincipal: base.colorPrincipal ?? "#126783",
+    colorPrincipal: base.colorPrincipal ?? "#111111",
     colorFondo: base.colorFondo ?? "#ffffff",
     colorTexto: base.colorTexto ?? "#111111",
     logoUrl: base.logoUrl ?? "",
+    heroAlineacion:
+      base.heroAlineacion === "centro" || base.heroAlineacion === "derecha"
+        ? base.heroAlineacion
+        : "izquierda",
     whatsapp:
       base.whatsapp?.trim() ||
       datos.negocio.telefono?.trim() ||
@@ -43,13 +64,24 @@ export default async function PaginaMiSitio() {
         <div>
           <h1>Mi sitio</h1>
         </div>
-        <span className="direccion-sitio">
-          {datos.negocio.slug}.site.turnosrapidos.com.ar
-        </span>
+        <form className="selector-local-sitio" method="get">
+          <label>
+            <span>Local</span>
+            <select name="local" defaultValue={localSeleccionado?.id ?? ""}>
+              {datos.sedes.map((sede) => (
+                <option key={sede.id} value={sede.id}>
+                  {sede.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="submit">Editar</button>
+        </form>
       </header>
       <EditorSitio
         inicial={inicial}
         slug={datos.negocio.slug}
+        localId={localSeleccionado?.id ?? ""}
         servicios={datos.servicios.map((servicio) => ({
           id: servicio.id,
           nombre: servicio.nombre,
@@ -66,6 +98,7 @@ export default async function PaginaMiSitio() {
         locales={datos.sedes.map((sede) => ({
           id: sede.id,
           nombre: sede.nombre,
+          subdominio: sede.subdominio,
           direccion: sede.direccion,
           telefono: sede.telefono,
           googlePuntaje: sede.googlePuntaje ? Number(sede.googlePuntaje) : null,
@@ -74,6 +107,12 @@ export default async function PaginaMiSitio() {
       />
     </div>
   );
+}
+
+function esMapa(
+  valor: unknown,
+): valor is Record<string, Partial<BorradorSitio>> {
+  return Boolean(valor && typeof valor === "object" && !Array.isArray(valor));
 }
 
 function normalizarHero(valor: unknown): BorradorSitio["hero"] {
