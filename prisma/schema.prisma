@@ -103,6 +103,13 @@ enum EstadoAviso {
   FALLIDO
 }
 
+enum EstadoCorreoPendiente {
+  PENDIENTE
+  ENVIANDO
+  ENVIADO
+  FALLIDO
+}
+
 model Usuario {
   id              String        @id @default(cuid())
   nombre          String
@@ -678,23 +685,47 @@ model ConfiguracionAvisos {
 }
 
 model AvisoReserva {
-  id             String      @id @default(cuid())
-  negocioId      String
-  reservaId      String
-  canal          CanalAviso
-  tipo           TipoAviso
-  inicioTurno    DateTime    @db.Timestamptz
-  programadoPara DateTime    @db.Timestamptz
-  estado         EstadoAviso @default(PENDIENTE)
-  intentos       Int         @default(0)
-  error          String?
-  enviadoEn      DateTime?
-  creadoEn       DateTime    @default(now())
-  negocio        Negocio     @relation(fields: [negocioId], references: [id], onDelete: Cascade)
-  reserva        Reserva     @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  id               String      @id @default(cuid())
+  negocioId        String
+  reservaId        String
+  canal            CanalAviso
+  tipo             TipoAviso
+  inicioTurno      DateTime    @db.Timestamptz
+  programadoPara   DateTime    @db.Timestamptz
+  estado           EstadoAviso @default(PENDIENTE)
+  intentos         Int         @default(0)
+  proximoIntentoEn DateTime?   @db.Timestamptz
+  reclamadoEn      DateTime?   @db.Timestamptz
+  error            String?
+  enviadoEn        DateTime?
+  creadoEn         DateTime    @default(now())
+  negocio          Negocio     @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  reserva          Reserva     @relation(fields: [reservaId], references: [id], onDelete: Cascade)
 
   @@unique([reservaId, canal, tipo, inicioTurno])
   @@index([estado, programadoPara])
+  @@index([estado, proximoIntentoEn])
+}
+
+model CorreoPendiente {
+  id                String                @id @default(cuid())
+  destinatario      String
+  asunto            String
+  texto             String                @db.Text
+  responderA        String?
+  claveIdempotencia String                @unique
+  estado            EstadoCorreoPendiente @default(PENDIENTE)
+  intentos          Int                   @default(0)
+  proximoIntentoEn  DateTime?             @db.Timestamptz
+  reclamadoEn       DateTime?             @db.Timestamptz
+  expiraEn          DateTime?             @db.Timestamptz
+  enviadoEn         DateTime?             @db.Timestamptz
+  proveedorId       String?
+  error             String?
+  creadoEn          DateTime              @default(now()) @db.Timestamptz
+  actualizadoEn     DateTime              @updatedAt @db.Timestamptz
+
+  @@index([estado, proximoIntentoEn, creadoEn])
 }
 
 model ConfiguracionSitio {

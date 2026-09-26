@@ -28,10 +28,11 @@ Falta
 | H01 | P0 | `autenticacion.ts` usa `WEB_URL` como origen de confianza; el usuario reportó Invalid origin desde Vercel | Confirmar variables del despliegue y probar acceso en el origen temporal y luego en el definitivo |
 
 Falta, hice una parte de código
-| H02 | P0 | Web y worker ahora comparten `@turnos/correo` con Resend; se exige verificar email | Activar remitente/dominio en Resend y configurar `RESEND_API_KEY` y `EMAIL_REMITENTE` en Vercel y Railway |
+| H02 | P0 | Web y worker usan Resend; el worker envía los correos | Activar remitente/dominio en Resend y configurar `RESEND_API_KEY` y `EMAIL_REMITENTE` en Railway; la web requiere PostgreSQL |
 
 
-| H03 | P1 | Los callbacks de autenticación ahora esperan la respuesta de Resend y usan idempotencia; todavía no hay cola persistente para reintentos | Añadir entrega duradera, estados y recuperación de errores del proveedor |
+| H03 | P1 | La web guarda autenticación en una bandeja persistente; el worker reintenta envíos y recupera reclamos vencidos | Aplicar la migración, desplegar web y worker, y comprobar correo pendiente/enviado/fallido en producción |
+
 | H04 | P0 | El webhook de Mercado Pago en Nest sólo comprueba que exista el encabezado de firma y registra IDs en memoria | Retirar su exposición o reemplazarlo por validación criptográfica y registro duradero; establecer un receptor oficial |
 | H05 | P0 | En Nest, consulta y confirmación de reserva por ID no tienen guard de sesión ni token específico | Proteger la operación y minimizar respuesta; verificar exposición del servicio Railway. Conocer un ID no debe otorgar permiso de confirmar |
 | H06 | P0 | Checkout/cancelación de plan validan membresía, pero no rol; creación/edición de profesionales tampoco exige rol administrador | Completar autorización de cada lectura y escritura, también al invocar rutas directamente |
@@ -40,7 +41,7 @@ Falta, hice una parte de código
 | H09 | P0 | Suscripción pertenece a Negocio; el contexto elige `membresia.findFirst`; onboarding reutiliza el primer negocio | Resolver qué compra la cuenta cuando se anuncian 1, 2 o ilimitados negocios, implementar selector y límites del servidor |
 | H10 | P0 | Reserva pública actualiza cliente existente por coincidencia de email O teléfono, sin verificar propiedad del contacto | Evitar sobrescribir identidades de clientes por datos enviados sin autenticar; tratar coincidencias conflictivas y consentimiento por separado |
 | H11 | P1 | Cancelación cambia inmediatamente a CANCELADA y a la vez marca `cancelarAlFinal` | Definir y cumplir el acceso hasta final de período pagado; distinguir cancelar renovación y suspender servicio |
-| H12 | P1 | Avisos se toman sólo en PENDIENTE; fallos quedan FALLIDO y una caída puede dejar ENVIANDO | Reintentos, recuperación de trabajos reclamados, identificadores del proveedor y trazabilidad |
+| H12 | P1 | Avisos de turnos tienen reintentos limitados y recuperan reclamos abandonados; aún falta panel operativo | Mostrar errores y permitir reintento administrativo; guardar IDs/estados del proveedor cuando estén disponibles |
 | H13 | P1 | El worker excluye demos mediante un slug específico | Usar entorno/indicador de demo; impedir mensajes y cobros reales desde todos los datos ficticios |
 | H14 | P1 | Listados de clientes, productos y compras tienen consultas sin paginación | Búsqueda y paginación del servidor; límites de memoria y exportaciones grandes |
 | H15 | P1 | Importadores permiten 5 MB y reciben multipart en funciones Vercel | Ajustar tamaño total por debajo de 4,5 MB o usar almacenamiento privado y procesamiento asíncrono |
@@ -50,7 +51,7 @@ Falta, hice una parte de código
 | H19 | P1 | Falló la prueba de duración en `cinematica-hoja.spec.ts`: espera 500, recibe 1000 | Actualizar la expectativa al requisito vigente de un segundo y mantener prueba funcional de animación |
 | H20 | P1 | Middleware reescribe sólo `/` del subdominio | Probar navegación completa, reservas, errores y caché por host; decidir qué rutas del panel deben estar disponibles en hosts de negocios |
 
-Referencias de código: `apps/web/src/lib/autenticacion.ts`, `apps/web/src/lib/correo.ts`, `packages/correo/src/index.ts`, `apps/api/src/services/integraciones.service.ts`, `apps/api/src/modules/integraciones.module.ts`, `apps/api/src/controllers/reservas.controller.ts`, `apps/api/src/repositories/prisma/reservas-prisma.repository.ts`, `apps/web/src/servicios/contexto-api.service.ts`, `apps/web/src/app/api/reservas-publicas/route.ts`, `apps/web/src/app/webhooks/mercadopago/route.ts`, `apps/web/src/app/api/v1/facturacion/suscripciones/`, `apps/web/src/servicios/panel-datos.service.ts`, `apps/worker/src/jobs/avisos-entrega.ts` y `prisma/schema.prisma`.
+Referencias de código: `apps/web/src/lib/autenticacion.ts`, `apps/web/src/lib/correo.ts`, `packages/correo/src/index.ts`, `apps/api/src/services/integraciones.service.ts`, `apps/api/src/modules/integraciones.module.ts`, `apps/api/src/controllers/reservas.controller.ts`, `apps/api/src/repositories/prisma/reservas-prisma.repository.ts`, `apps/web/src/servicios/contexto-api.service.ts`, `apps/web/src/app/api/reservas-publicas/route.ts`, `apps/web/src/app/webhooks/mercadopago/route.ts`, `apps/web/src/app/api/v1/facturacion/suscripciones/`, `apps/web/src/servicios/panel-datos.service.ts`, `apps/worker/src/jobs/avisos-entrega.ts`, `apps/worker/src/jobs/enviar-correos.job.ts` y `prisma/schema.prisma`.
 
 Ya hay bases útiles: autenticación, validación de entradas, filtros por negocio, roles en varias operaciones, cookies seguras, índices, transacciones, restricción de solapamientos, firmas Cloudinary, separación borrador/publicación, pruebas de disponibilidad, importaciones y ventas. Los controles no son todavía uniformes en todas las rutas.
 
@@ -149,15 +150,15 @@ Responsable: configuración y desarrollo.
 Hay tres funciones diferentes: enviar correos de la aplicación, recibir consultas en soporte e ingresar con Google. Necesitan configuraciones distintas.
 
 - [ ] Verificar `mail.turnosrapidos.com.ar` en Resend cuando NIC active el dominio y agregar allí sus registros SPF/DKIM en el DNS autoritativo.
-- [ ] Configurar la misma `RESEND_API_KEY` y `EMAIL_REMITENTE` en Vercel (web) y Railway (worker); confirmar que no queden variables SMTP sin uso.
-- [ ] Comprobar envíos de prueba y métricas de entrega desde ambos procesos con el dominio verificado.
+- [ ] Configurar `RESEND_API_KEY` y `EMAIL_REMITENTE` en Railway (worker), verificar DNS del remitente en Resend y confirmar que no queden variables SMTP sin uso. Vercel sólo persiste los correos en PostgreSQL.
+- [ ] Comprobar que Vercel encole correos, que Railway los entregue y revisar métricas de Resend con el dominio verificado.
 - [ ] Crear buzones/alias operativos para soporte, facturación y contacto. Verificar recepción y respuesta, no sólo envíos.
 - [ ] Verificar dominio/remitente y configurar SPF, DKIM y DMARC sin duplicar registros SPF. Usar los valores de cada proveedor.
 - [ ] Separar reputación de correo transaccional y marketing cuando se incorpore marketing; evitar seguimiento innecesario en enlaces de recuperación.
 - [ ] Guardar la clave Resend con acceso mínimo, sólo en los servicios que envían, y documentar rotación/revocación.
-- [ ] Incorporar una cola persistente para reintentar fallos temporales sin perder correos ni duplicar mensajes.
+- [x] Incorporar una cola persistente PostgreSQL para encolar autenticación y reintentar fallos transitorios; recuperar trabajos abandonados y usar idempotencia.
 - [ ] Crear plantillas HTML y texto accesibles: verificación, reset, bienvenida, confirmación, cambio/cancelación de turno, recordatorio, cobro y vencimiento.
-- [ ] Registrar proveedor, identificador, estado, intentos, siguiente intento y errores; incorporar webhooks de entrega/rebote cuando el proveedor los ofrezca.
+- [ ] Mostrar en administración proveedor, identificador, estado, intentos, siguiente intento y errores; incorporar webhooks de entrega/rebote cuando el proveedor los ofrezca.
 - [ ] Suprimir reenvíos a direcciones inválidas y gestionar quejas/bajas de marketing separadamente de mensajes necesarios del servicio.
 - [ ] Probar en Gmail y Outlook con usuarios controlados, cabeceras de autenticación, enlaces HTTPS y fechas en zona del negocio.
 
@@ -255,7 +256,7 @@ Fuente: [Mercado Pago OAuth para vendedores](https://www.mercadopago.com.ar/deve
 - [ ] Obtener consentimiento explícito y registrarlo con alcance, fecha y origen; ofrecer baja. Una reserva no equivale a consentimiento de marketing.
 - [ ] Implementar verificación inicial del webhook Meta y validación de firma sobre el cuerpo original.
 - [ ] Guardar ID del mensaje y estados aceptado, entregado, leído o fallido cuando el proveedor los informe. Aceptado por API no significa entregado.
-- [ ] Añadir reintentos con espera creciente, límite y recuperación de avisos ENVIANDO abandonados.
+- [x] Añadir reintentos limitados con espera creciente y recuperación de avisos ENVIANDO abandonados.
 - [ ] Definir cuotas/paquetes, vencimiento de créditos, costo real y bloqueo/aviso por saldo agotado antes de prometer mensajes ilimitados.
 - [ ] Registrar consumo por negocio y canal; evitar que un negocio agote el presupuesto de toda la plataforma.
 - [ ] Sustituir exclusión de un único slug demo por un control general del entorno y de cuentas de prueba.

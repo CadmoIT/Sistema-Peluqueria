@@ -5,6 +5,7 @@ export type CorreoTransaccional = {
   texto: string;
   responderA?: string | null;
   claveIdempotencia?: string;
+  expiraEn?: Date;
 };
 
 export function resendConfigurado(entorno: NodeJS.ProcessEnv = process.env) {
@@ -29,6 +30,7 @@ export async function enviarCorreoResend(
   const respuesta = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: encabezados,
+    signal: AbortSignal.timeout(15_000),
     body: JSON.stringify({
       from:
         entorno.EMAIL_REMITENTE ??
@@ -41,6 +43,11 @@ export async function enviarCorreoResend(
   });
 
   if (!respuesta.ok) {
-    throw new Error(`Resend respondió ${respuesta.status} al enviar el correo.`);
+    throw new Error(
+      `Resend respondió ${respuesta.status} al enviar el correo.`,
+    );
   }
+
+  const resultado = (await respuesta.json()) as { id?: string };
+  return resultado.id ?? null;
 }

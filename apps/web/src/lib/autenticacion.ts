@@ -25,6 +25,7 @@ export const autenticacion = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 128,
     requireEmailVerification: true,
+    resetPasswordTokenExpiresIn: 60 * 60,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
       await enviarCorreo({
@@ -32,11 +33,13 @@ export const autenticacion = betterAuth({
         asunto: "Restablecé tu contraseña de TurnosRapidos",
         texto: `Abrí este enlace para elegir una contraseña nueva: ${url}`,
         claveIdempotencia: claveIdempotenciaCorreo("reset", url),
+        expiraEn: new Date(Date.now() + 60 * 60 * 1000),
       });
     },
   },
   emailVerification: {
     sendOnSignUp: true,
+    expiresIn: 60 * 60,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       await enviarCorreo({
@@ -44,6 +47,7 @@ export const autenticacion = betterAuth({
         asunto: "Verificá tu cuenta de TurnosRapidos",
         texto: `Confirmá tu email desde este enlace: ${url}`,
         claveIdempotencia: claveIdempotenciaCorreo("verificar", url),
+        expiraEn: new Date(Date.now() + 60 * 60 * 1000),
       });
     },
   },

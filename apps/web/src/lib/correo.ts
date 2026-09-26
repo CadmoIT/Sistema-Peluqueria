@@ -1,27 +1,34 @@
-/** Envía correos transaccionales con Resend y permite inspeccionar enlaces en desarrollo. */
-import { enviarCorreoResend, type CorreoTransaccional } from "@turnos/correo";
+/** Encola correos transaccionales en producción y muestra enlaces en desarrollo. */
+import type { CorreoTransaccional } from "@turnos/correo";
+import { prisma } from "./prisma";
 
 export async function enviarCorreo({
   destinatario,
   asunto,
   texto,
+  responderA,
   claveIdempotencia,
+  expiraEn,
 }: CorreoTransaccional) {
-  if (!process.env.RESEND_API_KEY) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "Falta RESEND_API_KEY para enviar correos transaccionales.",
-      );
-    }
-
+  if (process.env.NODE_ENV !== "production") {
     console.info(`[correo local] ${asunto} -> ${destinatario}\n${texto}`);
     return;
   }
 
-  await enviarCorreoResend({
-    destinatario,
-    asunto,
-    texto,
-    claveIdempotencia,
+  if (!claveIdempotencia) {
+    throw new Error("El correo transaccional requiere una clave idempotente.");
+  }
+
+  await prisma.correoPendiente.upsert({
+    where: { claveIdempotencia },
+    create: {
+      destinatario,
+      asunto,
+      texto,
+      responderA,
+      claveIdempotencia,
+      expiraEn,
+    },
+    update: {},
   });
 }
