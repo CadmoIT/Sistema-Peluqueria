@@ -1,8 +1,9 @@
-/** Ofrece carga segura a R2 y conserva una URL manual como alternativa editable. */
+/** Carga imágenes a Cloudinary y conserva una URL manual como alternativa editable. */
 "use client";
 
 import { useEffect, useId, useState } from "react";
 import { ImageUp, LoaderCircle } from "lucide-react";
+import { subirImagenCloudinary } from "./subir-imagen-cloudinary";
 
 type Propiedades = {
   name: string;
@@ -11,6 +12,7 @@ type Propiedades = {
   valor?: string;
   valorInicial?: string;
   alCambiar?: (valor: string) => void;
+  soloCarga?: boolean;
 };
 
 export function CampoImagen({
@@ -20,6 +22,7 @@ export function CampoImagen({
   valor: valorControlado,
   valorInicial = "",
   alCambiar,
+  soloCarga = false,
 }: Propiedades) {
   const id = useId();
   const [valor, setValor] = useState(valorControlado ?? valorInicial);
@@ -40,21 +43,7 @@ export function CampoImagen({
     setCargando(true);
     setEstado("");
     try {
-      const formulario = new FormData();
-      formulario.set("archivo", archivo);
-      formulario.set("tipo", tipo);
-      const respuesta = await fetch("/api/v1/archivos/carga", {
-        method: "POST",
-        body: formulario,
-      });
-      const datos = (await respuesta.json()) as {
-        urlArchivo?: string;
-        mensaje?: string;
-      };
-      if (!respuesta.ok || !datos.urlArchivo) {
-        throw new Error(datos.mensaje ?? "No se pudo guardar la imagen.");
-      }
-      actualizar(datos.urlArchivo);
+      actualizar(await subirImagenCloudinary(archivo, tipo));
       setEstado("Imagen cargada.");
     } catch (error) {
       setEstado(
@@ -66,17 +55,19 @@ export function CampoImagen({
   }
 
   return (
-    <div className="campo-imagen">
-      <label htmlFor={`${id}-url`}>{etiqueta}</label>
+    <div className={`campo-imagen ${soloCarga ? "campo-imagen--solo-carga" : ""}`}>
+      <label>{etiqueta}</label>
       <input name={name} type="hidden" value={valor} />
       <div>
-        <input
-          id={`${id}-url`}
-          type="url"
-          value={valor}
-          onChange={(evento) => actualizar(evento.target.value)}
-          placeholder="Pegá una URL o cargá un archivo"
-        />
+        {!soloCarga && (
+          <input
+            id={`${id}-url`}
+            type="url"
+            value={valor}
+            onChange={(evento) => actualizar(evento.target.value)}
+            placeholder="Pegá una URL o cargá un archivo"
+          />
+        )}
         <label
           className="boton boton--secundario campo-imagen__boton"
           htmlFor={id}

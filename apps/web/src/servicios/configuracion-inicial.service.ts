@@ -92,16 +92,17 @@ function configuracionSitioInicial(nombreNegocio: string) {
   return {
     titulo: nombreNegocio,
     descripcion: "Reservá tu próximo turno de forma simple y rápida.",
+    colorTitulo: "#111111",
+    colorSubtitulo: "#111111",
     colorPrincipal: "#111111",
     colorFondo: "#ffffff",
     colorTexto: "#111111",
     logoUrl: "",
-    heroAlineacion: "izquierda",
     whatsapp: "",
     instagram: "",
     hero: [],
-    secciones: ["servicios", "equipo", "ubicacion"],
-    carruselAutomatico: true,
+    secciones: ["servicios", "equipo", "contacto", "ubicacion"],
+    versionSecciones: 2,
   };
 }
 

@@ -17,24 +17,23 @@ export default async function PaginaInventario() {
   return (
     <div className="panel-contenido">
       <VistaPanelLista ruta="/panel/inventario" />
-      <header className="cabecera-seccion">
-        <h1>Inventario</h1>
-        <details className="desplegable-accion">
-          <summary className="boton boton--primario">
-            <Plus />
-            Nuevo producto
-          </summary>
-          <FormularioProducto
-            sedes={locales}
-            columnas={columnas}
-            libres={libres}
-          />
-        </details>
-      </header>
       <TablaInventario
         sedes={locales}
         columnas={columnas}
         libres={libres}
+        nuevoProducto={
+          <details className="desplegable-accion">
+            <summary className="boton boton--primario">
+              <Plus />
+              Nuevo producto
+            </summary>
+            <FormularioProducto
+              sedes={locales}
+              columnas={columnas}
+              libres={libres}
+            />
+          </details>
+        }
         productos={productos.map((p) => ({
           ...p,
           precio: Number(p.precio),

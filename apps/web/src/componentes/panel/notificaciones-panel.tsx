@@ -21,7 +21,11 @@ const mensajes: Record<
     tipo: "error",
     texto: "No pudimos conectar Google Calendar.",
   },
-  "google-cancelado": { tipo: "info", texto: "Cancelaste la autorización de Google Calendar. No se conectó la cuenta." },
+  "google-cancelado": {
+    tipo: "info",
+    texto:
+      "Cancelaste la autorización de Google Calendar. No se conectó la cuenta.",
+  },
   "facturacion-retorno": {
     tipo: "info",
     texto: "Estamos esperando la confirmación de Mercado Pago.",
@@ -40,8 +44,24 @@ const mensajes: Record<
     texto:
       "Ya hay un plan activo o un pago iniciado. Consultá su estado antes de elegir otro.",
   },
+  "facturacion-plan-actual": {
+    tipo: "info",
+    texto: "Ese ya es el plan actual de tu negocio.",
+  },
+  "facturacion-actualizado": {
+    tipo: "success",
+    texto: "El cambio de plan quedó actualizado en Mercado Pago.",
+  },
   "sitio-guardado": { tipo: "success", texto: "El borrador quedó guardado." },
   "sitio-publicado": { tipo: "success", texto: "Tu sitio quedó publicado." },
+  "sitio-error": {
+    tipo: "error",
+    texto: "No pudimos guardar los cambios del sitio.",
+  },
+  "sitio-sin-borrador": {
+    tipo: "error",
+    texto: "Guardá los cambios antes de publicar el sitio.",
+  },
   "clientes-creado": { tipo: "success", texto: "Cliente agregado." },
   "configuracion-guardada": {
     tipo: "success",
@@ -77,7 +97,8 @@ const mensajes: Record<
   },
   "configuracion-avisos-error": {
     tipo: "error",
-    texto: "Revisá los mensajes. Sólo se permiten las variables indicadas y no pueden quedar vacíos.",
+    texto:
+      "Revisá los mensajes. Sólo se permiten las variables indicadas y no pueden quedar vacíos.",
   },
   "agenda-creado": { tipo: "success", texto: "Turno creado." },
 };

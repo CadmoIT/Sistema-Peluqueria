@@ -6,25 +6,47 @@ import {
   Building2,
   CalendarClock,
   CreditCard,
+  Layers3,
   Link2,
   LogOut,
   Mail,
   MapPin,
   ShieldCheck,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { clienteAutenticacion } from "@/lib/cliente-autenticacion";
 import { EnlacePanel as Link } from "./navegacion-carga-panel";
 
 const opcionesCuenta = [
-  { texto: "Datos del negocio", href: "/panel/configuracion/negocio", icono: Building2 },
+  {
+    texto: "Datos del negocio",
+    href: "/panel/configuracion/negocio",
+    icono: Building2,
+  },
   { texto: "Locales", href: "/panel/configuracion/locales", icono: MapPin },
-  { texto: "Horarios", href: "/panel/configuracion/horarios", icono: CalendarClock },
-  { texto: "Mensajes automáticos", href: "/panel/configuracion/avisos", icono: Mail },
-  { texto: "Integraciones", href: "/panel/configuracion/integraciones", icono: Link2 },
-  { texto: "Seguridad y cuenta", href: "/panel/configuracion/seguridad", icono: ShieldCheck },
-  { texto: "Pagos y Facturación", href: "/panel/facturacion", icono: CreditCard },
+  {
+    texto: "Horarios",
+    href: "/panel/configuracion/horarios",
+    icono: CalendarClock,
+  },
+  {
+    texto: "Mensajes automáticos",
+    href: "/panel/configuracion/avisos",
+    icono: Mail,
+  },
+  {
+    texto: "Integraciones",
+    href: "/panel/configuracion/integraciones",
+    icono: Link2,
+  },
+  {
+    texto: "Seguridad y cuenta",
+    href: "/panel/configuracion/seguridad",
+    icono: ShieldCheck,
+  },
+  { texto: "Planes", href: "/panel/planes", icono: Layers3 },
+  { texto: "Facturación", href: "/panel/facturacion", icono: CreditCard },
 ] as const;
 
 export function CuentaPanel({
@@ -37,6 +59,7 @@ export function CuentaPanel({
   imagenNegocio?: string;
 }) {
   const menuRef = useRef<HTMLDetailsElement>(null);
+  const [animacionMenu, setAnimacionMenu] = useState(0);
   const pathname = usePathname();
 
   function cerrarMenu() {
@@ -49,7 +72,11 @@ export function CuentaPanel({
     }
     function cerrarAlHacerClickAfuera(evento: PointerEvent) {
       const menu = menuRef.current;
-      if (menu?.open && evento.target instanceof Node && !menu.contains(evento.target)) {
+      if (
+        menu?.open &&
+        evento.target instanceof Node &&
+        !menu.contains(evento.target)
+      ) {
         cerrarMenuDesdeDocumento();
       }
     }
@@ -70,10 +97,17 @@ export function CuentaPanel({
 
   return (
     <details ref={menuRef} className="panel-cuenta">
-      <summary aria-label="Abrir menú del negocio">
+      <summary
+        aria-label="Abrir menú del negocio"
+        onClick={() => {
+          if (!menuRef.current?.open) {
+            setAnimacionMenu((actual) => actual + 1);
+          }
+        }}
+      >
         <Avatar nombre={nombreNegocio} imagen={imagenNegocio} />
       </summary>
-      <div className="panel-cuenta__menu">
+      <div className="panel-cuenta__menu" key={animacionMenu}>
         <div className="panel-cuenta__identidad">
           <Avatar nombre={nombreNegocio} imagen={imagenNegocio} grande />
           <span>
@@ -121,7 +155,9 @@ function Avatar({
   grande?: boolean;
 }) {
   return (
-    <span className={`panel-cuenta__avatar${grande ? " panel-cuenta__avatar--grande" : ""}`}>
+    <span
+      className={`panel-cuenta__avatar${grande ? " panel-cuenta__avatar--grande" : ""}`}
+    >
       {imagen ? <img src={imagen} alt="" /> : iniciales(nombre)}
     </span>
   );

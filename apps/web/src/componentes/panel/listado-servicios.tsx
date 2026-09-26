@@ -1,7 +1,7 @@
 /** Busca servicios en filas completas y abre detalles sin confundirlos con las acciones. */
 "use client";
-import { useState } from "react";
-import { Edit3, Search } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Edit3, Minus, Plus, Search } from "lucide-react";
 import {
   FormularioServicio,
   type ServicioEditable,
@@ -27,7 +27,12 @@ export function ListadoServicios({
   sedes: Opcion[];
 }) {
   const [buscar, cambiar] = useState(""),
-    [detalle, abrir] = useState<Fila | null>(null);
+    [detalle, abrir] = useState<Fila | null>(null),
+    [edicion, editar] = useState<Fila | null>(null);
+  const cerrarEdicion = useCallback(() => editar(null), []);
+  const [categoriasAbiertas, setCategoriasAbiertas] = useState<Set<string>>(
+    () => new Set(),
+  );
   const normalizar = (s: string) =>
     s
       .normalize("NFD")
@@ -36,6 +41,18 @@ export function ListadoServicios({
   const visibles = servicios.filter((s) =>
     normalizar(`${s.nombre} ${s.categoria}`).includes(normalizar(buscar)),
   );
+  const grupos = visibles.reduce<Record<string, Fila[]>>((resultado, servicio) => {
+    (resultado[servicio.categoria || "General"] ??= []).push(servicio);
+    return resultado;
+  }, {});
+  const alternarCategoria = (categoria: string) => {
+    setCategoriasAbiertas((actuales) => {
+      const siguientes = new Set(actuales);
+      if (siguientes.has(categoria)) siguientes.delete(categoria);
+      else siguientes.add(categoria);
+      return siguientes;
+    });
+  };
   return (
     <>
       <div className="herramientas-modulo">
@@ -49,63 +66,85 @@ export function ListadoServicios({
           />
         </label>
       </div>
-      <div className="grilla-listado servicios-listado">
-        {visibles.map((s) => (
-          <article
-            className={`tarjeta-listado servicio-fila ${s.activo ? "" : "inactivo"}`}
-            key={s.id}
-          >
-            <button
-              type="button"
-              className="servicio-fila__detalle"
-              onClick={() => abrir(s)}
-              aria-label={`Ver detalles de ${s.nombre}`}
+      <div className="servicios-categorias">
+        {Object.entries(grupos).map(([categoria, opciones], indice) => {
+          const abierta = categoriasAbiertas.has(categoria);
+          const idContenido = `servicios-categoria-${indice}`;
+          return (
+            <section
+              className={`servicios-categoria${abierta ? " abierta" : ""}`}
+              key={categoria}
             >
-              <div>
-                <span className="servicio-fila__etiqueta">Nombre</span>
-                <h2>{s.nombre}</h2>
+              <button
+                type="button"
+                className="servicios-categoria__encabezado"
+                aria-expanded={abierta}
+                aria-controls={idContenido}
+                onClick={() => alternarCategoria(categoria)}
+              >
+                <span>
+                  <strong>{categoria}</strong>
+                </span>
+                {abierta ? <Minus aria-hidden="true" /> : <Plus aria-hidden="true" />}
+              </button>
+              <div
+                className="servicios-categoria__contenido"
+                id={idContenido}
+                aria-hidden={!abierta}
+              >
+                <div className="servicios-categoria__interior">
+                  {opciones.map((s) => (
+                    <article
+                      className={`servicio-fila ${s.activo ? "" : "inactivo"}`}
+                      key={s.id}
+                    >
+                      <button
+                        type="button"
+                        className="servicio-fila__detalle"
+                        onClick={() => abrir(s)}
+                        aria-label={`Ver detalles de ${s.nombre}`}
+                      >
+                        <div>
+                          <h2>{s.nombre}</h2>
+                        </div>
+                        <div>
+                          <span className="servicio-fila__etiqueta">Precio</span>
+                          <strong>{dinero(s.precio)}</strong>
+                        </div>
+                        <div>
+                          <span className="servicio-fila__etiqueta">Duración</span>
+                          <strong>{s.duracionMinutos} min</strong>
+                        </div>
+                      </button>
+                      <div className="tarjeta-listado__acciones">
+                        <details className="desplegable-accion">
+                          <summary
+                            className="accion-icono accion-icono--editar"
+                            aria-label={`Editar ${s.nombre}`}
+                            title={`Editar ${s.nombre}`}
+                          >
+                            <Edit3 aria-hidden="true" />
+                          </summary>
+                          <FormularioServicio
+                            servicio={s}
+                            profesionales={profesionales}
+                            sedes={sedes}
+                          />
+                        </details>
+                        <BotonEliminar
+                          id={s.id}
+                          nombre={s.nombre}
+                          advertencia="Se eliminará este servicio del catálogo y de las asignaciones activas."
+                          accion={eliminarServicio}
+                        />
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </div>
-              <div>
-                <span className="servicio-fila__etiqueta">Categoría</span>
-                <strong>{s.categoria}</strong>
-              </div>
-              <div>
-                <span className="servicio-fila__etiqueta">Precio</span>
-                <strong>{dinero(s.precio)}</strong>
-              </div>
-              <div>
-                <span className="servicio-fila__etiqueta">Duración</span>
-                <strong>{s.duracionMinutos} min</strong>
-              </div>
-              <div>
-                <span className="servicio-fila__etiqueta">Seña</span>
-                <strong>{s.porcentajeSena}%</strong>
-              </div>
-            </button>
-            <div className="tarjeta-listado__acciones">
-              <details className="desplegable-accion">
-                <summary
-                  className="accion-icono accion-icono--editar"
-                  aria-label={`Editar ${s.nombre}`}
-                  title={`Editar ${s.nombre}`}
-                >
-                  <Edit3 aria-hidden="true" />
-                </summary>
-                <FormularioServicio
-                  servicio={s}
-                  profesionales={profesionales}
-                  sedes={sedes}
-                />
-              </details>
-              <BotonEliminar
-                id={s.id}
-                nombre={s.nombre}
-                advertencia="Se eliminará este servicio del catálogo y de las asignaciones activas."
-                accion={eliminarServicio}
-              />
-            </div>
-          </article>
-        ))}
+            </section>
+          );
+        })}
       </div>
       {!visibles.length && (
         <p className="sin-resultados">
@@ -126,10 +165,6 @@ export function ListadoServicios({
             <div>
               <dt>Duración</dt>
               <dd>{detalle.duracionMinutos} min</dd>
-            </div>
-            <div>
-              <dt>Seña</dt>
-              <dd>{detalle.porcentajeSena}%</dd>
             </div>
             {profesionales.length > 1 && (
               <div className="servicio-datos__ancho">
@@ -155,20 +190,18 @@ export function ListadoServicios({
             )}
           </dl>
           <div className="acciones-seccion">
-            <details className="desplegable-accion">
-              <summary
-                className="accion-icono accion-icono--editar"
-                aria-label={`Editar ${detalle.nombre}`}
-                title={`Editar ${detalle.nombre}`}
-              >
-                <Edit3 aria-hidden="true" />
-              </summary>
-              <FormularioServicio
-                servicio={detalle}
-                profesionales={profesionales}
-                sedes={sedes}
-              />
-            </details>
+            <button
+              className="accion-icono accion-icono--editar"
+              type="button"
+              aria-label={`Editar ${detalle.nombre}`}
+              title={`Editar ${detalle.nombre}`}
+              onClick={() => {
+                editar(detalle);
+                abrir(null);
+              }}
+            >
+              <Edit3 aria-hidden="true" />
+            </button>
             <BotonEliminar
               id={detalle.id}
               nombre={detalle.nombre}
@@ -176,6 +209,19 @@ export function ListadoServicios({
               accion={eliminarServicio}
             />
           </div>
+        </DialogoPanel>
+      )}
+      {edicion && (
+        <DialogoPanel
+          titulo={`Editar ${edicion.nombre}`}
+          cerrar={() => editar(null)}
+        >
+          <FormularioServicio
+            servicio={edicion}
+            profesionales={profesionales}
+            sedes={sedes}
+            alGuardar={cerrarEdicion}
+          />
         </DialogoPanel>
       )}
     </>

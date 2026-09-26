@@ -83,7 +83,7 @@ La importación lee la primera hoja de `.xlsx` o CSV separado por comas, punto y
 
 Servicios utiliza un formulario reducido: nombre, categoría, precio, duración y seña. Profesionales y locales se eligen sólo cuando hay varios activos; con uno solo se asignan desde el servidor. Crear y editar no borran información anterior que ya no aparece en el formulario, y los cambios válidos se reflejan en el catálogo del micrositio.
 
-Google Calendar cuenta con consentimiento separado, tokens cifrados, sincronización incremental de ocupaciones y exportación de turnos sin correo ni teléfono. Google Places actualiza puntaje y cantidad de valoraciones. Mercado Pago crea la suscripción y sólo activa el sitio después de validar el webhook y consultar el recurso al proveedor. R2 recibe logo, portadas, servicios y fotos mediante una carga autenticada que valida y optimiza cada imagen en el servidor. Estas integraciones requieren las credenciales documentadas en `.env.example`.
+Google Calendar cuenta con consentimiento separado, tokens cifrados, sincronización incremental de ocupaciones y exportación de turnos sin correo ni teléfono. Google Places actualiza puntaje y cantidad de valoraciones. Mercado Pago crea la suscripción y sólo activa el sitio después de validar el webhook y consultar el recurso al proveedor. Cloudinary recibe las nuevas imágenes mediante carga directa firmada: el servidor autoriza la sesión y limita el destino por negocio, mientras que el archivo no atraviesa la función de Vercel. Las rutas de R2 permanecen para servir imágenes cargadas antes de esta migración. Estas integraciones requieren las credenciales documentadas en `.env.example`.
 
 ### Agenda diaria y Google Calendar
 
@@ -93,7 +93,7 @@ Para habilitar Google Calendar, activar Calendar API en Google Cloud, configurar
 
 Desde Agenda se elige negocio, local o profesional antes de autorizar. El calendario “TurnosRápidos · nombre del negocio” debe estar activado en Google Calendar del teléfono, usando la misma cuenta. El worker importa ocupaciones y reintenta exportaciones cada cinco minutos. Los eventos usan identificadores estables y una huella para evitar duplicados. Desconectar detiene la sincronización y conserva los eventos en Google. Sin credenciales, la interfaz indica “No configurado”. La lógica se comparte entre web y worker en `packages/google-calendar`; sus pruebas usan proveedores simulados y no envían eventos reales.
 
-Las imágenes se decodifican en el servidor, corrigen su orientación, se reducen a un máximo de 2400 × 1800, pierden sus metadatos y se convierten a WebP antes de llegar a R2. Si R2 no está configurado, el editor mantiene la alternativa de pegar una URL y explica el motivo sin romper el formulario.
+Las nuevas imágenes se convierten y optimizan como WebP al cargarse en Cloudinary (máximo 2400 × 1800). Las firmas se generan sólo en el servidor; nunca se envía el secreto de Cloudinary al navegador. Los archivos históricos de R2 necesitan conservar sus credenciales o migrarse antes de retirarlas.
 
 ## Cuenta de demostración local
 
@@ -101,20 +101,13 @@ Con PostgreSQL local funcionando, `pnpm db:demo` crea o regenera exclusivamente 
 
 `pnpm test:e2e` regenera esta demo y comprueba en Chromium el acceso, las rutas del panel, el catálogo y el ancho móvil. Requiere instalar una vez el navegador con `pnpm --filter @turnos/web exec playwright install chromium`.
 
-## Dominios: etapa final
+## Deploy en Vercel y Railway
 
-Durante la validación se usan rutas locales:
+La configuración inicial para publicar este monorepo en Vercel, Railway y Cloudinary está en [Guía de deploy](./docs/deploy-vercel-railway-cloudinary.md). La guía incluye los comandos de build, migraciones, variables, wildcard DNS y el orden de puesta en línea.
 
-- Micrositio sin dominio: `http://localhost:3000/sitio/{slug}`.
-- Panel: `http://localhost:3000/panel`.
+El dominio base se configura en `PUBLIC_SITE_DOMAIN` (por ejemplo `site.turnosrapidos.com.ar`); cada local se publica como `{subdominio}.site.turnosrapidos.com.ar`. En desarrollo local se conserva `/sitio/{slug}`.
 
-En producción, la misma experiencia resolverá:
-
-- Sin dominio propio: `manlybarbercompany.site.turnosrapidos.com.ar`.
-- Con dominio conectado: `turnos.manlybarber.com.ar`.
-- Con dominio gestionado: el `.com.ar` registrado a nombre del cliente y apuntado al mismo tenant.
-
-La compra del dominio, wildcard, certificados y verificación DNS se deja expresamente para la última etapa del piloto.
+La configuración actual prepara subdominios wildcard propios de la plataforma. Los dominios personalizados de cada cliente todavía requieren una etapa aparte de verificación DNS y vinculación de tenant.
 
 ## Calidad
 

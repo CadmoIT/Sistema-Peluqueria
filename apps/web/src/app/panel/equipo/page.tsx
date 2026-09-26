@@ -11,11 +11,18 @@ import { BotonEliminar } from "@/componentes/panel/boton-eliminar";
 import { FormularioAccion } from "@/componentes/panel/formulario-accion";
 import { CampoImagen } from "@/componentes/panel/campo-imagen";
 import { obtenerEquipo } from "@/servicios/panel-datos.service";
+import { FiltroLocalUrl } from "@/componentes/panel/filtro-local";
 
 export const metadata = { title: "Equipo" };
 
-export default async function PaginaEquipo() {
-  const { profesionales, conexiones, sedes, servicios } = await obtenerEquipo();
+export default async function PaginaEquipo({
+  searchParams,
+}: {
+  searchParams: Promise<{ local?: string }>;
+}) {
+  const parametros = await searchParams;
+  const { profesionales, conexiones, sedes, servicios, localSeleccionado } =
+    await obtenerEquipo(parametros.local);
   return (
     <div className="panel-contenido">
       <VistaPanelLista ruta="/panel/equipo" />
@@ -23,12 +30,22 @@ export default async function PaginaEquipo() {
         <div>
           <h1>Equipo</h1>
         </div>
-        <details className="desplegable-accion">
-          <summary className="boton boton--primario">
-            <Plus /> Nuevo profesional
-          </summary>
-          <FormularioProfesional sedes={sedes} servicios={servicios} />
-        </details>
+        <div className="acciones-seccion">
+          {sedes.length > 1 && (
+            <FiltroLocalUrl
+              className="filtro-discreto"
+              sedes={sedes}
+              valor={localSeleccionado}
+              ariaLabel="Filtrar equipo por local"
+            />
+          )}
+          <details className="desplegable-accion">
+            <summary className="boton boton--primario">
+              <Plus /> Nuevo profesional
+            </summary>
+            <FormularioProfesional sedes={sedes} servicios={servicios} />
+          </details>
+        </div>
       </header>
       {profesionales.length ? (
         <div className="lista-equipo">

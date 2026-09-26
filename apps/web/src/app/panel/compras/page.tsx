@@ -18,32 +18,74 @@ export default async function PaginaCompras() {
   return (
     <div className="panel-contenido compras-contenido">
       <VistaPanelLista ruta="/panel/compras" />
-      <header className="cabecera-seccion">
-        <div>
-          <h1>Compras</h1>
-          <p>Cargá productos de tus vendedores y sumalos al inventario.</p>
-        </div>
-        <div className="compras-acciones">
-          <details className="desplegable-accion compras-exportar">
-            <summary className="boton boton--secundario"><Download /> Exportar</summary>
-            <div className="popover-panel">
-              <a href="/api/v1/compras/exportar?formato=xlsx">Excel (.xlsx)</a>
-              <a href="/api/v1/compras/exportar?formato=csv">CSV</a>
-            </div>
-          </details>
-          <ImportadorCompras sedes={locales} />
-          <details className="desplegable-accion">
-            <summary className="boton boton--primario"><Plus /> Agregar compra</summary>
-            <FormularioAccion accion={registrarCompra} texto="Registrar compra" className="formulario-flotante formulario-compra">
-              <h2>Nueva compra</h2>
-              <label>Proveedor<input name="proveedor" maxLength={160} placeholder="Opcional" /></label>
-              {locales.length === 1 ? <input type="hidden" name="sedeId" value={locales[0]!.id} /> : <label>Local<select name="sedeId" required defaultValue=""> <option value="" disabled>Elegí un local</option>{locales.map((sede) => <option value={sede.id} key={sede.id}>{sede.nombre}</option>)}</select></label>}
-              <ManualCompra productos={datos.productos.map((producto) => ({ id: producto.id, nombre: producto.nombre }))} />
-            </FormularioAccion>
-          </details>
-        </div>
-      </header>
-      <TablaCompras compras={datos.compras.map((compra) => ({ id: compra.id, creadoEn: compra.creadoEn.toISOString(), proveedor: compra.proveedor, sedeId: compra.sedeId, sedeNombre: compra.sede.nombre, items: compra.items, total: Number(compra.total) }))} sedes={locales} columnas={columnas} />
+      <TablaCompras
+        compras={datos.compras.map((compra) => ({ id: compra.id, creadoEn: compra.creadoEn.toISOString(), proveedor: compra.proveedor, sedeId: compra.sedeId, sedeNombre: compra.sede.nombre, items: compra.items, total: Number(compra.total) }))}
+        sedes={locales}
+        columnas={columnas}
+        acciones={
+            <>
+              <details className="desplegable-accion compras-exportar">
+                <summary className="boton boton--secundario">
+                  <Download /> Exportar
+                </summary>
+                <div className="popover-panel">
+                  <a href="/api/v1/compras/exportar?formato=xlsx">
+                    Excel (.xlsx)
+                  </a>
+                  <a href="/api/v1/compras/exportar?formato=csv">CSV</a>
+                </div>
+              </details>
+              <ImportadorCompras sedes={locales} />
+              <details className="desplegable-accion">
+                <summary className="boton boton--primario">
+                  <Plus /> Agregar compra
+                </summary>
+                <FormularioAccion
+                  accion={registrarCompra}
+                  texto="Registrar compra"
+                  className="formulario-flotante formulario-compra"
+                >
+                  <h2>Nueva compra</h2>
+                  <label>
+                    Proveedor
+                    <input
+                      name="proveedor"
+                      maxLength={160}
+                      placeholder="Opcional"
+                    />
+                  </label>
+                  {locales.length === 1 ? (
+                    <input
+                      type="hidden"
+                      name="sedeId"
+                      value={locales[0]!.id}
+                    />
+                  ) : (
+                    <label>
+                      Local
+                      <select name="sedeId" required defaultValue="">
+                        <option value="" disabled>
+                          Elegí un local
+                        </option>
+                        {locales.map((sede) => (
+                          <option value={sede.id} key={sede.id}>
+                            {sede.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  <ManualCompra
+                    productos={datos.productos.map((producto) => ({
+                      id: producto.id,
+                      nombre: producto.nombre,
+                    }))}
+                  />
+                </FormularioAccion>
+              </details>
+          </>
+        }
+      />
     </div>
   );
 }

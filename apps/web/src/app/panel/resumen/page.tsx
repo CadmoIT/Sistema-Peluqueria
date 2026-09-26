@@ -13,12 +13,19 @@ import { nombrePlan } from "@turnos/config";
 import { obtenerResumenPanel } from "@/servicios/panel-datos.service";
 import { obtenerPerfilNegocio } from "@/lib/perfiles-negocio";
 import { obtenerIconoServicios } from "@/componentes/panel/iconos-rubro";
+import { FiltroLocalUrl } from "@/componentes/panel/filtro-local";
+import { enlaceSitioPublico } from "@/lib/dominios-publicos";
 import "./resumen.css";
 
 export const metadata = { title: "Resumen" };
 
-export default async function PaginaPanel() {
-  const datos = await obtenerResumenPanel();
+export default async function PaginaPanel({
+  searchParams,
+}: {
+  searchParams: Promise<{ local?: string }>;
+}) {
+  const parametros = await searchParams;
+  const datos = await obtenerResumenPanel(parametros.local);
   const IconoServicios = obtenerIconoServicios(
     obtenerPerfilNegocio(datos.negocio.configuracion).iconoServicios,
   );
@@ -31,25 +38,12 @@ export default async function PaginaPanel() {
         ),
       )
     : 0;
-  const ahora = Date.now();
-  const suscripcion = datos.negocio.suscripcion;
-  const sitioDisponible =
-    datos.negocio.publicado &&
-    suscripcion?.estado !== "PAUSADA" &&
-    suscripcion?.estado !== "CANCELADA" &&
-    !(
-      suscripcion?.estado === "CONFIGURACION_GRATUITA" &&
-      suscripcion.pruebaFinalizaEn &&
-      suscripcion.pruebaFinalizaEn.getTime() < ahora
-    ) &&
-    !(
-      suscripcion?.estado === "EN_GRACIA" &&
-      suscripcion.graciaHasta &&
-      suscripcion.graciaHasta.getTime() < ahora
-    );
   const proximoTurno = datos.proximo
     ? formatoProximoTurno(datos.proximo.inicio, datos.negocio.zonaHoraria)
     : null;
+  const sedeSitio =
+    datos.sedes.find((sede) => sede.id === datos.localSeleccionado) ??
+    datos.sedes[0];
 
   return (
     <div className="panel-contenido resumen-pagina">
@@ -57,23 +51,30 @@ export default async function PaginaPanel() {
       <section className="panel-bienvenida">
         <div className="resumen-pagina__cabecera">
           <h1>{datos.negocio.nombre}</h1>
-          <Link
-            className="enlace-sitio-resumen"
-            href={
-              sitioDisponible
-                ? "/sitio/" + datos.negocio.slug
-                : "/panel/mi-sitio"
-            }
-            target={sitioDisponible ? "_blank" : undefined}
-            aria-label={
-              sitioDisponible
-                ? "Página Web, abrir sitio"
-                : "Página Web, abrir vista previa"
-            }
-          >
-            <span>Página Web</span>
-            <ExternalLink size={17} aria-hidden="true" />
-          </Link>
+          <div className="resumen-pagina__acciones-cabecera">
+            {datos.sedes.length > 1 && (
+              <FiltroLocalUrl
+                className="filtro-discreto"
+                sedes={datos.sedes}
+                valor={datos.localSeleccionado}
+                ariaLabel="Filtrar resumen por local"
+              />
+            )}
+            {datos.cantidadNegocios === 1 && (
+              <Link
+                className="enlace-sitio-resumen"
+                href={enlaceSitioPublico(
+                  sedeSitio?.subdominio ?? datos.negocio.slug,
+                )}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Página web de ${datos.negocio.nombre}, abrir sitio`}
+              >
+                <span>Página Web</span>
+                <ExternalLink size={17} aria-hidden="true" />
+              </Link>
+            )}
+          </div>
         </div>
       </section>
       <section className="metricas-panel">
@@ -167,7 +168,7 @@ export default async function PaginaPanel() {
           </div>
           <Link
             className="prueba-panel"
-            href="/panel/facturacion"
+            href="/panel/planes"
             aria-label="Ver plan y facturación"
           >
             <strong>

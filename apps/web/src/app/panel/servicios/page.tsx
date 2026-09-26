@@ -5,10 +5,16 @@ import { FormularioServicio } from "@/componentes/panel/formulario-servicio";
 import { ListadoServicios } from "@/componentes/panel/listado-servicios";
 import { obtenerCatalogo } from "@/servicios/panel-datos.service";
 import { obtenerPerfilNegocio } from "@/lib/perfiles-negocio";
+import { FiltroLocalUrl } from "@/componentes/panel/filtro-local";
 import "./servicios.css";
 export const metadata = { title: "Servicios" };
-export default async function PaginaServicios() {
-  const datos = await obtenerCatalogo();
+export default async function PaginaServicios({
+  searchParams,
+}: {
+  searchParams: Promise<{ local?: string }>;
+}) {
+  const parametros = await searchParams;
+  const datos = await obtenerCatalogo(parametros.local);
   const perfil = obtenerPerfilNegocio(datos.negocio.configuracion);
   const profesionales = datos.profesionales.map(({ id, nombre, apellido }) => ({
     id,
@@ -20,12 +26,23 @@ export default async function PaginaServicios() {
       <VistaPanelLista ruta="/panel/servicios" />
       <header className="cabecera-seccion">
         <h1>Servicios</h1>
-        <details className="desplegable-accion">
-          <summary className="boton boton--primario">
-            <Plus /> Nuevo servicio
-          </summary>
-          <FormularioServicio profesionales={profesionales} sedes={sedes} />
-        </details>
+        <div className="acciones-seccion">
+          {datos.sedes.length > 1 && (
+            <FiltroLocalUrl
+              className="filtro-discreto"
+              sedes={sedes}
+              valor={datos.localSeleccionado}
+              incluirTodos={false}
+              ariaLabel="Filtrar servicios por local"
+            />
+          )}
+          <details className="desplegable-accion">
+            <summary className="boton boton--primario">
+              <Plus /> Nuevo servicio
+            </summary>
+            <FormularioServicio profesionales={profesionales} sedes={sedes} />
+          </details>
+        </div>
       </header>
       {datos.servicios.length ? (
         <ListadoServicios
@@ -37,7 +54,6 @@ export default async function PaginaServicios() {
             categoria: servicio.categoria?.nombre ?? "General",
             precio: Number(servicio.precio),
             duracionMinutos: servicio.duracionMinutos,
-            porcentajeSena: Number(servicio.porcentajeSena ?? 0),
             activo: servicio.activo,
             profesionalIds: servicio.profesionales.map((p) => p.profesionalId),
             sedeIds: servicio.sedes.map((s) => s.sedeId),

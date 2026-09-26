@@ -2,38 +2,30 @@
 /* eslint-disable @next/next/no-img-element -- La vista previa acepta imágenes propias y URLs temporales. */
 "use client";
 
-import { useState, type MouseEvent } from "react";
+import { useRef, useState, type PointerEvent } from "react";
 import {
-  ArrowDown,
-  ArrowUp,
-  Eye,
   MapPin,
   MessageCircle,
   Palette,
-  Save,
-  UsersRound,
 } from "lucide-react";
-import {
-  guardarBorradorSitio,
-  publicarSitio,
-} from "@/app/panel/mi-sitio/acciones";
-import { BotonEnvio } from "@/componentes/panel/boton-envio";
 import { CampoImagen } from "@/componentes/panel/campo-imagen";
+import { VistaPreviaSitio } from "@/componentes/panel/vista-previa-sitio";
 
 export type BorradorSitio = {
   titulo: string;
   descripcion: string;
+  colorTitulo: string;
+  colorSubtitulo: string;
   colorPrincipal: string;
   colorFondo: string;
   colorTexto: string;
   logoUrl: string;
-  heroAlineacion: "izquierda" | "centro" | "derecha";
   whatsapp: string;
   instagram: string;
+  googleMapsUrl: string;
   hero: Array<{ url: string; alt: string; focoX: number; focoY: number }>;
-  carruselAutomatico: boolean;
-  secciones: Array<"servicios" | "equipo" | "ubicacion">;
-  serviciosDestacados: string[];
+  secciones: Array<"servicios" | "equipo" | "contacto" | "ubicacion">;
+  versionSecciones: number;
 };
 
 type LocalSitio = {
@@ -42,6 +34,7 @@ type LocalSitio = {
   subdominio?: string | null;
   direccion: string;
   telefono: string | null;
+  googleMapsUrl: string | null;
   googlePuntaje: number | null;
   googleResenas: number | null;
 };
@@ -49,12 +42,13 @@ type LocalSitio = {
 const nombresSecciones = {
   servicios: "Servicios",
   equipo: "Profesionales",
-  ubicacion: "Contacto y ubicación",
+  contacto: "Contacto",
+  ubicacion: "Ubicación",
 };
 const coloresFrecuentes = [
-  "#126783",
   "#111111",
   "#ffffff",
+  "#126783",
   "#2a9fba",
   "#1f7a5c",
   "#b65f3a",
@@ -64,20 +58,21 @@ const coloresFrecuentes = [
 
 export function EditorSitio({
   inicial,
-  slug,
   localId,
   servicios,
   profesionales,
   locales,
 }: {
   inicial: BorradorSitio;
-  slug: string;
   localId: string;
   servicios: Array<{
     id: string;
     nombre: string;
     precio: number;
     categoria: string;
+    descripcion: string | null;
+    duracionMinutos: number;
+    imagen: string | null;
   }>;
   profesionales: Array<{
     id: string;
@@ -98,7 +93,11 @@ export function EditorSitio({
   >;
 }) {
   const [datos, setDatos] = useState(inicial);
-  const cambiar = (campo: keyof BorradorSitio, valor: string | boolean) =>
+  const idLocal = localId || locales[0]?.id || "";
+  const cambiar = (
+    campo: keyof BorradorSitio,
+    valor: string | boolean | number,
+  ) =>
     setDatos((actual) => ({ ...actual, [campo]: valor }));
   const cambiarHero = (
     indice: number,
@@ -107,7 +106,7 @@ export function EditorSitio({
   ) =>
     setDatos((actual) => ({
       ...actual,
-      hero: Array.from({ length: 3 }, (_, i) =>
+      hero: Array.from({ length: 1 }, (_, i) =>
         i === indice
           ? {
               ...(actual.hero[i] ?? {
@@ -127,16 +126,6 @@ export function EditorSitio({
       ),
     }));
 
-  function moverHero(indice: number, direccion: -1 | 1) {
-    setDatos((actual) => {
-      const destino = indice + direccion;
-      if (destino < 0 || destino >= actual.hero.length) return actual;
-      const hero = [...actual.hero];
-      [hero[indice], hero[destino]] = [hero[destino]!, hero[indice]!];
-      return { ...actual, hero };
-    });
-  }
-
   function alternarSeccion(seccion: BorradorSitio["secciones"][number]) {
     setDatos((actual) => ({
       ...actual,
@@ -146,43 +135,23 @@ export function EditorSitio({
     }));
   }
 
-  function moverSeccion(indice: number, direccion: -1 | 1) {
-    setDatos((actual) => {
-      const destino = indice + direccion;
-      if (destino < 0 || destino >= actual.secciones.length) return actual;
-      const secciones = [...actual.secciones];
-      [secciones[indice], secciones[destino]] = [
-        secciones[destino]!,
-        secciones[indice]!,
-      ];
-      return { ...actual, secciones };
-    });
-  }
-
-  const seccionesEditor = [
-    ...datos.secciones,
-    ...(Object.keys(nombresSecciones) as BorradorSitio["secciones"]).filter(
-      (seccion) => !datos.secciones.includes(seccion),
-    ),
-  ];
-
   return (
     <div className="editor-sitio editor-sitio--simple">
-      <form action={guardarBorradorSitio} className="editor-controles">
-        <input type="hidden" name="localId" value={localId} />
-        <div className="editor-controles__titulo">
-          <div>
-            <h2>
-              Configuración de{" "}
-              {locales.find((local) => local.id === localId)?.nombre ??
-                "tu local"}
-            </h2>
-          </div>
-          <BotonEnvio pendiente="Guardando…">
-            <Save /> Guardar borrador
-          </BotonEnvio>
-        </div>
-
+      <form
+        id="form-editor-sitio"
+        className="editor-controles"
+        onSubmit={(evento) => evento.preventDefault()}
+      >
+        <input
+          type="text"
+          name="localId"
+          value={idLocal}
+          readOnly
+          aria-hidden="true"
+          tabIndex={-1}
+          style={{ display: "none" }}
+        />
+        <input type="hidden" name="versionSecciones" value="2" />
         <details className="grupo-editor" open>
           <summary>Identidad</summary>
           <div>
@@ -221,8 +190,20 @@ export function EditorSitio({
           </summary>
           <div className="colores-circulares">
             <SelectorColor
+              nombre="colorTitulo"
+              etiqueta="Título"
+              valor={datos.colorTitulo}
+              alCambiar={(valor) => cambiar("colorTitulo", valor)}
+            />
+            <SelectorColor
+              nombre="colorSubtitulo"
+              etiqueta="Subtítulo"
+              valor={datos.colorSubtitulo}
+              alCambiar={(valor) => cambiar("colorSubtitulo", valor)}
+            />
+            <SelectorColor
               nombre="colorPrincipal"
-              etiqueta="Principal"
+              etiqueta="Botones"
               valor={datos.colorPrincipal}
               alCambiar={(valor) => cambiar("colorPrincipal", valor)}
             />
@@ -244,99 +225,27 @@ export function EditorSitio({
         <details className="grupo-editor">
           <summary>Portada</summary>
           <div>
-            <label>
-              Posición del texto en la portada
-              <select
-                name="heroAlineacion"
-                value={datos.heroAlineacion}
-                onChange={(evento) =>
-                  cambiar(
-                    "heroAlineacion",
-                    evento.target.value as BorradorSitio["heroAlineacion"],
-                  )
-                }
-              >
-                <option value="izquierda">Izquierda</option>
-                <option value="centro">Centrada</option>
-                <option value="derecha">Derecha</option>
-              </select>
-            </label>
-            {[0, 1, 2].map((indice) => (
-              <div className="imagen-editor" key={indice}>
-                <div>
-                  <strong>Imagen {indice + 1}</strong>
-                  <span>
-                    <button
-                      type="button"
-                      onClick={() => moverHero(indice, -1)}
-                      aria-label="Mover imagen hacia arriba"
-                    >
-                      <ArrowUp />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moverHero(indice, 1)}
-                      aria-label="Mover imagen hacia abajo"
-                    >
-                      <ArrowDown />
-                    </button>
-                  </span>
-                </div>
-                <CampoImagen
-                  name={"hero" + (indice + 1)}
-                  etiqueta="Imagen"
-                  tipo="portada"
-                  valor={datos.hero[indice]?.url ?? ""}
-                  alCambiar={(valor) => cambiarHero(indice, "url", valor)}
-                />
-                <label>
-                  ¿Qué se ve en esta foto? <small>(opcional)</small>
-                  <input
-                    name={"heroAlt" + (indice + 1)}
-                    value={datos.hero[indice]?.alt ?? ""}
-                    onChange={(evento) =>
-                      cambiarHero(indice, "alt", evento.target.value)
-                    }
-                    placeholder="Por ejemplo: interior luminoso del local"
-                  />
-                  <small>
-                    Ayuda a quienes navegan con un lector de pantalla.
-                  </small>
-                </label>
-                {datos.hero[indice]?.url && (
-                  <SelectorFoco
-                    imagen={datos.hero[indice].url}
-                    x={datos.hero[indice].focoX}
-                    y={datos.hero[indice].focoY}
-                    alCambiar={(x, y) => {
-                      cambiarHero(indice, "focoX", x);
-                      cambiarHero(indice, "focoY", y);
-                    }}
-                  />
-                )}
-                <input
-                  type="hidden"
-                  name={"heroFocoX" + (indice + 1)}
-                  value={datos.hero[indice]?.focoX ?? 50}
-                />
-                <input
-                  type="hidden"
-                  name={"heroFocoY" + (indice + 1)}
-                  value={datos.hero[indice]?.focoY ?? 50}
-                />
-              </div>
-            ))}
-            <label className="check-editor">
-              <input
-                name="carruselAutomatico"
-                type="checkbox"
-                checked={datos.carruselAutomatico}
-                onChange={(evento) =>
-                  cambiar("carruselAutomatico", evento.target.checked)
-                }
+            <CampoImagen
+              name="hero1"
+              etiqueta="Foto de portada"
+              tipo="portada"
+              valor={datos.hero[0]?.url ?? ""}
+              alCambiar={(valor) => cambiarHero(0, "url", valor)}
+              soloCarga
+            />
+            {datos.hero[0]?.url && (
+              <SelectorFoco
+                imagen={datos.hero[0].url}
+                x={datos.hero[0].focoX}
+                y={datos.hero[0].focoY}
+                alCambiar={(x, y) => {
+                  cambiarHero(0, "focoX", x);
+                  cambiarHero(0, "focoY", y);
+                }}
               />
-              Cambiar la imagen cada 5 segundos
-            </label>
+            )}
+            <input type="hidden" name="heroFocoX1" value={datos.hero[0]?.focoX ?? 50} />
+            <input type="hidden" name="heroFocoY1" value={datos.hero[0]?.focoY ?? 50} />
           </div>
         </details>
 
@@ -344,75 +253,29 @@ export function EditorSitio({
           <summary>Contenido</summary>
           <div>
             <fieldset className="secciones-editor">
-              <legend>Secciones visibles y orden</legend>
-              {seccionesEditor.map((seccion) => {
-                const posicion = datos.secciones.indexOf(seccion);
+              <legend>Secciones del sitio</legend>
+              {(Object.keys(nombresSecciones) as BorradorSitio["secciones"]).map((seccion) => {
+                const visible = datos.secciones.includes(seccion);
                 return (
                   <div key={seccion}>
                     <label>
                       <input
                         type="checkbox"
-                        checked={posicion >= 0}
+                        checked={visible}
                         onChange={() => alternarSeccion(seccion)}
                       />
                       {nombresSecciones[seccion]}
                     </label>
-                    {posicion >= 0 && (
-                      <span>
-                        <input type="hidden" name="secciones" value={seccion} />
-                        <button
-                          type="button"
-                          onClick={() => moverSeccion(posicion, -1)}
-                          aria-label={"Subir " + nombresSecciones[seccion]}
-                        >
-                          <ArrowUp />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moverSeccion(posicion, 1)}
-                          aria-label={"Bajar " + nombresSecciones[seccion]}
-                        >
-                          <ArrowDown />
-                        </button>
-                      </span>
-                    )}
+                    {visible && <input type="hidden" name="secciones" value={seccion} />}
                   </div>
                 );
               })}
-            </fieldset>
-            <fieldset className="selector-multiple">
-              <legend>Servicios que querés destacar</legend>
-              {servicios.length ? (
-                servicios.map((servicio) => (
-                  <label key={servicio.id}>
-                    <input
-                      type="checkbox"
-                      name="serviciosDestacados"
-                      value={servicio.id}
-                      checked={datos.serviciosDestacados.includes(servicio.id)}
-                      onChange={(evento) =>
-                        setDatos((actual) => ({
-                          ...actual,
-                          serviciosDestacados: evento.target.checked
-                            ? [...actual.serviciosDestacados, servicio.id]
-                            : actual.serviciosDestacados.filter(
-                                (id) => id !== servicio.id,
-                              ),
-                        }))
-                      }
-                    />
-                    {servicio.nombre}
-                  </label>
-                ))
-              ) : (
-                <p>Cargá servicios para mostrarlos en tu página.</p>
-              )}
             </fieldset>
           </div>
         </details>
 
         <details className="grupo-editor">
-          <summary>Contacto y ubicación</summary>
+          <summary>Contacto</summary>
           <div>
             <div className="form-grid">
               <label>
@@ -442,15 +305,22 @@ export function EditorSitio({
                 />
               </label>
             </div>
-            <div className="resumen-contenido-sitio">
-              <span>
-                <UsersRound /> {profesionales.length} profesionales
-              </span>
-              <span>
-                <MapPin /> {locales.length}{" "}
-                {locales.length === 1 ? "local" : "locales"}
-              </span>
-            </div>
+          </div>
+        </details>
+
+        <details className="grupo-editor">
+          <summary>Ubicación</summary>
+          <div>
+            <label>
+              Enlace del local en Google Maps
+              <input
+                name="googleMapsUrl"
+                type="url"
+                value={datos.googleMapsUrl}
+                onChange={(evento) => cambiar("googleMapsUrl", evento.target.value)}
+                placeholder="Pegá el enlace para compartir del local"
+              />
+            </label>
             {!locales.length && (
               <a href="/panel/configuracion/locales">
                 Completar datos del local
@@ -461,32 +331,14 @@ export function EditorSitio({
       </form>
 
       <section className="editor-preview">
-        <div className="editor-preview__barra">
-          <span>
-            <Eye /> Vista previa
-          </span>
-          <a
-            href={
-              "/sitio/" +
-              (locales.find((local) => local.id === localId)?.subdominio ??
-                slug)
-            }
-            target="_blank"
-          >
-            Abrir sitio
-          </a>
-        </div>
-        <VistaPrevia
+        <VistaPreviaSitio
           datos={datos}
           servicios={servicios}
           profesionales={profesionales}
           locales={locales}
+          localId={idLocal}
         />
       </section>
-
-      <form action={publicarSitio} className="editor-publicar">
-        <BotonEnvio pendiente="Publicando…">Publicar cambios</BotonEnvio>
-      </form>
     </div>
   );
 }
@@ -547,40 +399,57 @@ function SelectorFoco({
   y: number;
   alCambiar: (x: number, y: number) => void;
 }) {
-  function elegir(evento: MouseEvent<HTMLButtonElement>) {
+  const arrastre = useRef<{
+    id: number;
+    x: number;
+    y: number;
+    focoX: number;
+    focoY: number;
+    ancho: number;
+    alto: number;
+  } | null>(null);
+
+  function iniciar(evento: PointerEvent<HTMLButtonElement>) {
     const limites = evento.currentTarget.getBoundingClientRect();
+    evento.currentTarget.setPointerCapture(evento.pointerId);
+    arrastre.current = {
+      id: evento.pointerId,
+      x: evento.clientX,
+      y: evento.clientY,
+      focoX: x,
+      focoY: y,
+      ancho: limites.width,
+      alto: limites.height,
+    };
+  }
+
+  function mover(evento: PointerEvent<HTMLButtonElement>) {
+    const inicio = arrastre.current;
+    if (!inicio || inicio.id !== evento.pointerId) return;
     alCambiar(
-      Math.round(((evento.clientX - limites.left) / limites.width) * 100),
-      Math.round(((evento.clientY - limites.top) / limites.height) * 100),
+      Math.max(0, Math.min(100, Math.round(inicio.focoX - ((evento.clientX - inicio.x) / inicio.ancho) * 100))),
+      Math.max(0, Math.min(100, Math.round(inicio.focoY - ((evento.clientY - inicio.y) / inicio.alto) * 100))),
     );
   }
+
   return (
     <div className="selector-foco">
-      <span>Parte importante de la foto</span>
+      <span>Acomodá la foto arrastrándola</span>
       <button
         type="button"
-        onClick={elegir}
+        onPointerDown={iniciar}
+        onPointerMove={mover}
+        onPointerUp={() => { arrastre.current = null; }}
+        onPointerCancel={() => { arrastre.current = null; }}
         style={{ backgroundImage: "url(" + imagen + ")" }}
-        aria-label="Elegir la parte importante tocando la imagen"
-      >
-        <i style={{ left: x + "%", top: y + "%" }} />
-      </button>
-      <div aria-label="Posiciones rápidas">
-        {[0, 1, 2].flatMap((fila) =>
-          [0, 1, 2].map((columna) => (
-            <button
-              type="button"
-              key={fila + "-" + columna}
-              aria-label={"Posición " + (fila * 3 + columna + 1)}
-              onClick={() => alCambiar(columna * 50, fila * 50)}
-            />
-          )),
-        )}
-      </div>
+        aria-label="Arrastrá para acomodar la foto de portada"
+      />
     </div>
   );
 }
 
+// La implementación anterior se conserva temporalmente para evitar cambios de formato en borradores existentes.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function VistaPrevia({
   datos,
   servicios,
@@ -604,6 +473,9 @@ function VistaPrevia({
   locales: LocalSitio[];
 }) {
   const estilo = {
+    "--sitio-titulo": datos.colorTitulo,
+    "--sitio-subtitulo": datos.colorSubtitulo,
+    "--sitio-acento": datos.colorPrincipal,
     "--sitio-principal": datos.colorPrincipal,
     "--sitio-fondo": datos.colorFondo,
     "--sitio-texto": datos.colorTexto,
@@ -618,7 +490,7 @@ function VistaPrevia({
   return (
     <div className="mini-sitio mini-sitio--nuevo" style={estilo}>
       <div
-        className={`mini-hero mini-hero--${datos.heroAlineacion}`}
+        className="mini-hero"
         style={
           datos.hero[0]?.url
             ? {
@@ -635,13 +507,15 @@ function VistaPrevia({
         </div>
       </div>
       <div className="mini-identidad">
-        {datos.logoUrl ? (
-          <img className="mini-logo-identidad" src={datos.logoUrl} alt="" />
-        ) : (
-          <i className="mini-logo-identidad">{iniciales(datos.titulo)}</i>
-        )}
-        <strong>{datos.titulo}</strong>
-        <p>{datos.descripcion}</p>
+        <div className="mini-identidad__marca">
+          {datos.logoUrl && (
+            <img className="mini-logo-identidad" src={datos.logoUrl} alt="" />
+          )}
+          <div>
+            <strong>{datos.titulo}</strong>
+            <p>{datos.descripcion}</p>
+          </div>
+        </div>
         <div className="mini-avatar-group">
           {profesionales.slice(0, 5).map((profesional) => (
             <span key={profesional.id} title={profesional.nombre}>

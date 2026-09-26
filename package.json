@@ -17,13 +17,15 @@
     "format": "prettier --check .",
     "validar:encabezados": "node scripts/validar-encabezados.mjs",
     "db:generate": "prisma generate",
+    "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
-    "db:demo": "pnpm --filter @turnos/web demo:crear"
+    "db:demo": "pnpm --filter @turnos/web demo:crear",
+    "db:demo:manly": "pnpm --filter @turnos/web demo:crear:manly"
   },
   "devDependencies": {
-    "prettier": "^3.5.3",
+    "prettier": "^3.9.6",
     "prisma": "6.19.3",
-    "turbo": "^2.5.3",
-    "typescript": "^5.8.3"
+    "turbo": "^2.10.12",
+    "typescript": "^5.9.3"
   }
 }

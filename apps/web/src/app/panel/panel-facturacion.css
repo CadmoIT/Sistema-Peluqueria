@@ -176,7 +176,7 @@
 }
 .facturacion-resumen small {
   color: #126783;
-  letter-spacing: .9px;
+  letter-spacing: 0.9px;
 }
 .facturacion-resumen strong {
   color: #111;
@@ -207,7 +207,10 @@
   border: 1px solid #d8e3e7 !important;
   border-radius: 16px !important;
   background: #fff;
-  transition: transform 300ms cubic-bezier(.16, 1, .3, 1), border-color 220ms ease, box-shadow 220ms ease;
+  transition:
+    transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 220ms ease,
+    box-shadow 220ms ease;
 }
 .plan-panel-card::before {
   content: "";
@@ -218,22 +221,28 @@
   border-radius: 16px 16px 0 0;
   background: linear-gradient(105deg, #126783, #13b8d4);
 }
-.plan-panel-card--prueba::before { background: linear-gradient(105deg, #3478f6, #39c5f4); }
-.plan-panel-card--autogestionado::before { background: linear-gradient(105deg, #6416d8, #a04dff); }
-.plan-panel-card--pro::before { background: linear-gradient(105deg, #c319d9, #ff4fb8); }
+.plan-panel-card--prueba::before {
+  background: linear-gradient(105deg, #3478f6, #39c5f4);
+}
+.plan-panel-card--autogestionado::before {
+  background: linear-gradient(105deg, #6416d8, #a04dff);
+}
+.plan-panel-card--pro::before {
+  background: linear-gradient(105deg, #c319d9, #ff4fb8);
+}
 .plan-panel-card:hover {
   transform: translateY(-5px);
   border-color: #126783 !important;
-  box-shadow: 0 14px 28px rgba(8, 50, 79, .1);
+  box-shadow: 0 14px 28px rgba(8, 50, 79, 0.1);
 }
 .plan-panel-card.actual {
   border: 2px solid #126783 !important;
-  box-shadow: 0 8px 20px rgba(18, 103, 131, .12);
+  box-shadow: 0 8px 20px rgba(18, 103, 131, 0.12);
 }
 .plan-panel-card > small {
   color: #126783;
   font: 11px var(--fuente-marca);
-  letter-spacing: .8px;
+  letter-spacing: 0.8px;
 }
 .plan-panel-card h2 {
   margin: 10px 0 7px;
@@ -294,12 +303,18 @@
   color: #fff;
   font-size: 15px;
 }
-.plan-panel-card--prueba .boton { background: linear-gradient(105deg, #3478f6, #39c5f4); }
-.plan-panel-card--autogestionado .boton { background: linear-gradient(105deg, #6416d8, #a04dff); }
-.plan-panel-card--pro .boton { background: linear-gradient(105deg, #c319d9, #ff4fb8); }
+.plan-panel-card--prueba .boton {
+  background: linear-gradient(105deg, #3478f6, #39c5f4);
+}
+.plan-panel-card--autogestionado .boton {
+  background: linear-gradient(105deg, #6416d8, #a04dff);
+}
+.plan-panel-card--pro .boton {
+  background: linear-gradient(105deg, #c319d9, #ff4fb8);
+}
 .plan-panel-card .boton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 7px 15px rgba(18, 103, 131, .22);
+  box-shadow: 0 7px 15px rgba(18, 103, 131, 0.22);
 }
 .plan-panel-recomendado {
   position: absolute;
@@ -311,7 +326,7 @@
   background: #6416d8;
   color: #fff;
   font: 11px var(--fuente-marca);
-  letter-spacing: .7px;
+  letter-spacing: 0.7px;
   white-space: nowrap;
 }
 .historial-pagos {
@@ -329,7 +344,10 @@
   background: #eaf5f7;
   color: #126783;
 }
-.historial-pagos h2 { color: #111; font-size: 20px; }
+.historial-pagos h2 {
+  color: #111;
+  font-size: 20px;
+}
 .tabla-pagos {
   overflow: hidden;
   border: 1px solid #d8e3e7;
@@ -340,9 +358,17 @@
   padding: 15px 18px;
   background: #fff;
 }
-.tabla-pagos > div + div { border-top: 1px solid #edf1f2; }
-.tabla-pagos > div span { color: #526b7c; font-size: 14px; }
-.tabla-pagos > div strong { color: #111; font-size: 15px; }
+.tabla-pagos > div + div {
+  border-top: 1px solid #edf1f2;
+}
+.tabla-pagos > div span {
+  color: #526b7c;
+  font-size: 14px;
+}
+.tabla-pagos > div strong {
+  color: #111;
+  font-size: 15px;
+}
 .tabla-pagos .estado {
   justify-self: start;
   padding: 4px 8px;
@@ -353,19 +379,192 @@
   text-transform: capitalize;
 }
 @media (max-width: 1000px) {
-  .planes-panel { grid-template-columns: 1fr 1fr; }
-  .plan-panel-card--pro { grid-column: 1 / -1; }
+  .planes-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+  .plan-panel-card--pro {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Facturación reutiliza las mismas tarjetas y gradientes de /precios. */
 .facturacion-pantalla .planes-grid--panel {
   width: min(1060px, calc(100% - 40px));
-  padding-block: 72px 24px;
+  padding-block: 28px 24px;
 }
 .facturacion-pantalla .planes-grid--panel article.actual {
-  outline: 3px solid rgba(18, 103, 131, .35);
+  outline: 3px solid rgba(18, 103, 131, 0.35);
   outline-offset: 5px;
 }
 .facturacion-pantalla .planes-grid--panel article .boton:disabled {
   cursor: not-allowed;
+}
+
+/* Facturación prioriza filas y divisores, como un resumen de cuenta. */
+.facturacion-detalle {
+  max-width: 920px;
+}
+.facturacion-detalle .facturacion-cabecera {
+  margin-bottom: 28px;
+}
+.facturacion-detalle .facturacion-cabecera h1 {
+  font: 600 28px var(--fuente-marca);
+  letter-spacing: 0;
+}
+.facturacion-bloque {
+  padding: 26px 0;
+  border-top: 1px solid var(--panel-borde);
+}
+.facturacion-bloque h2,
+.facturacion-bloque p {
+  margin: 0;
+}
+.facturacion-bloque h2 {
+  color: #17191a;
+  font: 500 19px var(--fuente-marca);
+}
+.facturacion-bloque p {
+  margin-top: 5px;
+  color: #62696d;
+  line-height: 1.5;
+}
+.facturacion-plan-actual,
+.facturacion-cancelacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.facturacion-plan-actual .boton,
+.facturacion-detalle .facturacion-enlace {
+  color: #1b2529;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.facturacion-transacciones > header,
+.facturacion-metodos > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.facturacion-transacciones > header svg,
+.facturacion-metodos > header svg {
+  width: 19px;
+  height: 19px;
+  color: #32393c;
+}
+.facturacion-filas {
+  border-top: 1px solid var(--panel-borde);
+}
+.facturacion-fila {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(95px, 0.6fr) minmax(
+      70px,
+      0.45fr
+    ) minmax(100px, 0.45fr) 20px;
+  align-items: center;
+  gap: 14px;
+  min-height: 48px;
+  border-bottom: 1px solid var(--panel-borde);
+  color: #3f4649;
+  font-size: 14px;
+}
+.facturacion-fila strong {
+  color: #17191a;
+  font-weight: 500;
+  text-align: right;
+}
+.facturacion-estado {
+  justify-self: start;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #eef1f2;
+  color: #41494c;
+  font-size: 12px;
+}
+.facturacion-fila::after {
+  content: "›";
+  color: #677176;
+  font-size: 22px;
+}
+.facturacion-vacio {
+  padding: 12px 0;
+  border-top: 1px solid var(--panel-borde);
+}
+.facturacion-datos {
+  margin: 0;
+  border-top: 1px solid var(--panel-borde);
+}
+.facturacion-datos > div {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--panel-borde);
+}
+.facturacion-datos dt {
+  color: #343b3f;
+  font-size: 14px;
+}
+.facturacion-datos dd {
+  margin: 3px 0 0;
+  color: #62696d;
+  line-height: 1.5;
+}
+.facturacion-detalle .facturacion-enlace {
+  display: inline-block;
+  margin-top: 12px;
+  color: #126783;
+  font-size: 14px;
+}
+.facturacion-cancelacion {
+  border-bottom: 1px solid var(--panel-borde);
+}
+.boton-cancelar-plan {
+  min-width: 106px;
+  min-height: 40px;
+  padding: 0 20px;
+  border: 1px solid #db4a4a;
+  border-radius: 999px;
+  background: transparent;
+  color: #c92e35;
+  font: 600 14px var(--fuente-marca);
+  cursor: pointer;
+}
+.boton-cancelar-plan:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.facturacion-cancelacion__accion > p {
+  max-width: 190px;
+  color: #b42318;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .facturacion-plan-actual,
+  .facturacion-cancelacion {
+    align-items: flex-start;
+  }
+  .facturacion-fila {
+    grid-template-columns: 1fr auto auto;
+    gap: 7px 12px;
+    padding: 8px 0;
+  }
+  .facturacion-fila > span:first-child {
+    grid-column: 1;
+  }
+  .facturacion-fila time {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .facturacion-fila .facturacion-estado {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .facturacion-fila strong {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .facturacion-fila::after {
+    grid-column: 3;
+    grid-row: 1 / 3;
+  }
 }

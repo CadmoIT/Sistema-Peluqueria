@@ -1,5 +1,5 @@
 /** Modela el agarre de la esquina inferior derecha, la curvatura y el paso detrás de los aros. */
-export const duracionGiroHoja = 500;
+export const duracionGiroHoja = 1000;
 
 export function calcularHojaCurvada(progreso: number) {
   const p = Math.max(0, Math.min(1, progreso));

@@ -30,8 +30,22 @@ export const requerirContextoPanel = cache(
   },
 );
 
-export async function obtenerResumenPanel() {
-  const { negocio } = await requerirContextoPanel();
+export async function obtenerResumenPanel(sedeSolicitada?: string) {
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const sedes = await prisma.sede.findMany({
+    where: { negocioId: negocio.id, activa: true },
+    select: { id: true, nombre: true, subdominio: true },
+    orderBy: { nombre: "asc" },
+  });
+  const localSeleccionado =
+    sedes.length > 1
+      ? sedes.find((sede) => sede.id === sedeSolicitada)?.id
+      : undefined;
+  const filtroSede = localSeleccionado ? { sedeId: localSeleccionado } : {};
+  const filtroAsignacion = localSeleccionado
+    ? { some: { sedeId: localSeleccionado } }
+    : undefined;
   const fechaLocal = fechaEnZona(new Date(), negocio.zonaHoraria);
   const inicio = fechaLocalAUtc(fechaLocal, "00:00", negocio.zonaHoraria);
   const fin = fechaLocalAUtc(
@@ -48,9 +62,14 @@ export async function obtenerResumenPanel() {
     profesionales,
     servicios,
     ingresos,
+    cantidadNegocios,
   ] = await Promise.all([
     prisma.reserva.findMany({
-      where: { negocioId: negocio.id, inicio: { gte: inicio, lt: fin } },
+      where: {
+        negocioId: negocio.id,
+        ...filtroSede,
+        inicio: { gte: inicio, lt: fin },
+      },
       select: {
         id: true,
         inicio: true,
@@ -70,6 +89,7 @@ export async function obtenerResumenPanel() {
     prisma.reserva.count({
       where: {
         negocioId: negocio.id,
+        ...filtroSede,
         inicio: { gte: inicio, lt: fin },
         estado: { notIn: ["CANCELADA", "VENCIDA"] },
       },
@@ -77,6 +97,7 @@ export async function obtenerResumenPanel() {
     prisma.reserva.findFirst({
       where: {
         negocioId: negocio.id,
+        ...filtroSede,
         inicio: { gte: new Date() },
         estado: { notIn: ["CANCELADA", "VENCIDA"] },
       },
@@ -84,19 +105,45 @@ export async function obtenerResumenPanel() {
       orderBy: { inicio: "asc" },
     }),
     prisma.cliente.count({
-      where: { negocioId: negocio.id },
+      where: {
+        negocioId: negocio.id,
+        ...(localSeleccionado
+          ? { reservas: { some: { sedeId: localSeleccionado } } }
+          : {}),
+      },
     }),
     prisma.profesional.count({
-      where: { negocioId: negocio.id, activo: true },
+      where: {
+        negocioId: negocio.id,
+        activo: true,
+        ...(filtroAsignacion ? { sedes: filtroAsignacion } : {}),
+      },
     }),
-    prisma.servicio.count({ where: { negocioId: negocio.id, activo: true } }),
+    prisma.servicio.count({
+      where: {
+        negocioId: negocio.id,
+        activo: true,
+        ...(localSeleccionado
+          ? {
+              OR: [
+                { sedes: { some: { sedeId: localSeleccionado } } },
+                { sedes: { none: {} } },
+              ],
+            }
+          : {}),
+      },
+    }),
     prisma.movimientoCaja.aggregate({
       where: {
         negocioId: negocio.id,
+        ...filtroSede,
         tipo: "INGRESO",
         creadoEn: { gte: inicio, lt: fin },
       },
       _sum: { monto: true },
+    }),
+    prisma.membresia.count({
+      where: { usuarioId: contexto.usuario.id, activo: true },
     }),
   ]);
 
@@ -108,7 +155,10 @@ export async function obtenerResumenPanel() {
     profesionales,
     servicios,
     ingresosHoy: Number(ingresos._sum.monto ?? 0),
+    cantidadNegocios,
     proximo,
+    sedes,
+    localSeleccionado: localSeleccionado ?? "",
   };
 }
 
@@ -262,28 +312,77 @@ export async function obtenerAgenda(fechaSolicitada?: string) {
   };
 }
 
-export async function obtenerClientes() {
+export async function obtenerClientes(sedeSolicitada?: string) {
   const { negocio } = await requerirContextoPanel();
-  const clientes = await prisma.cliente.findMany({
-    where: { negocioId: negocio.id },
-    include: {
-      reservas: {
-        select: { inicio: true },
-        orderBy: { inicio: "desc" },
-        take: 1,
-      },
-      _count: { select: { reservas: true } },
-    },
-    orderBy: { creadoEn: "desc" },
+  const sedes = await prisma.sede.findMany({
+    where: { negocioId: negocio.id, activa: true },
+    select: { id: true, nombre: true },
+    orderBy: { nombre: "asc" },
   });
-  return { negocio, clientes };
+  const localSeleccionado =
+    sedes.length > 1
+      ? sedes.find((sede) => sede.id === sedeSolicitada)?.id
+      : undefined;
+  const [clientes, resumenes] = await Promise.all([
+    prisma.cliente.findMany({
+      where: {
+        negocioId: negocio.id,
+        ...(localSeleccionado
+          ? { reservas: { some: { sedeId: localSeleccionado } } }
+          : {}),
+      },
+      orderBy: { creadoEn: "desc" },
+    }),
+    prisma.reserva.groupBy({
+      by: ["clienteId"],
+      where: {
+        negocioId: negocio.id,
+        clienteId: { not: null },
+        ...(localSeleccionado ? { sedeId: localSeleccionado } : {}),
+      },
+      _count: { _all: true },
+      _max: { inicio: true },
+    }),
+  ]);
+  const resumenPorCliente = new Map(
+    resumenes.map((resumen) => [resumen.clienteId, resumen]),
+  );
+  return {
+    negocio,
+    sedes,
+    localSeleccionado: localSeleccionado ?? "",
+    clientes: clientes.map((cliente) => {
+      const resumen = resumenPorCliente.get(cliente.id);
+      return {
+        ...cliente,
+        reservas: resumen?._max.inicio ? [{ inicio: resumen._max.inicio }] : [],
+        _count: { reservas: resumen?._count._all ?? 0 },
+      };
+    }),
+  };
 }
 
-export async function obtenerCatalogo() {
+export async function obtenerCatalogo(sedeSolicitada?: string) {
   const { negocio } = await requerirContextoPanel();
-  const [servicios, categorias, profesionales, sedes] = await Promise.all([
+  const sedes = await prisma.sede.findMany({
+    where: { negocioId: negocio.id, activa: true },
+    orderBy: { nombre: "asc" },
+  });
+  const localSeleccionado =
+    sedes.find((sede) => sede.id === sedeSolicitada)?.id ?? sedes[0]?.id ?? "";
+  const [servicios, categorias, profesionales] = await Promise.all([
     prisma.servicio.findMany({
-      where: { negocioId: negocio.id },
+      where: {
+        negocioId: negocio.id,
+        ...(localSeleccionado
+          ? {
+              OR: [
+                { sedes: { some: { sedeId: localSeleccionado } } },
+                { sedes: { none: {} } },
+              ],
+            }
+          : {}),
+      },
       include: {
         categoria: true,
         profesionales: { include: { profesional: true } },
@@ -296,22 +395,45 @@ export async function obtenerCatalogo() {
       orderBy: { orden: "asc" },
     }),
     prisma.profesional.findMany({
-      where: { negocioId: negocio.id, activo: true },
-      orderBy: { nombre: "asc" },
-    }),
-    prisma.sede.findMany({
-      where: { negocioId: negocio.id, activa: true },
+      where: {
+        negocioId: negocio.id,
+        activo: true,
+        ...(localSeleccionado
+          ? { sedes: { some: { sedeId: localSeleccionado } } }
+          : {}),
+      },
       orderBy: { nombre: "asc" },
     }),
   ]);
-  return { negocio, servicios, categorias, profesionales, sedes };
+  return {
+    negocio,
+    servicios,
+    categorias,
+    profesionales,
+    sedes,
+    localSeleccionado,
+  };
 }
 
-export async function obtenerEquipo() {
+export async function obtenerEquipo(sedeSolicitada?: string) {
   const { negocio } = await requerirContextoPanel();
-  const [profesionales, sedes, servicios, conexiones] = await Promise.all([
+  const sedes = await prisma.sede.findMany({
+    where: { negocioId: negocio.id, activa: true },
+    select: { id: true, nombre: true },
+    orderBy: { nombre: "asc" },
+  });
+  const localSeleccionado =
+    sedes.length > 1
+      ? sedes.find((sede) => sede.id === sedeSolicitada)?.id
+      : undefined;
+  const [profesionales, servicios] = await Promise.all([
     prisma.profesional.findMany({
-      where: { negocioId: negocio.id },
+      where: {
+        negocioId: negocio.id,
+        ...(localSeleccionado
+          ? { sedes: { some: { sedeId: localSeleccionado } } }
+          : {}),
+      },
       include: {
         sedes: { include: { sede: true } },
         servicios: { include: { servicio: true } },
@@ -319,15 +441,42 @@ export async function obtenerEquipo() {
       },
       orderBy: [{ activo: "desc" }, { nombre: "asc" }],
     }),
-    prisma.sede.findMany({ where: { negocioId: negocio.id, activa: true } }),
     prisma.servicio.findMany({
-      where: { negocioId: negocio.id, activo: true },
-    }),
-    prisma.conexionGoogleCalendar.findMany({
-      where: { negocioId: negocio.id },
+      where: {
+        negocioId: negocio.id,
+        activo: true,
+        ...(localSeleccionado
+          ? {
+              OR: [
+                { sedes: { some: { sedeId: localSeleccionado } } },
+                { sedes: { none: {} } },
+              ],
+            }
+          : {}),
+      },
     }),
   ]);
-  return { negocio, profesionales, sedes, servicios, conexiones };
+  const conexiones = await prisma.conexionGoogleCalendar.findMany({
+    where: {
+      negocioId: negocio.id,
+      ...(localSeleccionado
+        ? {
+            profesionalId: {
+              in: profesionales.map((profesional) => profesional.id),
+            },
+          }
+        : {}),
+    },
+    select: { profesionalId: true, estado: true },
+  });
+  return {
+    negocio,
+    profesionales,
+    sedes,
+    servicios,
+    conexiones,
+    localSeleccionado: localSeleccionado ?? "",
+  };
 }
 
 export async function obtenerSitioEditable() {
@@ -370,23 +519,30 @@ export async function obtenerConfiguracionNegocio() {
 
 export async function obtenerFacturacion() {
   const contexto = await requerirContextoPanel();
-  const pagos = await prisma.pago.findMany({
-    where: {
-      negocioId: contexto.negocio.id,
-      reservaId: null,
-      ventaId: null,
-    },
-    select: {
-      id: true,
-      proveedor: true,
-      estado: true,
-      monto: true,
-      creadoEn: true,
-    },
-    orderBy: { creadoEn: "desc" },
-    take: 30,
-  });
-  return { ...contexto, pagos };
+  const [pagos, sede] = await Promise.all([
+    prisma.pago.findMany({
+      where: {
+        negocioId: contexto.negocio.id,
+        reservaId: null,
+        ventaId: null,
+      },
+      select: {
+        id: true,
+        proveedor: true,
+        estado: true,
+        monto: true,
+        creadoEn: true,
+      },
+      orderBy: { creadoEn: "desc" },
+      take: 30,
+    }),
+    prisma.sede.findFirst({
+      where: { negocioId: contexto.negocio.id, activa: true },
+      select: { direccion: true },
+      orderBy: { nombre: "asc" },
+    }),
+  ]);
+  return { ...contexto, pagos, sede };
 }
 
 export async function obtenerInventario() {
@@ -438,36 +594,51 @@ export async function obtenerCompras() {
   return { negocio, sedes, productos, compras };
 }
 
-export async function obtenerCaja() {
+export async function obtenerCaja(sedeSolicitada?: string) {
   const { negocio } = await requerirContextoPanel();
   const inicio = inicioDelDia(new Date(), negocio.zonaHoraria);
-  const [servicios, productos, movimientos, sedes, profesionales] =
-    await Promise.all([
-      prisma.servicio.findMany({
-        where: { negocioId: negocio.id, activo: true },
-        include: { sedes: true },
-        orderBy: { nombre: "asc" },
-      }),
-      prisma.producto.findMany({
-        where: { negocioId: negocio.id, activo: true },
-        include: { existencias: true },
-        orderBy: { nombre: "asc" },
-      }),
-      prisma.movimientoCaja.findMany({
-        where: { negocioId: negocio.id, creadoEn: { gte: inicio } },
-        orderBy: { creadoEn: "desc" },
-      }),
-      prisma.sede.findMany({
-        where: { negocioId: negocio.id, activa: true },
-        select: { id: true, nombre: true },
-      }),
-      prisma.profesional.findMany({
-        where: { negocioId: negocio.id, activo: true },
-        select: { id: true, nombre: true, apellido: true },
-        orderBy: { nombre: "asc" },
-      }),
-    ]);
-  return { negocio, servicios, productos, movimientos, sedes, profesionales };
+  const sedes = await prisma.sede.findMany({
+    where: { negocioId: negocio.id, activa: true },
+    select: { id: true, nombre: true },
+  });
+  const localSeleccionado =
+    sedes.length > 1 && sedes.some((sede) => sede.id === sedeSolicitada)
+      ? sedeSolicitada!
+      : "";
+  const [servicios, productos, movimientos, profesionales] = await Promise.all([
+    prisma.servicio.findMany({
+      where: { negocioId: negocio.id, activo: true },
+      include: { sedes: true },
+      orderBy: { nombre: "asc" },
+    }),
+    prisma.producto.findMany({
+      where: { negocioId: negocio.id, activo: true },
+      include: { existencias: true },
+      orderBy: { nombre: "asc" },
+    }),
+    prisma.movimientoCaja.findMany({
+      where: {
+        negocioId: negocio.id,
+        ...(localSeleccionado ? { sedeId: localSeleccionado } : {}),
+        creadoEn: { gte: inicio },
+      },
+      orderBy: { creadoEn: "desc" },
+    }),
+    prisma.profesional.findMany({
+      where: { negocioId: negocio.id, activo: true },
+      select: { id: true, nombre: true, apellido: true },
+      orderBy: { nombre: "asc" },
+    }),
+  ]);
+  return {
+    negocio,
+    servicios,
+    productos,
+    movimientos,
+    sedes,
+    profesionales,
+    localSeleccionado,
+  };
 }
 
 export async function obtenerReportes(
@@ -534,10 +705,7 @@ export const obtenerSitioPublico = cache(async function obtenerSitioPublico(
 ) {
   return prisma.negocio.findFirst({
     where: {
-      OR: [
-        { slug },
-        { sedes: { some: { subdominio: slug, activa: true } } },
-      ],
+      OR: [{ slug }, { sedes: { some: { subdominio: slug, activa: true } } }],
     },
     select: {
       id: true,

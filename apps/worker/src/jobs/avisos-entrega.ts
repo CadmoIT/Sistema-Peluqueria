@@ -12,6 +12,7 @@ export async function entregarAvisos() {
       reserva: {
         include: {
           cliente: true,
+          sede: { select: { subdominio: true } },
           negocio: { include: { suscripcion: true, configuracionAvisos: true } },
           servicios: { include: { servicio: true }, orderBy: { orden: "asc" } },
         },
@@ -78,7 +79,7 @@ export async function entregarAvisos() {
         minute: "2-digit",
         hourCycle: "h23",
       }).format(reserva.inicio),
-      enlace: `${(process.env.WEB_URL ?? "http://localhost:3000").replace(/\/$/, "")}/sitio/${negocio.slug}`,
+      enlace: enlacePublico(reserva.sede.subdominio ?? negocio.slug),
     };
 
     try {
@@ -116,6 +117,19 @@ export async function entregarAvisos() {
       });
     }
   }
+}
+
+function enlacePublico(slug: string) {
+  const dominio = process.env.PUBLIC_SITE_DOMAIN?.trim();
+  if (dominio) {
+    const host = dominio
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^\*\./, "")
+      .replace(/\/+$/, "");
+    return `https://${slug}.${host}`;
+  }
+  return `${(process.env.WEB_URL ?? "http://localhost:3000").replace(/\/$/, "")}/sitio/${slug}`;
 }
 
 function completar(texto: string, variables: Record<string, string>) {

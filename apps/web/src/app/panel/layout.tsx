@@ -13,6 +13,7 @@ import "./panel-mi-sitio.css";
 import "./panel-responsive.css";
 import "./panel-tipografia.css";
 import "./panel-formularios.css";
+import "../sitio/sitio.css";
 
 export default async function LayoutPanel({
   children,

@@ -17,7 +17,6 @@ export type ServicioEditable = {
   categoria: string;
   precio: number;
   duracionMinutos: number;
-  porcentajeSena: number;
   profesionalIds: string[];
   sedeIds: string[];
 };
@@ -118,17 +117,6 @@ export function FormularioServicio({
             />
           </label>
         </div>
-        <label>
-          Seña (%)
-          <input
-            name="porcentajeSena"
-            type="number"
-            min="0"
-            max="100"
-            step="0.01"
-            defaultValue={servicio?.porcentajeSena ?? 0}
-          />
-        </label>
         {profesionales.length === 1 ? (
           <input
             type="hidden"

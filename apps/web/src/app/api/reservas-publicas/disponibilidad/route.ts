@@ -24,13 +24,29 @@ export async function GET(solicitud: Request) {
 
   if (
     !slug ||
+    slug.length > 120 ||
     !servicioIds.length ||
+    servicioIds.length > 20 ||
+    servicioIds.some((id) => id.length > 128) ||
     !sedeId ||
+    sedeId.length > 128 ||
     !profesionalId ||
+    profesionalId.length > 128 ||
     !/^\d{4}-\d{2}-\d{2}$/.test(fecha)
   ) {
     return NextResponse.json(
       { mensaje: "La consulta está incompleta." },
+      { status: 400 },
+    );
+  }
+  const fechaParseada = new Date(`${fecha}T00:00:00.000Z`);
+  if (
+    Number.isNaN(fechaParseada.getTime()) ||
+    fechaParseada.toISOString().slice(0, 10) !== fecha ||
+    fechaParseada.getTime() > Date.now() + 366 * 24 * 60 * 60_000
+  ) {
+    return NextResponse.json(
+      { mensaje: "Elegí una fecha dentro del próximo año." },
       { status: 400 },
     );
   }

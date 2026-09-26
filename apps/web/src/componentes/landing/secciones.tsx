@@ -237,7 +237,6 @@ export function SeccionesLanding() {
       <section className="cierre-landing">
         <div className="contenedor cierre-landing__interior">
           <div>
-            <span>Tu negocio, a tu ritmo</span>
             <h2>
               Empezá hoy.
               <br />

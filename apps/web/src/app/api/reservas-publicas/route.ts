@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { after, NextResponse } from "next/server";
 import { Prisma, type Cliente } from "@prisma/client";
 import { sincronizarReservaEnGoogle } from "@/lib/google-calendar";
+import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
+import { superaLimiteDeclarado } from "@/lib/limite-solicitud";
 import { prisma } from "@/lib/prisma";
 import { estaDentroDelHorario } from "@/servicios/disponibilidad.service";
 
@@ -22,25 +24,62 @@ type Entrada = {
 };
 
 export async function POST(solicitud: Request) {
+  if (!esOrigenMismoSitio(solicitud)) {
+    return respuesta("Origen no válido.", 403);
+  }
+  if (superaLimiteDeclarado(solicitud, 16 * 1024)) {
+    return respuesta("La solicitud supera el tamaño permitido.", 413);
+  }
   const entrada = (await solicitud.json().catch(() => null)) as Entrada | null;
+  const idsEntrada = Array.isArray(entrada?.servicioIds)
+    ? entrada.servicioIds
+    : typeof entrada?.servicioId === "string"
+      ? [entrada.servicioId]
+      : [];
   const servicioIds = Array.from(
     new Set(
-      (entrada?.servicioIds?.length
-        ? entrada.servicioIds
-        : entrada?.servicioId
-          ? [entrada.servicioId]
-          : []
-      ).filter(Boolean),
+      idsEntrada.filter(
+        (id): id is string =>
+          typeof id === "string" && id.length > 0 && id.length <= 128,
+      ),
     ),
   );
   if (
-    !entrada?.slug ||
+    typeof entrada?.slug !== "string" ||
+    entrada.slug.length > 120 ||
     !servicioIds.length ||
+    servicioIds.length > 20 ||
+    servicioIds.length !== idsEntrada.length ||
     !entrada.sedeId ||
+    typeof entrada.sedeId !== "string" ||
+    entrada.sedeId.length > 128 ||
     !entrada.profesionalId ||
-    !entrada.inicio
+    typeof entrada.profesionalId !== "string" ||
+    entrada.profesionalId.length > 128 ||
+    typeof entrada.inicio !== "string" ||
+    entrada.inicio.length > 40
   )
     return respuesta("Faltan datos para crear el turno.", 400);
+  const nombre = limpiar(entrada.nombre);
+  const apellido = limpiar(entrada.apellido);
+  const email = limpiar(entrada.email)?.toLowerCase() ?? null;
+  const telefono = limpiar(entrada.telefono)?.replace(/[^+\d]/g, "") ?? null;
+  const observacion = limpiar(entrada.observacion);
+  const inicio = new Date(entrada.inicio);
+  if (
+    (nombre?.length ?? 0) > 100 ||
+    (apellido?.length ?? 0) > 100 ||
+    (email?.length ?? 0) > 254 ||
+    (telefono?.length ?? 0) > 40 ||
+    (observacion?.length ?? 0) > 500 ||
+    (email !== null && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) ||
+    (telefono !== null && telefono.replace(/\D/g, "").length < 6) ||
+    Number.isNaN(inicio.getTime()) ||
+    inicio < new Date() ||
+    inicio.getTime() > Date.now() + 366 * 24 * 60 * 60_000
+  ) {
+    return respuesta("Revisá los datos ingresados para el turno.", 400);
+  }
   const negocio = await prisma.negocio.findFirst({
     where: {
       OR: [
@@ -71,12 +110,7 @@ export async function POST(solicitud: Request) {
       negocio.suscripcion.pruebaFinalizaEn < new Date())
   )
     return respuesta("La prueba de este negocio finalizó.", 403);
-  const nombre = limpiar(entrada.nombre);
-  const apellido = limpiar(entrada.apellido);
-  const email = limpiar(entrada.email)?.toLowerCase() ?? null;
-  const telefono = limpiar(entrada.telefono)?.replace(/[^+\d]/g, "") ?? null;
   const aceptaWhatsapp = entrada.aceptaWhatsapp === true && Boolean(telefono);
-  const observacion = limpiar(entrada.observacion)?.slice(0, 500) ?? null;
   if (negocio.politicaContacto === "EMAIL" && !email)
     return respuesta("Ingresá tu correo para reservar.", 400);
   if (negocio.politicaContacto === "TELEFONO" && !telefono)
@@ -120,13 +154,11 @@ export async function POST(solicitud: Request) {
       select: { id: true },
     }),
   ]);
-  const inicio = new Date(entrada.inicio);
   if (
     servicios.length !== servicioIds.length ||
     !profesional ||
     !sede ||
-    Number.isNaN(inicio.getTime()) ||
-    inicio < new Date()
+    Number.isNaN(inicio.getTime())
   )
     return respuesta("La selección ya no está disponible.", 400);
   const fin = new Date(
@@ -272,7 +304,7 @@ export async function POST(solicitud: Request) {
   }
 }
 function limpiar(valor?: string) {
-  const resultado = valor?.trim();
+  const resultado = typeof valor === "string" ? valor.trim() : "";
   return resultado || null;
 }
 function respuesta(mensaje: string, estado: number) {

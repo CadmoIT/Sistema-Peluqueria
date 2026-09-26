@@ -13,7 +13,7 @@ export const metadata = { title: "Agenda" };
 export default async function PaginaAgenda({
   searchParams,
 }: {
-  searchParams: Promise<{ fecha?: string }>;
+  searchParams: Promise<{ fecha?: string; local?: string }>;
 }) {
   const parametros = await searchParams;
   const datos = await obtenerAgenda(parametros.fecha);
@@ -141,6 +141,7 @@ export default async function PaginaAgenda({
       </header>
       <CalendarioAgenda
         fecha={datos.fecha}
+        localInicial={parametros.local ?? ""}
         zonaHoraria={datos.negocio.zonaHoraria}
         eventos={eventos}
         profesionales={[

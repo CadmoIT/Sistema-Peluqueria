@@ -2,6 +2,16 @@
 .reportes-contenido {
   position: relative;
 }
+.reportes-cabecera {
+  align-items: center;
+}
+.reportes-filtros {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px 18px;
+  margin: 0 0 0 auto;
+}
 .reportes-cargando {
   position: absolute;
   inset: 185px 20px 70px;

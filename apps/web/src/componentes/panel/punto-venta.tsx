@@ -2,7 +2,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { Minus, Plus, Search, Trash2 } from "lucide-react";
-import SellIcon from "@mui/icons-material/Sell";
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { registrarVenta } from "@/app/panel/caja/acciones";
 import { DialogoPanel } from "./dialogo-panel";
 import { FormularioAccion } from "./formulario-accion";
@@ -32,7 +32,7 @@ export function PuntoVenta({
 }) {
   const [cantidades, poner] = useState<Record<string, number>>({}),
     [buscar, buscarPor] = useState(""),
-    [sedeId, seleccionar] = useState(sedes[0]?.id ?? ""),
+    [sedeId, seleccionar] = useState(sedes[0]?.id || ""),
     [abierto, abrir] = useState(false),
     [cambioLocal, confirmarCambio] = useState("");
   const idempotencia = useRef("");
@@ -49,10 +49,9 @@ export function PuntoVenta({
     cantidad: cantidades[clave(a)]!,
   }));
   const total = seleccionados.reduce(
-      (s, a) => s + a.precio * cantidades[clave(a)]!,
-      0,
-    ),
-    unidades = items.reduce((s, a) => s + a.cantidad, 0);
+    (s, a) => s + a.precio * cantidades[clave(a)]!,
+    0,
+  );
   const normalizar = (s: string) =>
     s
       .normalize("NFD")
@@ -120,29 +119,13 @@ export function PuntoVenta({
       <div className="caja-barra">
         <h2>Venta rápida</h2>
         <div className="caja-barra__acciones">
-          {sedes.length > 1 && (
-            <label className="filtro-discreto">
-              Local
-              <select
-                aria-label="Local de la venta"
-                value={sedeId}
-                onChange={(e) => cambiarLocal(e.target.value)}
-              >
-                {sedes.map((s) => (
-                  <option value={s.id} key={s.id}>
-                    {s.nombre}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
           <button
             className="boton boton--secundario"
             type="button"
             onClick={abrirCarrito}
           >
-            <SellIcon />
-            Registrar ({unidades})
+            <ShoppingCartIcon />
+            Vender
           </button>
         </div>
       </div>
@@ -214,7 +197,25 @@ export function PuntoVenta({
                   name="items"
                   value={JSON.stringify(items)}
                 />
-                <input type="hidden" name="sedeId" value={sedeId} />
+                {sedes.length > 1 ? (
+                  <label>
+                    Local de la venta
+                    <select
+                      name="sedeId"
+                      value={sedeId}
+                      onChange={(evento) => cambiarLocal(evento.target.value)}
+                      required
+                    >
+                      {sedes.map((sede) => (
+                        <option value={sede.id} key={sede.id}>
+                          {sede.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <input type="hidden" name="sedeId" value={sedeId} />
+                )}
                 <input
                   type="hidden"
                   name="idempotencia"

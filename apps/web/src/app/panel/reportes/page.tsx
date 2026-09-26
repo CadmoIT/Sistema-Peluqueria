@@ -27,19 +27,19 @@ export default async function PaginaReportes({
   return (
     <div className="panel-contenido reportes-contenido">
       <VistaPanelLista ruta="/panel/reportes" />
-      <header className="cabecera-seccion">
+      <header className="cabecera-seccion reportes-cabecera">
         <h1>Reportes</h1>
+        <FiltrosReportes
+          periodo={datos.periodo}
+          local={datos.localSeleccionado ?? ""}
+          atribucion={datos.atribucion}
+          sedes={datos.sedes}
+          profesionales={datos.profesionales.map((p) => ({
+            id: p.id,
+            nombre: [p.nombre, p.apellido].filter(Boolean).join(" "),
+          }))}
+        />
       </header>
-      <FiltrosReportes
-        periodo={datos.periodo}
-        local={datos.localSeleccionado ?? ""}
-        atribucion={datos.atribucion}
-        sedes={datos.sedes}
-        profesionales={datos.profesionales.map((p) => ({
-          id: p.id,
-          nombre: [p.nombre, p.apellido].filter(Boolean).join(" "),
-        }))}
-      />
       <MetricasOperativas
         datos={[
           { etiqueta: "Ingresos", valor: ingresos },

@@ -4,6 +4,7 @@
 
 import { useId, useState } from "react";
 import { ImageUp, LoaderCircle } from "lucide-react";
+import { subirImagenCloudinary } from "./subir-imagen-cloudinary";
 
 export function CampoImagenPerfil({
   nombreNegocio,
@@ -29,18 +30,7 @@ export function CampoImagenPerfil({
     cambiarCargando(true);
     cambiarEstado("");
     try {
-      const formulario = new FormData();
-      formulario.set("archivo", archivo);
-      formulario.set("tipo", "perfil");
-      const respuesta = await fetch("/api/v1/archivos/carga", {
-        method: "POST",
-        body: formulario,
-      });
-      const datos = (await respuesta.json()) as { urlArchivo?: string; mensaje?: string };
-      if (!respuesta.ok || !datos.urlArchivo) {
-        throw new Error(datos.mensaje ?? "No se pudo cargar la imagen.");
-      }
-      cambiarValor(datos.urlArchivo);
+      cambiarValor(await subirImagenCloudinary(archivo, "perfil"));
       cambiarEstado("Imagen cargada. Guardá para aplicar el cambio.");
     } catch (error) {
       cambiarEstado(error instanceof Error ? error.message : "No se pudo cargar la imagen.");

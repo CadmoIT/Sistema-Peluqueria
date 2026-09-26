@@ -1,10 +1,15 @@
-/** Abre el editor persistente del micrositio con borrador y publicación explícita. */
+/** Abre el editor persistente del micrositio para el local elegido. */
 import {
   EditorSitio,
   type BorradorSitio,
 } from "@/componentes/panel/editor-sitio";
+import { SelectorLocalSitio } from "@/componentes/panel/selector-local-sitio";
+import { BotonGuardarSitio } from "@/componentes/panel/boton-guardar-sitio";
+import { BotonPublicarSitio } from "@/componentes/panel/boton-publicar-sitio";
 import { obtenerSitioEditable } from "@/servicios/panel-datos.service";
 import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
+import { ExternalLink } from "lucide-react";
+import { enlaceSitioPublico } from "@/lib/dominios-publicos";
 
 export const metadata = { title: "Mi sitio" };
 
@@ -34,59 +39,67 @@ export default async function PaginaMiSitio({
       base.descripcion ??
       datos.negocio.descripcion ??
       "Reservá tu próximo turno de forma simple y rápida.",
+    colorTitulo: base.colorTitulo ?? base.colorTexto ?? "#111111",
+    colorSubtitulo: base.colorSubtitulo ?? base.colorTexto ?? "#111111",
     colorPrincipal: base.colorPrincipal ?? "#111111",
     colorFondo: base.colorFondo ?? "#ffffff",
     colorTexto: base.colorTexto ?? "#111111",
     logoUrl: base.logoUrl ?? "",
-    heroAlineacion:
-      base.heroAlineacion === "centro" || base.heroAlineacion === "derecha"
-        ? base.heroAlineacion
-        : "izquierda",
     whatsapp:
       base.whatsapp?.trim() ||
       datos.negocio.telefono?.trim() ||
       datos.sedes.find((sede) => sede.telefono?.trim())?.telefono ||
       "",
     instagram: base.instagram ?? "",
+    googleMapsUrl:
+      base.googleMapsUrl ?? localSeleccionado?.googleMapsUrl ?? "",
     hero: normalizarHero(base.hero),
-    carruselAutomatico: base.carruselAutomatico ?? true,
-    secciones: normalizarSecciones(base.secciones),
-    serviciosDestacados: Array.isArray(base.serviciosDestacados)
-      ? base.serviciosDestacados.filter(
-          (valor): valor is string => typeof valor === "string",
-        )
-      : [],
+    secciones: normalizarSecciones(base.secciones, base.versionSecciones),
+    versionSecciones: 2,
   };
   return (
     <div className="panel-contenido panel-contenido--editor">
       <VistaPanelLista ruta="/panel/mi-sitio" />
       <header className="cabecera-seccion">
-        <div>
-          <h1>Mi sitio</h1>
+        <h1>Mi sitio</h1>
+        <div className="mi-sitio-acciones">
+          {datos.sedes.length > 1 && (
+            <SelectorLocalSitio
+              locales={datos.sedes.map((sede) => ({
+                id: sede.id,
+                nombre: sede.nombre,
+              }))}
+              valor={localSeleccionado?.id ?? ""}
+            />
+          )}
+          <BotonGuardarSitio />
+          <div className="mi-sitio-publicar">
+            <BotonPublicarSitio />
+          </div>
+          <a
+            className="mi-sitio-pagina-web"
+            href={enlaceSitioPublico(
+              localSeleccionado?.subdominio ?? datos.negocio.slug,
+            )}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Página Web
+            <ExternalLink size={15} aria-hidden="true" />
+          </a>
         </div>
-        <form className="selector-local-sitio" method="get">
-          <label>
-            <span>Local</span>
-            <select name="local" defaultValue={localSeleccionado?.id ?? ""}>
-              {datos.sedes.map((sede) => (
-                <option key={sede.id} value={sede.id}>
-                  {sede.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="submit">Editar</button>
-        </form>
       </header>
       <EditorSitio
         inicial={inicial}
-        slug={datos.negocio.slug}
         localId={localSeleccionado?.id ?? ""}
         servicios={datos.servicios.map((servicio) => ({
           id: servicio.id,
           nombre: servicio.nombre,
           precio: Number(servicio.precio),
           categoria: servicio.categoria?.nombre ?? "General",
+          descripcion: servicio.descripcion,
+          duracionMinutos: servicio.duracionMinutos,
+          imagen: servicio.imagen,
         }))}
         profesionales={datos.profesionales.map((p) => ({
           id: p.id,
@@ -101,8 +114,15 @@ export default async function PaginaMiSitio({
           subdominio: sede.subdominio,
           direccion: sede.direccion,
           telefono: sede.telefono,
+          googleMapsUrl: sede.googleMapsUrl,
           googlePuntaje: sede.googlePuntaje ? Number(sede.googlePuntaje) : null,
           googleResenas: sede.googleResenas,
+          horarios: sede.horarios.map((horario) => ({
+            diaSemana: horario.diaSemana,
+            abre: horario.abre,
+            cierra: horario.cierra,
+            activo: horario.activo,
+          })),
         }))}
       />
     </div>
@@ -132,18 +152,26 @@ function normalizarHero(valor: unknown): BorradorSitio["hero"] {
         focoY: typeof candidata.focoY === "number" ? candidata.focoY : 50,
       },
     ];
-  });
+  }).slice(0, 1);
 }
 
-function normalizarSecciones(valor: unknown): BorradorSitio["secciones"] {
+function normalizarSecciones(
+  valor: unknown,
+  version: unknown,
+): BorradorSitio["secciones"] {
   const permitidas: BorradorSitio["secciones"] = [
     "servicios",
     "equipo",
+    "contacto",
     "ubicacion",
   ];
   if (!Array.isArray(valor)) return permitidas;
-  return valor.filter(
+  const secciones = valor.filter(
     (seccion): seccion is BorradorSitio["secciones"][number] =>
       typeof seccion === "string" && permitidas.includes(seccion as never),
   );
+  if (version !== 2 && secciones.includes("ubicacion") && !secciones.includes("contacto")) {
+    secciones.splice(secciones.indexOf("ubicacion"), 0, "contacto");
+  }
+  return secciones;
 }

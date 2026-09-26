@@ -78,12 +78,10 @@ export default async function PaginaSitio({
       ? String(publicada[campo])
       : alternativa;
   const hero = normalizarHero(publicada.hero);
-  const secciones = normalizarSecciones(publicada.secciones);
-  const serviciosDestacados = Array.isArray(publicada.serviciosDestacados)
-    ? publicada.serviciosDestacados.filter(
-        (valor): valor is string => typeof valor === "string",
-      )
-    : [];
+  const secciones = normalizarSecciones(
+    publicada.secciones,
+    publicada.versionSecciones,
+  );
   const datos: DatosSitioPublico = {
     slug,
     nombre: negocio.nombre,
@@ -94,21 +92,30 @@ export default async function PaginaSitio({
     configuracion: {
       titulo: cadena("titulo", negocio.nombre),
       descripcion: cadena("descripcion", negocio.descripcion ?? ""),
+      colorTitulo: cadena(
+        "colorTitulo",
+        cadena("colorTexto", "#111111"),
+      ),
+      colorSubtitulo: cadena(
+        "colorSubtitulo",
+        cadena("colorTexto", "#111111"),
+      ),
       colorPrincipal: cadena("colorPrincipal", "#111111"),
       colorFondo: cadena("colorFondo", "#ffffff"),
       colorTexto: cadena("colorTexto", "#111111"),
       logoUrl: cadena("logoUrl"),
-      heroAlineacion: normalizarAlineacion(publicada.heroAlineacion),
       whatsapp:
         cadena("whatsapp").trim() ||
         negocio.telefono?.trim() ||
         negocio.sedes.find((sede) => sede.telefono?.trim())?.telefono ||
         "",
       instagram: cadena("instagram"),
+      googleMapsUrl: cadena(
+        "googleMapsUrl",
+        sedeDelSubdominio?.googleMapsUrl ?? negocio.sedes[0]?.googleMapsUrl ?? "",
+      ),
       hero,
-      carruselAutomatico: publicada.carruselAutomatico !== false,
       secciones,
-      serviciosDestacados,
     },
     sedes: (sedeDelSubdominio ? [sedeDelSubdominio] : negocio.sedes).map(
       (sede) => ({
@@ -144,15 +151,7 @@ export default async function PaginaSitio({
           (asignacion) => asignacion.profesionalId,
         ),
       })),
-    profesionales: negocio.profesionales
-      .filter(
-        (profesional) =>
-          !sedeDelSubdominio ||
-          profesional.sedes.some(
-            (sede) => sede.sedeId === sedeDelSubdominio.id,
-          ),
-      )
-      .map((profesional) => ({
+    profesionales: negocio.profesionales.map((profesional) => ({
         id: profesional.id,
         nombre: profesional.nombre,
         apellido: profesional.apellido,
@@ -193,27 +192,27 @@ function normalizarHero(
         focoY: typeof candidata.focoY === "number" ? candidata.focoY : 50,
       },
     ];
-  });
+  }).slice(0, 1);
 }
 
 function normalizarSecciones(
   valor: unknown,
+  version: unknown,
 ): DatosSitioPublico["configuracion"]["secciones"] {
   const permitidas: DatosSitioPublico["configuracion"]["secciones"] = [
     "servicios",
     "equipo",
+    "contacto",
     "ubicacion",
   ];
   if (!Array.isArray(valor)) return permitidas;
-  return valor.filter(
+  const secciones = valor.filter(
     (seccion): seccion is (typeof permitidas)[number] =>
       typeof seccion === "string" &&
       permitidas.includes(seccion as (typeof permitidas)[number]),
   );
-}
-
-function normalizarAlineacion(
-  valor: unknown,
-): "izquierda" | "centro" | "derecha" {
-  return valor === "centro" || valor === "derecha" ? valor : "izquierda";
+  if (version !== 2 && secciones.includes("ubicacion") && !secciones.includes("contacto")) {
+    secciones.splice(secciones.indexOf("ubicacion"), 0, "contacto");
+  }
+  return secciones;
 }

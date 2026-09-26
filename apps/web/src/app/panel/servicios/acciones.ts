@@ -30,25 +30,22 @@ export async function guardarServicio(
     nombre = leerTexto(datos, "nombre"),
     categoriaNombre = leerTexto(datos, "categoria") || "General";
   const precio = Number(datos.get("precio")),
-    duracionMinutos = Number(datos.get("duracionMinutos")),
-    porcentajeSena = Number(datos.get("porcentajeSena") ?? 0);
+    duracionMinutos = Number(datos.get("duracionMinutos"));
   if (nombre.length < 2 || nombre.length > 200 || categoriaNombre.length > 100)
     return {
       ok: false,
       mensaje: "Revisá el nombre y la categoría del servicio.",
     };
   if (
-    ![precio, duracionMinutos, porcentajeSena].every(Number.isFinite) ||
+    ![precio, duracionMinutos].every(Number.isFinite) ||
     precio < 0 ||
     !Number.isInteger(duracionMinutos) ||
     duracionMinutos < 5 ||
-    duracionMinutos > 1440 ||
-    porcentajeSena < 0 ||
-    porcentajeSena > 100
+    duracionMinutos > 1440
   )
     return {
       ok: false,
-      mensaje: "Revisá el precio, la duración y el porcentaje de seña.",
+      mensaje: "Revisá el precio y la duración del servicio.",
     };
   try {
     await prisma.$transaction(async (tx) => {
@@ -98,7 +95,6 @@ export async function guardarServicio(
         categoriaId: categoria.id,
         precio: new Prisma.Decimal(precio),
         duracionMinutos,
-        porcentajeSena: new Prisma.Decimal(porcentajeSena),
         profesionales: {
           create: profesionalIds.map((profesionalId) => ({ profesionalId })),
         },

@@ -1,4 +1,4 @@
-/** Centraliza el cliente compatible con S3 utilizado para guardar imágenes en Cloudflare R2. */
+/** Conecta objetos históricos almacenados en Cloudflare R2 durante la transición a Cloudinary. */
 import "server-only";
 
 import { S3Client } from "@aws-sdk/client-s3";

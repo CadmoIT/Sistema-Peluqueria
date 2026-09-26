@@ -107,12 +107,6 @@
   line-height: 1.25;
 }
 
-.cierre-landing__interior > div > span {
-  color: var(--naranja);
-  font-family: var(--fuente-marca);
-  font-size: 15px;
-}
-
 .rubros {
   overflow: hidden;
   display: grid;
@@ -465,14 +459,13 @@
 
 .cierre-landing__interior {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 60px;
-  padding-top: 68px;
-  padding-bottom: 68px;
+  padding-top: 38px;
+  padding-bottom: 38px;
 }
 
-.cierre-landing__interior > div > span,
 .cierre-landing h2,
 .cierre-landing p {
   color: #fff;
@@ -480,11 +473,20 @@
 
 .cierre-landing h2 {
   margin-bottom: 0;
+  font-size: clamp(34px, 4vw, 50px);
+}
+
+.cierre-landing__interior > div:last-child {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
 }
 
 .cierre-landing p {
   max-width: 520px;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .pie {
@@ -647,13 +649,16 @@
 
   .cierre-landing__interior {
     display: block;
-    padding-top: 54px;
-    padding-bottom: 54px;
+    padding-top: 32px;
+    padding-bottom: 32px;
+  }
+
+  .cierre-landing__interior > div:last-child {
+    margin-top: 20px;
   }
 
   .cierre-landing p {
     max-width: 340px;
-    white-space: normal;
   }
 
   .cierre-landing .boton {

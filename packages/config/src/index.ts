@@ -28,7 +28,7 @@ export const PLANES = [
 export const PLAN_PRO = {
   id: "pro",
   nombre: "PRO",
-  precioMensual: null,
+  precioMensual: 14_900,
   descripcion: "Todo Plus, con recordatorios automáticos por WhatsApp.",
   destacado: false,
   beneficios: ["Todo Plus", "Recordatorios por WhatsApp"],

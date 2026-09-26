@@ -345,6 +345,10 @@ html:has(.panel-shell) {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
 }
+.campo-imagen--solo-carga > div {
+  display: flex;
+  justify-content: flex-start;
+}
 .campo-imagen__archivo {
   position: absolute;
   width: 1px;
@@ -993,7 +997,6 @@ html:has(.panel-shell) {
   grid-template-columns: 390px minmax(0, 1fr);
   gap: 18px;
   position: relative;
-  padding-bottom: 88px;
 }
 .editor-sitio--simple {
   padding-top: 8px;
@@ -1003,20 +1006,6 @@ html:has(.panel-shell) {
   border: 0;
   border-right: 1px solid #d9e1e4;
   border-radius: 0;
-}
-.editor-controles__titulo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 22px;
-}
-.editor-controles__titulo h2 {
-  margin: 4px 0 0;
-  font: 18px var(--fuente-marca);
-}
-.editor-controles__titulo .boton {
-  min-height: 38px;
-  padding: 0 14px;
 }
 .editor-controles fieldset {
   margin: 18px 0;
@@ -1061,8 +1050,7 @@ html:has(.panel-shell) {
 .imagen-editor > div:first-child {
   margin-bottom: 10px;
 }
-.imagen-editor button,
-.secciones-editor button {
+.imagen-editor button {
   width: 32px;
   height: 32px;
   display: inline-grid;
@@ -1073,16 +1061,18 @@ html:has(.panel-shell) {
   color: #126783;
   cursor: pointer;
 }
-.imagen-editor button svg,
-.secciones-editor button svg {
+.imagen-editor button svg {
   width: 15px;
 }
 .imagen-editor input[type="range"] {
   padding: 0;
 }
 .secciones-editor > div {
-  min-height: 42px;
+  min-height: 38px;
   border-bottom: 1px solid #edf0f1;
+}
+.secciones-editor > div:last-child {
+  border-bottom: 0;
 }
 .secciones-editor label {
   display: flex;
@@ -1100,25 +1090,7 @@ html:has(.panel-shell) {
   border-radius: 0;
   border-left: 1px solid #d9e1e4;
   overflow: hidden;
-  background: #eef2f3;
-}
-.editor-preview__barra {
-  height: 48px;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #fff;
-  background: #126783;
-  font: 11px var(--fuente-marca);
-}
-.editor-preview__barra span {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.editor-preview__barra svg {
-  width: 16px;
+  background: #fff;
 }
 .mini-sitio {
   min-height: 690px;
@@ -1153,8 +1125,8 @@ html:has(.panel-shell) {
 }
 .mini-hero > div {
   max-width: 510px;
-  padding: 28px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 0;
+  background: transparent;
 }
 .mini-hero h1 {
   margin: 8px 0;
@@ -1205,11 +1177,6 @@ html:has(.panel-shell) {
   color: #fff;
   background: var(--sitio-principal);
   font-style: normal;
-}
-.editor-publicar {
-  position: absolute;
-  top: -56px;
-  right: 0;
 }
 @media (max-width: 1050px) {
   .metricas-panel {
@@ -1402,11 +1369,6 @@ html:has(.panel-shell) {
   }
   .editor-preview {
     margin-top: 18px;
-  }
-  .editor-publicar {
-    top: auto;
-    right: 14px;
-    bottom: 24px;
   }
   .mini-servicios {
     grid-template-columns: 1fr;

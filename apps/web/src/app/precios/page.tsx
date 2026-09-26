@@ -49,7 +49,7 @@ export default function PaginaPrecios() {
                 {plan.destacado && (
                   <span className="recomendado">MÁS ELEGIDO</span>
                 )}
-                <h2>{plan.nombre}</h2>
+                <h2>{plan.id === "pro" ? "Pro" : plan.nombre}</h2>
                 <p>{plan.descripcion}</p>
                 <div className={`precio precio--${plan.id.toLowerCase()}`}>
                   <strong>
@@ -64,6 +64,14 @@ export default function PaginaPrecios() {
                   )}
                 </div>
                 <ul aria-label={`Características del plan ${plan.nombre}`}>
+                  <li className="incluido">
+                    <DoneIcon aria-hidden="true" />
+                    {plan.id === "PRUEBA"
+                      ? "1 negocio"
+                      : plan.id === "pro"
+                        ? "Negocios ilimitados"
+                        : "2 negocios"}
+                  </li>
                   {caracteristicas
                     .filter(({ texto }) =>
                       plan.id === "PRUEBA"
@@ -89,21 +97,14 @@ export default function PaginaPrecios() {
                       );
                     })}
                 </ul>
-                {plan.id === "pro" ? (
-                  <span
-                    className="boton boton--secundario"
-                    aria-disabled="true"
-                  >
-                    Próximamente
-                  </span>
-                ) : (
-                  <Link
-                    href="/acceder"
-                    className={`boton ${plan.destacado ? "boton--primario" : "boton--secundario"}`}
-                  >
-                    {plan.id === "PRUEBA" ? "Probar gratis" : "Empezar"}
-                  </Link>
-                )}
+                <Link
+                  href={
+                    plan.id === "pro" ? "/acceder?modo=ingreso" : "/acceder"
+                  }
+                  className={`boton ${plan.destacado ? "boton--primario" : "boton--secundario"}`}
+                >
+                  {plan.id === "PRUEBA" ? "Probar gratis" : "Empezar"}
+                </Link>
               </article>
             ))}
           </section>

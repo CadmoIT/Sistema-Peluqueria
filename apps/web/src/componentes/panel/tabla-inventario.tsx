@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Edit3, Minus, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ import {
 } from "./formulario-producto";
 import { BotonEliminar } from "./boton-eliminar";
 import { EditorTablaInventario } from "./editor-tabla-inventario";
+import { ControlFiltroLocal } from "./filtro-local";
 
 const dinero = (valor: number) =>
   new Intl.NumberFormat("es-AR", {
@@ -46,14 +48,16 @@ export function TablaInventario({
   sedes,
   columnas,
   libres,
+  nuevoProducto,
 }: {
   productos: Producto[];
   sedes: Array<{ id: string; nombre: string }>;
   columnas: string[];
   libres: ColumnaLibre[];
+  nuevoProducto: ReactNode;
 }) {
   const [buscar, cambiar] = useState("");
-  const [local, cambiarLocal] = useState(sedes[0]?.id ?? "");
+  const [local, cambiarLocal] = useState("");
   const [pendientes, cambiarPendientes] = useState<Record<string, number>>({});
   const pendientesRef = useRef<Record<string, number>>({});
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -67,7 +71,7 @@ export function TablaInventario({
   );
   useEffect(() => {
     if (local && !sedes.some((sede) => sede.id === local)) {
-      cambiarLocal(sedes[0]?.id ?? "");
+      cambiarLocal("");
     }
   }, [local, sedes]);
 
@@ -156,7 +160,27 @@ export function TablaInventario({
 
   return (
     <>
-      <div className="herramientas-modulo">
+      <header className="cabecera-seccion inventario-cabecera">
+        <h1>Inventario</h1>
+        <div className="acciones-seccion inventario-cabecera__acciones">
+          {sedes.length > 1 && (
+            <ControlFiltroLocal
+              className="filtro-discreto"
+              ariaLabel="Filtrar inventario por local"
+              sedes={sedes}
+              valor={local}
+              onChange={cambiarLocal}
+            />
+          )}
+          <EditorTablaInventario
+            columnas={columnas}
+            libres={libres}
+            variosLocales={sedes.length > 1}
+          />
+          {nuevoProducto}
+        </div>
+      </header>
+      <div className="herramientas-modulo inventario-buscador">
         <label className="buscador-panel">
           <Search />
           <input
@@ -166,28 +190,6 @@ export function TablaInventario({
             onChange={(e) => cambiar(e.target.value)}
           />
         </label>
-        {sedes.length > 1 && (
-          <label className="filtro-discreto">
-            Local
-            <select
-              aria-label="Filtrar inventario por local"
-              value={local}
-              onChange={(e) => cambiarLocal(e.target.value)}
-            >
-              <option value="">Todos los locales</option>
-              {sedes.map((sede) => (
-                <option value={sede.id} key={sede.id}>
-                  {sede.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <EditorTablaInventario
-          columnas={columnas}
-          libres={libres}
-          variosLocales={sedes.length > 1}
-        />
       </div>
       <div className="tabla-abierta inventario-tabla">
         <table>

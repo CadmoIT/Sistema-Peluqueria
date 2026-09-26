@@ -16,7 +16,7 @@ async function ejecutar(accion: (negocioId: string) => Promise<void>, mensaje: s
 }
 export async function registrarMovimientoCaja(datos: FormData) { return ejecutar(async (negocioId) => {
   const tipo = leerTexto(datos, "tipo"), concepto = leerTexto(datos, "concepto"), monto = Number(datos.get("monto"));
-  if (!["INGRESO", "EGRESO"].includes(tipo) || !concepto || concepto.length > 200 || !Number.isFinite(monto) || monto <= 0 || monto > 1_000_000_000) throw new Error("Revisá el concepto y escribí un importe mayor a cero.");
+  if (tipo !== "INGRESO" || !concepto || concepto.length > 200 || !Number.isFinite(monto) || monto <= 0 || monto > 1_000_000_000) throw new Error("Revisá el concepto y escribí un importe mayor a cero.");
   await prisma.$transaction(async (tx) => {
     const sedes = await tx.sede.findMany({ where: { negocioId, activa: true }, select: { id: true } });
     const sedeId = sedes.length === 1 ? sedes[0]!.id : leerTexto(datos, "sedeId");

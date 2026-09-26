@@ -1,5 +1,7 @@
 /** Estiliza la carga y el historial de compras sin separarlo del lenguaje del panel. */
 .compras-acciones { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; }
+.compras-cabecera { align-items: center; }
+.compras-herramientas .buscador-panel { flex: 1 1 100%; width: 100%; }
 .compras-acciones > .boton { white-space: nowrap; }
 .formulario-compra { display: grid; gap: 14px; }
 .formulario-compra h2 { margin: 0 0 2px; }
@@ -9,4 +11,4 @@
 .compras-tabla th, .compras-tabla td { min-width: 120px; }
 .compras-tabla th:first-child, .compras-tabla td:first-child { min-width: 110px; }
 .compras-tabla .compras-columna--centrada { text-align: center; }
-@media (max-width: 820px) { .compras-acciones { justify-content: flex-start; } .compras-tabla { padding-bottom: 12px; } }
+@media (max-width: 820px) { .compras-cabecera { align-items: flex-start; } .compras-acciones { justify-content: flex-start; } .compras-tabla { padding-bottom: 12px; } }

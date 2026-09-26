@@ -17,6 +17,13 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.resumen-pagina__acciones-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 22px;
+  margin-left: auto;
+}
 .resumen-pagina .enlace-sitio-resumen {
   margin: 0;
   padding: 8px 0;
@@ -142,6 +149,10 @@
 @media (max-width: 650px) {
   .resumen-pagina__cabecera {
     gap: 12px;
+  }
+  .resumen-pagina__acciones-cabecera {
+    flex-wrap: wrap;
+    gap: 10px;
   }
   .resumen-pagina__cabecera h1 {
     font-size: clamp(22px, 5.5vw, 30px);

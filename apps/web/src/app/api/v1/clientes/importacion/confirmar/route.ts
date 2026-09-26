@@ -1,5 +1,7 @@
 /** Guarda filas revisadas en una transacción sin reemplazar datos existentes. */
 import { NextResponse } from "next/server";
+import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
+import { superaLimiteDeclarado } from "@/lib/limite-solicitud";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { obtenerContextoApi } from "@/servicios/contexto-api.service";
@@ -9,17 +11,21 @@ import {
   revisarImportacion,
 } from "@/servicios/clientes-importacion.service";
 export async function POST(solicitud: Request) {
-  const contexto = await obtenerContextoApi();
-  if (!contexto)
-    return NextResponse.json({ mensaje: "Sesión no válida." }, { status: 401 });
-  if (
-    solicitud.headers.get("origin") &&
-    solicitud.headers.get("origin") !== new URL(solicitud.url).origin
-  )
+  if (!esOrigenMismoSitio(solicitud)) {
     return NextResponse.json(
       { mensaje: "Solicitud no válida." },
       { status: 403 },
     );
+  }
+  if (superaLimiteDeclarado(solicitud, 2 * 1024 * 1024)) {
+    return NextResponse.json(
+      { mensaje: "La importación es demasiado grande." },
+      { status: 413 },
+    );
+  }
+  const contexto = await obtenerContextoApi();
+  if (!contexto)
+    return NextResponse.json({ mensaje: "Sesión no válida." }, { status: 401 });
   try {
     const entrada = leerSolicitudImportacion(await solicitud.json());
     const resultado = await prisma.$transaction(
@@ -47,7 +53,6 @@ export async function POST(solicitud: Request) {
               where: {
                 id: operacion.id,
                 negocioId: contexto.negocio.id,
-                
               },
               data: { nombre, apellido, email, telefono },
             });

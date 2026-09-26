@@ -1,178 +1,133 @@
-/** Muestra planes, estado de suscripción e historial de pagos del negocio. */
-import {
-  CircleAlert,
-  CircleCheck,
-  CreditCard,
-  Check,
-  ReceiptText,
-} from "lucide-react";
-import {
-  formatearPesos,
-  nombrePlan,
-  PLANES,
-  PLAN_GRATIS,
-  PLAN_PRO,
-} from "@turnos/config";
+/** Muestra el estado de cobro y la información de facturación del negocio. */
+import Link from "next/link";
+import { CreditCard, ReceiptText } from "lucide-react";
+import { formatearPesos, nombrePlan } from "@turnos/config";
 import { obtenerFacturacion } from "@/servicios/panel-datos.service";
 import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
+import { BotonCancelarPlan } from "@/componentes/panel/boton-cancelar-plan";
 
-export const metadata = { title: "Pagos y Facturación" };
+export const metadata = { title: "Facturación" };
 
 export default async function PaginaFacturacion() {
-  const { negocio, pagos } = await obtenerFacturacion();
+  const { negocio, usuario, pagos, sede } = await obtenerFacturacion();
   const suscripcion = negocio.suscripcion;
-  const mercadoPagoDisponible = Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN);
+  const planPagado = Boolean(suscripcion?.proveedorId);
 
   return (
-    <div className="panel-contenido facturacion-pantalla">
+    <div className="panel-contenido facturacion-pantalla facturacion-detalle">
       <VistaPanelLista ruta="/panel/facturacion" />
       <header className="cabecera-seccion facturacion-cabecera">
-        <div>
-          <span className="facturacion-sobrelinea">PLANES Y PAGOS</span>
-          <h1>Pagos y Facturación</h1>
-          <p>Elegí el plan que mejor acompaña a tu negocio y revisá tus pagos en un solo lugar.</p>
-        </div>
+        <h1>Facturación</h1>
       </header>
-      <section className="estado-plan facturacion-resumen">
+
+      <section className="facturacion-bloque facturacion-plan-actual">
         <div>
-          {suscripcion?.estado === "ACTIVA" ? <CircleCheck /> : <CircleAlert />}
-          <span>
-            <small>TU PLAN ACTUAL</small>
-            <strong>
-              {suscripcion?.estado === "ACTIVA"
-                ? `Plan activo · ${nombrePlan(suscripcion.plan)}`
-                : suscripcion?.estado === "EN_GRACIA"
-                  ? "Pago pendiente"
-                  : "Plan Gratis · período de prueba"}
-            </strong>
-          </span>
+          <h2>{nombrePlan(suscripcion?.plan)}</h2>
+          <p>
+            {suscripcion?.estado === "ACTIVA" && suscripcion.proximoCobro
+              ? `Tu plan se renueva automáticamente el ${fecha(suscripcion.proximoCobro)}.`
+              : suscripcion?.pruebaFinalizaEn
+                ? `La prueba finaliza el ${fecha(suscripcion.pruebaFinalizaEn)}.`
+                : "Plan gratuito"}
+          </p>
         </div>
-        <p>{detalleSuscripcion(suscripcion)}</p>
+        <Link className="boton boton--secundario" href="/panel/planes">
+          Cambiar plan
+        </Link>
       </section>
-      {!mercadoPagoDisponible && (
-        <aside className="aviso-integracion">
-          <CircleAlert />
-          <div>
-            <strong>Mercado Pago todavía no está configurado</strong>
-            <p>
-              Los planes se pueden revisar, pero el checkout se habilitará
-              cuando se agregue la credencial del entorno.
-            </p>
-          </div>
-        </aside>
-      )}
-      <section className="planes-grid planes-grid--panel" aria-label="Planes disponibles">
-        {[PLAN_GRATIS, ...PLANES, PLAN_PRO].map((plan) => (
-          <article
-            key={plan.id}
-            className={`plan-card plan-card--${plan.id.toLowerCase()}${plan.destacado ? " destacado" : ""}${suscripcion?.plan === plan.id ? " actual" : ""}`}
-          >
-            {plan.destacado && <span className="recomendado">MÁS ELEGIDO</span>}
-            <h2>{plan.nombre}</h2>
-            <p>{plan.descripcion}</p>
-            <div className={`precio precio--${plan.id.toLowerCase()}`}>
-              <strong>
-                {plan.precioMensual === 0
-                  ? "Gratis"
-                  : plan.precioMensual === null
-                    ? "A definir"
-                    : formatearPesos(plan.precioMensual)}
-              </strong>
-              {plan.precioMensual !== null && plan.precioMensual !== 0 && (
-                <span className="precio__moneda">ARS</span>
-              )}
-            </div>
-            <ul>
-              {plan.beneficios.map((beneficio) => (
-                <li key={beneficio}><Check aria-hidden="true" />{beneficio}</li>
-              ))}
-            </ul>
-            {plan.id === "PRUEBA" ? (
-              <button className="boton boton--secundario" disabled>
-                {suscripcion?.estado === "CONFIGURACION_GRATUITA"
-                  ? "Prueba en curso"
-                  : "Prueba de siete días"}
-              </button>
-            ) : plan.id === "pro" ? (
-              <button className="boton boton--secundario" disabled>
-                Próximamente
-              </button>
-            ) : suscripcion?.estado === "ACTIVA" || suscripcion?.proveedorId ? (
-              <button className="boton boton--secundario" disabled>
-                {suscripcion.estado === "ACTIVA"
-                  ? "Plan en curso"
-                  : "Pago iniciado"}
-              </button>
-            ) : mercadoPagoDisponible ? (
-              <a
-                className="boton boton--primario"
-                href={
-                  "/api/v1/facturacion/suscripciones/checkout?plan=" + plan.id
-                }
-              >
-                <CreditCard /> Elegir plan
-              </a>
-            ) : (
-              <button className="boton boton--secundario" disabled>
-                Checkout no disponible
-              </button>
-            )}
-          </article>
-        ))}
-      </section>
-      <section className="historial-pagos">
+
+      <section className="facturacion-bloque facturacion-transacciones">
         <header>
-          <ReceiptText />
-          <div>
-            <h2>Historial de pagos</h2>
-            <p>Importes cobrados y su estado.</p>
-          </div>
+          <ReceiptText aria-hidden="true" />
+          <h2>Historial de transacciones</h2>
         </header>
         {pagos.length ? (
-          <div className="tabla-pagos">
+          <div className="facturacion-filas">
             {pagos.map((pago) => (
-              <div key={pago.id}>
-                <span>{fecha(pago.creadoEn)}</span>
-                <span>
-                  {pago.proveedor === "mercadopago"
-                    ? "Mercado Pago"
-                    : pago.proveedor === "demo"
-                      ? "Pago ficticio · Demo"
-                      : pago.proveedor}
+              <div className="facturacion-fila" key={pago.id}>
+                <span>{nombrePlan(suscripcion?.plan)}</span>
+                <time dateTime={pago.creadoEn.toISOString()}>
+                  {fecha(pago.creadoEn)}
+                </time>
+                <span className="facturacion-estado">
+                  {pago.estado.replaceAll("_", " ")}
                 </span>
                 <strong>{formatearPesos(Number(pago.monto))}</strong>
-                <b className={"estado estado--" + pago.estado.toLowerCase()}>
-                  {pago.estado.replaceAll("_", " ")}
-                </b>
               </div>
             ))}
           </div>
         ) : (
-          <p className="aviso-ajustes">Todavía no hay pagos registrados.</p>
+          <p className="facturacion-vacio">
+            Todavía no hay transacciones registradas.
+          </p>
         )}
       </section>
+
+      <section className="facturacion-bloque">
+        <header>
+          <h2>Información de facturación</h2>
+        </header>
+        <dl className="facturacion-datos">
+          <div>
+            <dt>Correo electrónico de facturación</dt>
+            <dd>{usuario.email}</dd>
+          </div>
+          <div>
+            <dt>Nombre</dt>
+            <dd>{negocio.nombre}</dd>
+          </div>
+          <div>
+            <dt>Dirección</dt>
+            <dd>
+              {sede?.direccion || "Todavía no se configuró una dirección."}
+            </dd>
+          </div>
+        </dl>
+        <Link
+          className="facturacion-enlace"
+          href="/panel/configuracion/negocio"
+        >
+          Editar información del negocio
+        </Link>
+      </section>
+
+      <section className="facturacion-bloque facturacion-metodos">
+        <header>
+          <CreditCard aria-hidden="true" />
+          <h2>Métodos de pago</h2>
+        </header>
+        {planPagado ? (
+          <p>
+            El medio de pago de tu suscripción se administra de forma segura en
+            Mercado Pago.
+          </p>
+        ) : (
+          <p>
+            Al contratar un plan, vas a poder asociar tu medio de pago en
+            Mercado Pago.
+          </p>
+        )}
+        <Link className="facturacion-enlace" href="/panel/planes">
+          {planPagado ? "Administrar suscripción" : "Ver planes"}
+        </Link>
+      </section>
+
+      {planPagado && suscripcion?.estado !== "CANCELADA" && (
+        <section className="facturacion-bloque facturacion-cancelacion">
+          <div>
+            <h2>Cancelar plan</h2>
+            <p>
+              Al cancelar, tu suscripción dejará de renovarse y Mercado Pago
+              actualizará su estado.
+            </p>
+          </div>
+          <BotonCancelarPlan />
+        </section>
+      )}
     </div>
   );
 }
 
-function detalleSuscripcion(
-  suscripcion: {
-    pruebaFinalizaEn: Date | null;
-    proximoCobro: Date | null;
-    estado: string;
-  } | null,
-) {
-  if (suscripcion?.estado === "ACTIVA" && suscripcion.proximoCobro) {
-    return "Próximo cobro: " + fecha(suscripcion.proximoCobro) + ".";
-  }
-  if (suscripcion?.pruebaFinalizaEn) {
-    return "La prueba finaliza el " + fecha(suscripcion.pruebaFinalizaEn) + ".";
-  }
-  return "Podés configurar todo antes de elegir un plan.";
-}
-
 function fecha(valor: Date) {
-  return new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(
-    valor,
-  );
+  return new Intl.DateTimeFormat("es-AR", { dateStyle: "short" }).format(valor);
 }

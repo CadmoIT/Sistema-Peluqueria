@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { enviarCorreo } from "./correo";
 import { prisma } from "./prisma";
+import { obtenerSecretoAutenticacion } from "./secreto-autenticacion";
 
 const googleConfigurado = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
@@ -15,9 +16,7 @@ export const autenticacion = betterAuth({
     process.env.WEB_URL ??
     "http://localhost:3000",
   basePath: "/api/autenticacion",
-  secret:
-    process.env.BETTER_AUTH_SECRET ??
-    "solo-desarrollo-turnos-rapidos-cambiar-antes-de-publicar",
+  secret: obtenerSecretoAutenticacion(),
   trustedOrigins: [process.env.WEB_URL ?? "http://localhost:3000"],
   database: prismaAdapter(prisma, { provider: "postgresql" }),
   emailAndPassword: {

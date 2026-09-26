@@ -1,4 +1,6 @@
 /** Termina el giro en curso al cargar la vista y confirma sin recorrer meses innecesarios. */
+import { duracionGiroHoja } from "./cinematica-hoja";
+
 export type TiempoCalendario = {
   instante: number;
   destino: number | null;
@@ -16,7 +18,9 @@ export function avanzarCalendario(
   // Acabar la hoja ya levantada evita cortarla o devolverla bruscamente al frente.
   const destino =
     anterior.destino ??
-    (listo ? Math.ceil(anterior.instante / 500) * 500 : null);
+    (listo
+      ? Math.ceil(anterior.instante / duracionGiroHoja) * duracionGiroHoja
+      : null);
   const instante =
     destino === null
       ? anterior.instante + paso

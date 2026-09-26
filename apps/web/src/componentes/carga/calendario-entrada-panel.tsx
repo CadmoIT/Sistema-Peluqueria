@@ -2,7 +2,10 @@
 "use client";
 
 import { memo, useId, useLayoutEffect, useRef, useState } from "react";
-import { calcularHojaCurvada } from "./cinematica-hoja";
+import {
+  calcularHojaCurvada,
+  duracionGiroHoja,
+} from "./cinematica-hoja";
 import {
   avanzarCalendario,
   type TiempoCalendario,
@@ -229,11 +232,14 @@ export function CalendarioEntradaPanel({
   const id = useId().replaceAll(":", "");
   const fechaInicio = useRef(new Date()).current;
   const { instante, confirmacion } = useLineaDeTiempo(listo, onFinalizar);
-  const mes = Math.floor(instante / 500);
+  const mes = Math.floor(instante / duracionGiroHoja);
   const mesDelAno = (fechaInicio.getMonth() + mes) % 12;
   const ano =
     fechaInicio.getFullYear() + Math.floor((fechaInicio.getMonth() + mes) / 12);
-  const avance = Math.min(1, (instante - mes * 500) / 500);
+  const avance = Math.min(
+    1,
+    (instante - mes * duracionGiroHoja) / duracionGiroHoja,
+  );
   const confirmado = confirmacion !== null;
   const pasando = !confirmado;
   const saliendo = confirmado && confirmacion >= 360;

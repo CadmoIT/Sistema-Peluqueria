@@ -23,18 +23,20 @@ export function CalendarioAgenda({
   sedes,
   fecha,
   zonaHoraria,
+  localInicial = "",
 }: {
   eventos: EventoAgenda[];
   profesionales: ProfesionalAgenda[];
   sedes: LocalAgenda[];
   fecha: string;
   zonaHoraria: string;
+  localInicial?: string;
 }) {
   const router = useRouter();
   const parametros = useSearchParams();
   const [pendiente, iniciar] = useTransition();
   const [profesional, setProfesional] = useState("");
-  const [local, setLocal] = useState("");
+  const [local, setLocal] = useState(localInicial);
   const [estados, setEstados] = useState(ESTADOS_AGENDA.map((g) => g.id));
   const [seleccionado, setSeleccionado] = useState<EventoAgenda | null>(null);
   const hoy = fechaEnZona(new Date(), zonaHoraria);
@@ -92,15 +94,6 @@ export function CalendarioAgenda({
           <summary>Calendario y filtros</summary>
           {filtros}
         </details>
-        <div className="agenda-navegacion">
-          <h2>
-            {new Intl.DateTimeFormat("es-AR", {
-              month: "long",
-              year: "numeric",
-              timeZone: "UTC",
-            }).format(new Date(fecha))}
-          </h2>
-        </div>
         <FilaDias
           fecha={fecha}
           hoy={hoy}

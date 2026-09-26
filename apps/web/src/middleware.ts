@@ -6,12 +6,21 @@ export function middleware(solicitud: NextRequest) {
   if (solicitud.nextUrl.pathname.startsWith("/marca/")) {
     return NextResponse.next();
   }
-  const host =
-    (solicitud.headers.get("host") ?? "").split(":")[0]?.toLowerCase() ?? "";
-  const sufijo = ".site.turnosrapidos.com.ar";
-  if (host.endsWith(sufijo)) {
+  const dominio = process.env.PUBLIC_SITE_DOMAIN
+    ?.trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^\*\./, "")
+    .replace(/\/+$/, "");
+  const host = solicitud.nextUrl.hostname.toLowerCase();
+  const sufijo =
+    dominio && /^[a-z0-9.-]+$/.test(dominio) ? `.${dominio}` : "";
+  if (sufijo && host.endsWith(sufijo)) {
     const slug = host.slice(0, -sufijo.length);
-    if (slug && solicitud.nextUrl.pathname === "/") {
+    if (
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) &&
+      solicitud.nextUrl.pathname === "/"
+    ) {
       const destino = solicitud.nextUrl.clone();
       destino.pathname = `/sitio/${slug}`;
       return NextResponse.rewrite(destino);

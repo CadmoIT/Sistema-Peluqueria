@@ -4,14 +4,13 @@
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import {
-  ChevronLeft,
-  ChevronRight,
   Clock3,
-  MapPin,
   Search,
   Star,
 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa6";
+import { enlaceInstagram } from "@/lib/enlaces-redes";
+import { GrupoProfesionales } from "@/componentes/sitio/grupo-profesionales";
 
 export type DatosSitioPublico = {
   slug: string;
@@ -21,17 +20,17 @@ export type DatosSitioPublico = {
   configuracion: {
     titulo: string;
     descripcion: string;
+    colorTitulo: string;
+    colorSubtitulo: string;
     colorPrincipal: string;
     colorFondo: string;
     colorTexto: string;
     logoUrl: string;
-    heroAlineacion: "izquierda" | "centro" | "derecha";
     whatsapp: string;
     instagram: string;
+    googleMapsUrl: string;
     hero: Array<{ url: string; alt: string; focoX: number; focoY: number }>;
-    carruselAutomatico: boolean;
-    secciones: Array<"servicios" | "equipo" | "ubicacion">;
-    serviciosDestacados: string[];
+    secciones: Array<"servicios" | "equipo" | "contacto" | "ubicacion">;
   };
   sedes: Array<{
     id: string;
@@ -74,20 +73,18 @@ export type DatosSitioPublico = {
   }>;
 };
 
-export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
-  const [imagen, setImagen] = useState(0);
+export function SitioPublico({
+  datos,
+  modoVistaPrevia = false,
+}: {
+  datos: DatosSitioPublico;
+  modoVistaPrevia?: boolean;
+}) {
   const [busqueda, setBusqueda] = useState("");
   const [serviciosElegidos, setServiciosElegidos] = useState<string[]>([]);
   const [categoriaAbierta, setCategoriaAbierta] = useState<string | null>(null);
-  const hero = datos.configuracion.hero.filter((imagen) => imagen.url);
-  useEffect(() => {
-    if (!datos.configuracion.carruselAutomatico || hero.length < 2) return;
-    const intervalo = window.setInterval(
-      () => setImagen((actual) => (actual + 1) % hero.length),
-      5_000,
-    );
-    return () => window.clearInterval(intervalo);
-  }, [datos.configuracion.carruselAutomatico, hero.length]);
+  const imagenPortada = datos.configuracion.hero.find((imagen) => imagen.url);
+  const instagram = enlaceInstagram(datos.configuracion.instagram);
   const servicios = useMemo(
     () =>
       datos.servicios
@@ -95,13 +92,8 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
           `${servicio.nombre} ${servicio.categoria}`
             .toLocaleLowerCase("es")
             .includes(busqueda.toLocaleLowerCase("es")),
-        )
-        .sort(
-          (a, b) =>
-            posicionDestacado(a.id, datos.configuracion.serviciosDestacados) -
-            posicionDestacado(b.id, datos.configuracion.serviciosDestacados),
         ),
-    [busqueda, datos.configuracion.serviciosDestacados, datos.servicios],
+    [busqueda, datos.servicios],
   );
   const categorias = useMemo(
     () =>
@@ -132,70 +124,162 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
     (total, servicio) => total + servicio.precio,
     0,
   );
+  const mostrarUbicacion = datos.configuracion.secciones.includes("ubicacion");
+  const mostrarContacto = datos.configuracion.secciones.includes("contacto");
+  const mostrarEquipo = datos.configuracion.secciones.includes("equipo");
   const estilo = {
+    "--sitio-titulo": datos.configuracion.colorTitulo,
+    "--sitio-subtitulo": datos.configuracion.colorSubtitulo,
+    "--sitio-acento": datos.configuracion.colorPrincipal,
     "--sitio-principal": datos.configuracion.colorPrincipal,
     "--sitio-fondo": datos.configuracion.colorFondo,
     "--sitio-texto": datos.configuracion.colorTexto,
   } as React.CSSProperties;
-  const sedePrincipal = datos.sedes[0]!;
+  const sedePrincipal = datos.sedes[0];
+  const telefono =
+    datos.configuracion.whatsapp.trim() || sedePrincipal?.telefono || "";
 
   return (
-    <div className="publico-sitio" style={estilo}>
+    <div
+      className={`publico-sitio${modoVistaPrevia ? " editor-preview__sitio" : ""}`}
+      style={estilo}
+    >
       <main>
-        <section
-          className={`publico-hero publico-hero--${datos.configuracion.heroAlineacion} ${hero.length ? "con-imagen" : ""}`}
-          aria-label={hero[imagen]?.alt || undefined}
-          style={
-            hero[imagen]
-              ? {
-                  backgroundImage: `url(${hero[imagen].url})`,
-                  backgroundPosition: `${hero[imagen].focoX}% ${hero[imagen].focoY}%`,
+        {sedePrincipal && (
+          <section
+            className="publico-identidad"
+            aria-label="Información del local"
+          >
+            <div className="publico-identidad__principal">
+              <section
+                className={`publico-hero ${imagenPortada ? "con-imagen" : ""}`}
+                aria-label={imagenPortada?.alt || undefined}
+                style={
+                  imagenPortada
+                    ? {
+                        backgroundImage: `url(${imagenPortada.url})`,
+                        backgroundPosition: `${imagenPortada.focoX}% ${imagenPortada.focoY}%`,
+                      }
+                    : undefined
                 }
-              : undefined
-          }
-        >
-          <div className="publico-hero__velo" />
-          <div className="publico-hero__contenido">
-            <small>RESERVAS ONLINE</small>
-            <h1>{datos.configuracion.titulo}</h1>
-            <p>{datos.configuracion.descripcion || datos.descripcion}</p>
-          </div>
-          {hero.length > 1 && (
-            <div className="hero-controles">
-              <button
-                onClick={() =>
-                  setImagen((imagen - 1 + hero.length) % hero.length)
-                }
-                aria-label="Imagen anterior"
               >
-                <ChevronLeft />
-              </button>
-              <span>
-                {imagen + 1} / {hero.length}
-              </span>
-              <button
-                onClick={() => setImagen((imagen + 1) % hero.length)}
-                aria-label="Imagen siguiente"
-              >
-                <ChevronRight />
-              </button>
+                <div className="publico-hero__velo" />
+              </section>
+              <div className="publico-identidad__marca">
+                <div className="publico-identidad__encabezado">
+                  {datos.configuracion.logoUrl && (
+                    <img
+                      className="publico-identidad__logo"
+                      src={datos.configuracion.logoUrl}
+                      alt=""
+                    />
+                  )}
+                  <div>
+                    <h2>{datos.configuracion.titulo}</h2>
+                    <p>{datos.configuracion.descripcion || datos.descripcion}</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-        </section>
+            {(mostrarUbicacion || mostrarContacto || mostrarEquipo) && (
+              <aside className="publico-identidad__tarjeta" aria-label={`Información de ${sedePrincipal.nombre}`}>
+                {mostrarUbicacion && (
+                  <div className="publico-identidad__mapa">
+                    <iframe
+                      title={`Mapa de ${sedePrincipal.nombre}`}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.google.com/maps?q=${encodeURIComponent(sedePrincipal.direccion || datos.nombre)}&output=embed`}
+                    />
+                  </div>
+                )}
+                {(mostrarUbicacion || mostrarContacto) && (
+                  <div className="publico-identidad__datos">
+                    {mostrarUbicacion && (
+                      <a
+                        className="publico-identidad__direccion"
+                        href={
+                          datos.configuracion.googleMapsUrl ||
+                          sedePrincipal.googleMapsUrl ||
+                          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(sedePrincipal.direccion || datos.nombre)}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img className="publico-identidad__icono-maps" src="/iconos/google-maps.png" alt="" /> {sedePrincipal.direccion || "Dirección pendiente"}
+                      </a>
+                    )}
+                    {mostrarContacto && telefono && (
+                      <a
+                        href={`https://wa.me/${telefono.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <FaWhatsapp /> {telefono}
+                      </a>
+                    )}
+                    {mostrarContacto && instagram && (
+                      <a
+                        className="publico-identidad__instagram"
+                        href={instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Instagram del negocio"
+                      >
+                        <img src="/iconos/instagram.png" alt="" /> Instagram
+                      </a>
+                    )}
+                    {mostrarUbicacion && (
+                      <>
+                        <div className="publico-horarios" tabIndex={0} aria-label="Ver horarios de atención">
+                          <span><Clock3 /> Ver horario</span>
+                          <div role="tooltip">
+                            <strong>Horarios de atención</strong>
+                            {sedePrincipal.horarios
+                              .filter((horario) => horario.activo)
+                              .map((horario) => (
+                                <span key={horario.diaSemana}>
+                                  {nombreDia(horario.diaSemana)} · {horario.abre} a {horario.cierra}
+                                </span>
+                              ))}
+                          </div>
+                        </div>
+                        {sedePrincipal.googlePuntaje !== null && (
+                          <span className="publico-identidad__valoracion" aria-label={`Puntuación ${sedePrincipal.googlePuntaje} de 5`}>
+                            <span aria-hidden="true">
+                            {Array.from({ length: 5 }, (_, indice) => (
+                                <Star key={indice} fill="currentColor" />
+                              ))}
+                            </span>
+                            {sedePrincipal.googlePuntaje} · {sedePrincipal.googleResenas ?? 0} valoraciones
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+                {mostrarEquipo && datos.profesionales.length > 0 && (
+                <div className="publico-identidad__equipo">
+                  <h3>Profesionales</h3>
+                  <GrupoProfesionales profesionales={datos.profesionales} />
+                </div>
+                )}
+              </aside>
+            )}
+          </section>
+        )}
         {datos.configuracion.secciones.includes("servicios") && (
           <section className="publico-experiencia" id="servicios">
             <div className="publico-catalogo-col">
               <div className="publico-titulo">
-                <small>SERVICIOS</small>
                 <h2>Elegí tu próximo turno</h2>
-                <p>Consultá duración y precio antes de reservar.</p>
               </div>
               <label className="publico-buscador">
                 <Search />
                 <input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar un servicio (ej. corte, uñas, masaje...)"
+                  placeholder="Buscar un servicio (ej. corte, uñas,masaje...)"
                 />
               </label>
               <nav
@@ -228,13 +312,15 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
                       id={"categoria-" + categoria}
                       key={categoria}
                       open={abierta}
-                      onToggle={(evento) => {
-                        setCategoriaAbierta(
-                          evento.currentTarget.open ? categoria : null,
-                        );
-                      }}
                     >
-                      <summary>
+                      <summary
+                        onClick={(evento) => {
+                          evento.preventDefault();
+                          setCategoriaAbierta((actual) =>
+                            actual === categoria ? null : categoria,
+                          );
+                        }}
+                      >
                         <strong>{categoria}</strong>
                         <span>{abierta ? "−" : "+"}</span>
                       </summary>
@@ -263,15 +349,16 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
                                 aria-pressed={serviciosElegidos.includes(
                                   servicio.id,
                                 )}
-                                onClick={() =>
+                                onClick={() => {
+                                  if (modoVistaPrevia) return;
                                   setServiciosElegidos((actuales) =>
                                     actuales.includes(servicio.id)
                                       ? actuales.filter(
                                           (id) => id !== servicio.id,
                                         )
                                       : [...actuales, servicio.id],
-                                  )
-                                }
+                                  );
+                                }}
                               >
                                 {serviciosElegidos.includes(servicio.id)
                                   ? "Quitar"
@@ -291,83 +378,6 @@ export function SitioPublico({ datos }: { datos: DatosSitioPublico }) {
                 No encontramos servicios con ese nombre.
               </p>
             )}
-            <aside
-              className="publico-lateral"
-              aria-label="Información del local"
-            >
-              {sedePrincipal && (
-                <div className="publico-lateral__local">
-                  <div className="publico-lateral__mapa">
-                    <iframe
-                      title={`Mapa de ${sedePrincipal.nombre}`}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={`https://www.google.com/maps?q=${encodeURIComponent(sedePrincipal.direccion || datos.nombre)}&output=embed`}
-                    />
-                  </div>
-                  <div className="publico-lateral__datos">
-                    <strong>{sedePrincipal.nombre}</strong>
-                    <span>
-                      <MapPin />{" "}
-                      {sedePrincipal.direccion || "Dirección pendiente"}
-                    </span>
-                    {sedePrincipal.telefono && (
-                      <a
-                        href={`https://wa.me/${sedePrincipal.telefono.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <FaWhatsapp /> {sedePrincipal.telefono}
-                      </a>
-                    )}
-                    <details className="publico-horarios">
-                      <summary>Horarios</summary>
-                      <div role="tooltip">
-                        {sedePrincipal.horarios
-                          .filter((horario) => horario.activo)
-                          .map((horario) => (
-                            <span key={horario.diaSemana}>
-                              {nombreDia(horario.diaSemana)} · {horario.abre} a{" "}
-                              {horario.cierra}
-                            </span>
-                          ))}
-                      </div>
-                    </details>
-                    {sedePrincipal.googlePuntaje !== null && (
-                      <span>
-                        <Star fill="currentColor" />{" "}
-                        {sedePrincipal.googlePuntaje} ·{" "}
-                        {sedePrincipal.googleResenas ?? 0} valoraciones
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-              <section className="publico-equipo-minimal">
-                <div className="publico-lateral__titulo">
-                  <h2>Nuestro equipo</h2>
-                  <span>Profesionales que te cuidan</span>
-                </div>
-                <div className="publico-equipo-grid">
-                  {datos.profesionales.map((profesional) => (
-                    <article
-                      key={profesional.id}
-                      title={`${profesional.nombre} ${profesional.apellido ?? ""}`.trim()}
-                    >
-                      {profesional.foto ? (
-                        <img src={profesional.foto} alt="" />
-                      ) : (
-                        <i>
-                          {iniciales(profesional.nombre, profesional.apellido)}
-                        </i>
-                      )}
-                      <strong>{profesional.nombre}</strong>
-                      <small>{profesional.especialidad ?? "Profesional"}</small>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            </aside>
           </section>
         )}
       </main>
@@ -703,6 +713,7 @@ function pesos(valor: number) {
     maximumFractionDigits: 0,
   }).format(valor);
 }
+
 function iniciales(nombre: string, apellido: string | null) {
   return `${nombre[0] ?? ""}${apellido?.[0] ?? ""}`.toUpperCase();
 }
@@ -713,11 +724,6 @@ function nombreDia(diaSemana: number) {
       diaSemana
     ] ?? "Día"
   );
-}
-
-function posicionDestacado(id: string, destacados: string[]) {
-  const posicion = destacados.indexOf(id);
-  return posicion === -1 ? Number.MAX_SAFE_INTEGER : posicion;
 }
 
 function minimoFecha() {
