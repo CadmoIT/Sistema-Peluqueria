@@ -1,6 +1,7 @@
 /** Configura Better Auth con Prisma, email/contraseña, Google y sesiones seguras. */
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
+import { createHash } from "node:crypto";
 import { enviarCorreo } from "./correo";
 import { prisma } from "./prisma";
 import { obtenerSecretoAutenticacion } from "./secreto-autenticacion";
@@ -26,10 +27,11 @@ export const autenticacion = betterAuth({
     requireEmailVerification: true,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
-      void enviarCorreo({
+      await enviarCorreo({
         destinatario: user.email,
         asunto: "Restablecé tu contraseña de TurnosRapidos",
         texto: `Abrí este enlace para elegir una contraseña nueva: ${url}`,
+        claveIdempotencia: claveIdempotenciaCorreo("reset", url),
       });
     },
   },
@@ -37,10 +39,11 @@ export const autenticacion = betterAuth({
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
-      void enviarCorreo({
+      await enviarCorreo({
         destinatario: user.email,
         asunto: "Verificá tu cuenta de TurnosRapidos",
         texto: `Confirmá tu email desde este enlace: ${url}`,
+        claveIdempotencia: claveIdempotenciaCorreo("verificar", url),
       });
     },
   },
@@ -110,3 +113,8 @@ export const autenticacion = betterAuth({
     },
   },
 });
+
+function claveIdempotenciaCorreo(tipo: string, enlace: string) {
+  const huella = createHash("sha256").update(enlace).digest("hex");
+  return `${tipo}-${huella}`;
+}

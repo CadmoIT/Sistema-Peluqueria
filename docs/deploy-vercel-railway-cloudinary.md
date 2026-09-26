@@ -23,6 +23,7 @@ Hay una diferencia importante entre la infraestructura deseada y la arquitectura
 - `PUBLIC_SITE_DOMAIN=site.turnosrapidos.com.ar` (sin `https://`, sin `*.`)
 - `DATABASE_URL`: conexión externa de Railway PostgreSQL, con TLS y parámetros de conexión moderados para funciones serverless. No usar la URL privada `*.railway.internal` desde Vercel.
 - `BETTER_AUTH_SECRET`: secreto aleatorio de al menos 32 caracteres.
+- `RESEND_API_KEY` y `EMAIL_REMITENTE`: configurar el mismo remitente y una clave activa de Resend para los correos de autenticación y notificaciones que envía la web. El dominio de envío debe estar verificado en Resend antes de producción.
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `CLOUDINARY_UPLOAD_PRESET`
 - Credenciales activas de las integraciones que se vayan a utilizar: Google OAuth/Calendar, cifrado de integraciones, correo, Mercado Pago, Google Maps y Meta/WhatsApp. La lista completa está en `.env.example`.
 - Mantener `R2_*` sólo si la base aún contiene URLs `/api/archivos/...` de cargas históricas. Las nuevas cargas ya van a Cloudinary.
@@ -60,11 +61,11 @@ pnpm --filter @turnos/config build && pnpm --filter @turnos/contratos build && p
 - Build Command:
 
 ```sh
-pnpm --filter @turnos/config build && pnpm --filter @turnos/contratos build && pnpm --filter @turnos/google-calendar build && pnpm db:generate && pnpm --filter @turnos/worker build
+pnpm --filter @turnos/config build && pnpm --filter @turnos/contratos build && pnpm --filter @turnos/google-calendar build && pnpm --filter @turnos/correo build && pnpm db:generate && pnpm --filter @turnos/worker build
 ```
 
 - Start Command: `pnpm --filter @turnos/worker start`
-- Variables: `DATABASE_URL` privada, `WEB_URL=https://turnosrapidos.com.ar`, `PUBLIC_SITE_DOMAIN=site.turnosrapidos.com.ar` y las mismas credenciales de Google Calendar, SMTP y WhatsApp que necesiten los avisos.
+- Variables: `DATABASE_URL` privada, `WEB_URL=https://turnosrapidos.com.ar`, `PUBLIC_SITE_DOMAIN=site.turnosrapidos.com.ar`, `RESEND_API_KEY` y `EMAIL_REMITENTE` (los mismos valores que en Vercel), además de las credenciales de Google Calendar y WhatsApp que necesiten los avisos. Ya no se usa Gmail/SMTP para estos correos.
 - No generar dominio público para el worker.
 
 En API y worker, configurar watch paths para incluir los directorios de su app, `packages/**`, `prisma/**`, `package.json`, `pnpm-lock.yaml` y `pnpm-workspace.yaml`, así una migración compartida no queda sin deploy.
@@ -79,7 +80,7 @@ Las imágenes antiguas guardadas en R2 no se copian solas. Mantener temporalment
 
 1. Agregar el dominio raíz de la plataforma al proyecto web y configurar `PUBLIC_SITE_DOMAIN=site.turnosrapidos.com.ar` en producción.
 2. Agregar el wildcard `*.site.turnosrapidos.com.ar` al mismo proyecto. El middleware toma el host y reescribe el subdominio `{sede}` internamente a `/sitio/{sede}`; los enlaces de “Mi sitio”, Resumen y avisos usan ese host en producción.
-3. Completar la verificación DNS que indique Vercel. La emisión de certificados wildcard de Vercel requiere usar sus nameservers para el dominio wildcard: <https://vercel.com/docs/domains/troubleshooting>.
+3. Completar la verificación DNS que indique Vercel. Se puede conservar Cloudflare como DNS autoritativo: la documentación actual permite delegar únicamente `_acme-challenge.site` con los dos registros NS de Vercel, habilitar Vercel DNS en el panel del dominio sin cambiar los nameservers del registrador y crear el CNAME `*.site` hacia el destino indicado por Vercel. Mantener inicialmente ese CNAME en DNS Only. Los NS delegados deben permanecer para la renovación automática. Alternativamente se pueden usar los nameservers de Vercel para todo el dominio. Seguir la sección oficial [Use wildcard domains with an external DNS provider](https://vercel.com/docs/domains/working-with-domains/add-a-domain#use-wildcard-domains-with-an-external-dns-provider). Cloudflare Universal SSL en configuración completa no cubre por defecto nombres de segundo nivel como `negocio.site.turnosrapidos.com.ar`; habilitar su proxy requiere resolver por separado esa cobertura de certificado.
 4. Mantener `/sitio/{slug}` como URL local y ruta de respaldo.
 5. Verificar que cada `Sede.subdominio` esté libre, activo y corresponda a un negocio publicado antes de anunciarlo.
 

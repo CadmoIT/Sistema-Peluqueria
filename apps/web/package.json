@@ -24,6 +24,7 @@
     "@mui/icons-material": "9.4.0",
     "@prisma/client": "6.19.3",
     "@turnos/config": "workspace:*",
+    "@turnos/correo": "workspace:*",
     "@turnos/google-calendar": "workspace:*",
     "better-auth": "1.7.3",
     "exceljs": "4.4.0",

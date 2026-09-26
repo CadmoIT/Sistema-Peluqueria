@@ -1,6 +1,6 @@
 /** Entrega avisos pendientes verificando de nuevo turno, plan y consentimiento. */
 import { prisma } from "../lib/prisma.js";
-import { enviarCorreoAviso, smtpConfigurado } from "../lib/correo-smtp.js";
+import { enviarCorreoResend, resendConfigurado } from "@turnos/correo";
 import { enviarPlantillaWhatsapp, whatsappConfigurado } from "../lib/whatsapp-cloud.js";
 import { hayConsentimientoWhatsapp, turnoSigueVigente } from "./avisos-reglas.js";
 
@@ -86,19 +86,20 @@ export async function entregarAvisos() {
       const vigente = await prisma.avisoReserva.findFirst({ where: { id: aviso.id, estado: "ENVIANDO", reserva: { clienteId: cliente.id, profesionalId: { not: null }, estado: "CONFIRMADA" } } });
       if (!vigente) continue;
       if (aviso.canal === "EMAIL") {
-        if (!smtpConfigurado()) throw new Error("Gmail SMTP no está configurado.");
+        if (!resendConfigurado()) throw new Error("Resend no está configurado.");
         const asunto = aviso.tipo === "CONFIRMACION"
           ? ajustes?.emailAsuntoConfirmacion ?? "Tu turno en {negocio} está confirmado"
           : ajustes?.emailAsuntoRecordatorio ?? "Recordatorio de tu turno en {negocio}";
         const texto = aviso.tipo === "CONFIRMACION"
           ? ajustes?.emailTextoConfirmacion ?? "Hola {nombre}, tu turno de {servicio} es el {fecha} a las {hora} en {negocio}."
           : ajustes?.emailTextoRecordatorio ?? "Hola {nombre}, te recordamos tu turno de {servicio} el {fecha} a las {hora} en {negocio}.";
-        await enviarCorreoAviso(
-          cliente.email!,
-          completar(asunto, variables),
-          completar(texto, variables),
-          negocio.email,
-        );
+        await enviarCorreoResend({
+          destinatario: cliente.email!,
+          asunto: completar(asunto, variables),
+          texto: completar(texto, variables),
+          responderA: negocio.email,
+          claveIdempotencia: `aviso-reserva-${aviso.id}`,
+        });
       } else {
         if (!whatsappConfigurado()) throw new Error("WhatsApp automático no está configurado.");
         await enviarPlantillaWhatsapp(cliente.telefono!, aviso.tipo, variables);

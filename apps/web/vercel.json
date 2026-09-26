@@ -2,5 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm --filter @turnos/config build && pnpm --filter @turnos/contratos build && pnpm --filter @turnos/google-calendar build && pnpm db:generate && pnpm --filter @turnos/web build"
+  "buildCommand": "cd ../.. && pnpm --filter @turnos/config build && pnpm --filter @turnos/contratos build && pnpm --filter @turnos/google-calendar build && pnpm --filter @turnos/correo build && pnpm db:generate && pnpm --filter @turnos/web build"
 }

@@ -2,7 +2,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@turnos/config"],
+  transpilePackages: ["@turnos/config", "@turnos/correo"],
   async headers() {
     const cabeceras = [
       { key: "X-Content-Type-Options", value: "nosniff" },

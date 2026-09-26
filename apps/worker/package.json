@@ -11,13 +11,12 @@
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
+    "@turnos/correo": "workspace:*",
     "@turnos/google-calendar": "workspace:*",
-    "nodemailer": "^10.0.9",
     "pg-boss": "^10.4.2"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
-    "@types/nodemailer": "^8.0.1",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3"
   }
