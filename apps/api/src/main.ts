@@ -22,7 +22,7 @@ async function iniciarApi() {
 
   // Configura el prefijo de la API y las rutas que no deberían tenerlo
   app.setGlobalPrefix("api/v1", {
-    exclude: ["salud", "webhooks/mercadopago", "webhooks/meta"],
+    exclude: ["salud", "webhooks/meta"],
   });
 
   // Procesa y valida datos antes de que lleguen al controller. Por ejemplo, convierte strings a números y rechaza propiedades que no estén en el DTO.

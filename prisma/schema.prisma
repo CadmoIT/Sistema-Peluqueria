@@ -45,12 +45,22 @@ enum EstadoSuscripcion {
   CANCELADA
 }
 
+enum EstadoEventoExterno {
+  RECIBIDO
+  PROCESANDO
+  PROCESADO
+  FALLIDO
+}
+
 enum EstadoPago {
   PENDIENTE
+  EN_PROCESO
   APROBADO
   RECHAZADO
   REEMBOLSADO
   REEMBOLSADO_PARCIAL
+  CONTRACARGO
+  ANULADO
 }
 
 enum TipoMovimientoStock {
@@ -193,6 +203,7 @@ model Negocio {
   productos           Producto[]
   compras             Compra[]
   ventas              Venta[]
+  pagos               Pago[]
   movimientosCaja     MovimientoCaja[]
   suscripcion         Suscripcion?
   dominios            Dominio[]
@@ -637,36 +648,51 @@ model ValorColumnaInventario {
 }
 
 model Pago {
-  id            String     @id @default(cuid())
-  negocioId     String
-  reservaId     String?
-  ventaId       String?
-  proveedor     String     @default("mercadopago")
-  proveedorId   String?    @unique
-  idempotencia  String     @unique
-  estado        EstadoPago @default(PENDIENTE)
-  monto         Decimal    @db.Decimal(12, 2)
-  creadoEn      DateTime   @default(now())
-  actualizadoEn DateTime   @updatedAt
-  reserva       Reserva?   @relation(fields: [reservaId], references: [id])
-  venta         Venta?     @relation(fields: [ventaId], references: [id])
+  id                 String       @id @default(cuid())
+  negocioId          String
+  suscripcionId      String?
+  reservaId          String?
+  ventaId            String?
+  proveedor          String       @default("mercadopago")
+  proveedorId        String?      @unique
+  facturaProveedorId String?
+  idempotencia       String       @unique
+  estado             EstadoPago   @default(PENDIENTE)
+  estadoProveedor    String?
+  detalleProveedor   String?
+  plan               String?
+  moneda             String       @default("ARS")
+  monto              Decimal      @db.Decimal(12, 2)
+  pagadoEn           DateTime?
+  creadoEn           DateTime     @default(now())
+  actualizadoEn      DateTime     @updatedAt
+  negocio            Negocio      @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  suscripcion        Suscripcion? @relation(fields: [suscripcionId], references: [id], onDelete: SetNull)
+  reserva            Reserva?     @relation(fields: [reservaId], references: [id])
+  venta              Venta?       @relation(fields: [ventaId], references: [id])
 
   @@index([negocioId, estado, creadoEn])
+  @@index([suscripcionId, creadoEn])
+  @@index([facturaProveedorId])
 }
 
 model Suscripcion {
-  id               String            @id @default(cuid())
-  negocioId        String            @unique
-  plan             String
-  estado           EstadoSuscripcion @default(CONFIGURACION_GRATUITA)
-  precioMensual    Decimal           @db.Decimal(12, 2)
-  proveedorId      String?           @unique
-  proximoCobro     DateTime?
-  graciaHasta      DateTime?
-  pruebaIniciaEn   DateTime?
-  pruebaFinalizaEn DateTime?
-  cancelarAlFinal  Boolean           @default(false)
-  negocio          Negocio           @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  id                   String            @id @default(cuid())
+  negocioId            String            @unique
+  plan                 String
+  estado               EstadoSuscripcion @default(CONFIGURACION_GRATUITA)
+  precioMensual        Decimal           @db.Decimal(12, 2)
+  proveedorId          String?           @unique
+  proximoCobro         DateTime?
+  graciaHasta          DateTime?
+  pruebaIniciaEn       DateTime?
+  pruebaFinalizaEn     DateTime?
+  cancelarAlFinal      Boolean           @default(false)
+  planPendiente        String?
+  precioPendiente      Decimal?          @db.Decimal(12, 2)
+  checkoutIdempotencia String?           @unique
+  negocio              Negocio           @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+  pagos                Pago[]
 }
 
 model ConfiguracionAvisos {
@@ -845,18 +871,25 @@ model ConsumoWhatsapp {
 }
 
 model EventoExterno {
-  id          String    @id @default(cuid())
-  negocioId   String?
-  proveedor   String
-  eventoId    String
-  tipo        String
-  contenido   Json
-  procesadoEn DateTime?
-  recibidoEn  DateTime  @default(now())
-  negocio     Negocio?  @relation(fields: [negocioId], references: [id], onDelete: SetNull)
+  id               String              @id @default(cuid())
+  negocioId        String?
+  proveedor        String
+  eventoId         String
+  tipo             String
+  recursoId        String?
+  contenido        Json
+  estado           EstadoEventoExterno @default(RECIBIDO)
+  intentos         Int                 @default(0)
+  proximoIntentoEn DateTime?
+  reclamadoEn      DateTime?
+  procesadoEn      DateTime?
+  error            String?
+  recibidoEn       DateTime            @default(now())
+  negocio          Negocio?            @relation(fields: [negocioId], references: [id], onDelete: SetNull)
 
   @@unique([proveedor, eventoId])
   @@index([negocioId, recibidoEn])
+  @@index([proveedor, estado, proximoIntentoEn, recibidoEn])
 }
 
 model Auditoria {

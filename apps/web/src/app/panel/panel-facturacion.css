@@ -411,6 +411,16 @@
   font: 600 28px var(--fuente-marca);
   letter-spacing: 0;
 }
+.facturacion-aviso {
+  width: min(1060px, calc(100% - 40px));
+  margin: 0 auto 16px;
+  padding: 12px 16px;
+  border: 1px solid rgba(18, 103, 131, 0.22);
+  border-radius: 12px;
+  background: rgba(18, 103, 131, 0.06);
+  color: #28525e;
+  line-height: 1.5;
+}
 .facturacion-bloque {
   padding: 26px 0;
   border-top: 1px solid var(--panel-borde);
@@ -518,23 +528,53 @@
 .facturacion-cancelacion {
   border-bottom: 1px solid var(--panel-borde);
 }
-.boton-cancelar-plan {
-  min-width: 106px;
-  min-height: 40px;
-  padding: 0 20px;
-  border: 1px solid #db4a4a;
-  border-radius: 999px;
-  background: transparent;
-  color: #c92e35;
-  font: 600 14px var(--fuente-marca);
-  cursor: pointer;
+.facturacion-renovacion__control {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: #343b3f;
+  font-size: 14px;
 }
-.boton-cancelar-plan:disabled {
+.control-renovacion {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  padding: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: #a6adb1;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+.control-renovacion[aria-checked="true"] {
+  background: #126783;
+}
+.control-renovacion__punto {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px #0003;
+  transition: transform 160ms ease;
+}
+.control-renovacion[aria-checked="true"] .control-renovacion__punto {
+  transform: translateX(20px);
+}
+.control-renovacion:focus-visible {
+  outline: 3px solid #12678355;
+  outline-offset: 3px;
+}
+.control-renovacion:disabled {
   opacity: 0.65;
   cursor: wait;
 }
-.facturacion-cancelacion__accion > p {
-  max-width: 190px;
+.facturacion-renovacion__control > p {
+  flex-basis: 100%;
+  margin: 0 0 0 56px;
+  max-width: 290px;
   color: #b42318;
   font-size: 12px;
 }

@@ -9,20 +9,6 @@ import { IntegracionesService } from "../services/integraciones.service";
 export class IntegracionesController {
   constructor(private readonly integracionesService: IntegracionesService) {}
 
-  @Post("mercadopago")
-  @HttpCode(200)
-  recibirMercadoPago(
-    @Body() contenido: Record<string, unknown>,
-    @Headers("x-signature") firma?: string,
-    @Headers("x-request-id") requestId?: string,
-  ) {
-    return this.integracionesService.recibirMercadoPago(
-      contenido,
-      firma,
-      requestId,
-    );
-  }
-
   @Post("meta")
   @HttpCode(200)
   recibirMeta(

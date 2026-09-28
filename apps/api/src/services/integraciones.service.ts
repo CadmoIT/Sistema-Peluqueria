@@ -14,24 +14,6 @@ export class IntegracionesService {
     private readonly repositorio: EventosRepository,
   ) {}
 
-  async recibirMercadoPago(
-    contenido: Record<string, unknown>,
-    firma?: string,
-    requestId?: string,
-  ) {
-    const id = String(requestId ?? contenido.id ?? "");
-
-    if (!id) {
-      throw new UnauthorizedException("Evento sin identificador");
-    }
-
-    if (process.env.NODE_ENV === "production" && !firma) {
-      throw new UnauthorizedException("Firma ausente");
-    }
-
-    return this.registrarUnaVez(`mercadopago:${id}`);
-  }
-
   async recibirMeta(contenido: Record<string, unknown>, firma?: string) {
     const cuerpo = JSON.stringify(contenido);
     const firmaValida = coincideFirmaHmac(

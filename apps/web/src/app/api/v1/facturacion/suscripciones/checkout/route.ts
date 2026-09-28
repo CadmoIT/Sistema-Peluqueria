@@ -1,4 +1,4 @@
-/** Inicia el checkout recurrente sin activar la suscripción desde el navegador. */
+/** Inicia el checkout recurrente y guarda el cambio como pendiente hasta su confirmación. */
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { PLANES, PLAN_PRO } from "@turnos/config";
@@ -9,6 +9,7 @@ import { obtenerContextoApi } from "@/servicios/contexto-api.service";
 type RespuestaPreapproval = {
   id?: string;
   init_point?: string;
+  sandbox_init_point?: string;
   status?: string;
   message?: string;
 };
@@ -24,42 +25,68 @@ export async function POST(solicitud: Request) {
       303,
     );
   }
-
-  const planId = new URL(solicitud.url).searchParams.get("plan");
-  const plan = [...PLANES, PLAN_PRO].find(
-    (candidato) => candidato.id === planId,
-  );
-  if (!plan || plan.precioMensual === null || plan.precioMensual <= 0) {
-    return NextResponse.redirect(
-      new URL("/panel/planes?facturacion=plan-invalido", solicitud.url),
-      303,
+  if (!["DUENO", "ADMINISTRADOR"].includes(contexto.membresia.rol)) {
+    return NextResponse.json(
+      { mensaje: "Solo una persona administradora puede cambiar el plan." },
+      { status: 403 },
     );
   }
+
+  const planId = new URL(solicitud.url).searchParams.get("plan");
+  const plan = [...PLANES, PLAN_PRO].find((candidato) => candidato.id === planId);
+  if (!plan || plan.precioMensual === null || plan.precioMensual <= 0) {
+    return volver(solicitud, "plan-invalido");
+  }
+
   const suscripcionActual = await prisma.suscripcion.findUnique({
     where: { negocioId: contexto.negocio.id },
-    select: { id: true, plan: true, estado: true, proveedorId: true },
   });
-  if (
-    suscripcionActual?.plan === plan.id &&
-    suscripcionActual.estado === "ACTIVA"
-  ) {
-    return NextResponse.redirect(
-      new URL("/panel/planes?facturacion=plan-actual", solicitud.url),
-      303,
+  if (!suscripcionActual) {
+    return NextResponse.json(
+      { mensaje: "No se encontró la suscripción del negocio." },
+      { status: 409 },
     );
+  }
+  if (
+    suscripcionActual.plan === plan.id &&
+    suscripcionActual.estado === "ACTIVA" &&
+    !suscripcionActual.cancelarAlFinal
+  ) {
+    return volver(solicitud, "plan-actual");
+  }
+  if (suscripcionActual.cancelarAlFinal) {
+    return volver(solicitud, "cancelacion-en-curso");
   }
 
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
   const webUrl = process.env.WEB_URL ?? new URL(solicitud.url).origin;
-  if (!accessToken) {
-    return NextResponse.redirect(
-      new URL("/panel/planes?facturacion=no-configurada", solicitud.url),
-      303,
-    );
-  }
+  if (!accessToken) return volver(solicitud, "no-configurada");
 
   const retornoPlanes = `${webUrl.replace(/\/$/, "")}/panel/planes?facturacion=retorno`;
-  if (suscripcionActual?.proveedorId) {
+  const webhookMercadoPago = `${webUrl.replace(/\/$/, "")}/webhooks/mercadopago`;
+  const mismoCambioPendiente =
+    suscripcionActual.planPendiente === plan.id &&
+    Number(suscripcionActual.precioPendiente) === plan.precioMensual;
+  const claveIdempotencia = mismoCambioPendiente
+    ? (suscripcionActual.checkoutIdempotencia ?? randomUUID())
+    : randomUUID();
+
+  // Persistimos intención y clave antes de llamar a MP: un timeout/reintento no
+  // crea un segundo checkout y nunca activa el plan anticipadamente.
+  await prisma.suscripcion.update({
+    where: { id: suscripcionActual.id },
+    data: {
+      planPendiente: plan.id,
+      precioPendiente: plan.precioMensual,
+      checkoutIdempotencia: claveIdempotencia,
+    },
+  });
+
+  if (
+    suscripcionActual.proveedorId &&
+    suscripcionActual.estado !== "CANCELADA" &&
+    !suscripcionActual.cancelarAlFinal
+  ) {
     const respuestaCambio = await fetch(
       `https://api.mercadopago.com/preapproval/${encodeURIComponent(suscripcionActual.proveedorId)}`,
       {
@@ -67,6 +94,7 @@ export async function POST(solicitud: Request) {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
+          "X-Idempotency-Key": claveIdempotencia,
         },
         body: JSON.stringify({
           reason: `TurnosRápidos - ${plan.nombre}`,
@@ -77,8 +105,10 @@ export async function POST(solicitud: Request) {
             currency_id: "ARS",
           },
           back_url: retornoPlanes,
+          notification_url: webhookMercadoPago,
         }),
         cache: "no-store",
+        signal: AbortSignal.timeout(12_000),
       },
     );
     const resultadoCambio = (await respuestaCambio
@@ -89,20 +119,10 @@ export async function POST(solicitud: Request) {
         estado: respuestaCambio.status,
         mensaje: resultadoCambio?.message,
       });
-      return NextResponse.redirect(
-        new URL("/panel/planes?facturacion=error", solicitud.url),
-        303,
-      );
-    }
-    await prisma.suscripcion.update({
-      where: { id: suscripcionActual.id },
-      data: { plan: plan.id, precioMensual: plan.precioMensual },
-    });
-    if (resultadoCambio?.init_point) {
-      return NextResponse.redirect(resultadoCambio.init_point, 303);
+      return volver(solicitud, "error");
     }
     return NextResponse.redirect(
-      new URL("/panel/planes?facturacion=actualizado", solicitud.url),
+      resultadoCambio?.init_point ?? retornoPlanes,
       303,
     );
   }
@@ -112,7 +132,7 @@ export async function POST(solicitud: Request) {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
-      "X-Idempotency-Key": randomUUID(),
+      "X-Idempotency-Key": claveIdempotencia,
     },
     body: JSON.stringify({
       reason: `TurnosRápidos - ${plan.nombre}`,
@@ -125,38 +145,42 @@ export async function POST(solicitud: Request) {
         currency_id: "ARS",
       },
       back_url: retornoPlanes,
+      notification_url: webhookMercadoPago,
       status: "pending",
     }),
     cache: "no-store",
+    signal: AbortSignal.timeout(12_000),
+  }).catch((error: unknown) => {
+    console.error("No se pudo conectar con Mercado Pago", error);
+    return null;
   });
-  const resultado = (await respuesta.json()) as RespuestaPreapproval;
 
-  if (!respuesta.ok || !resultado.id || !resultado.init_point) {
+  if (!respuesta) return volver(solicitud, "error");
+  const resultado = (await respuesta.json().catch(() => null)) as
+    | RespuestaPreapproval
+    | null;
+  const checkoutUrl =
+    process.env.MERCADOPAGO_ACCESS_TOKEN?.startsWith("TEST-")
+      ? resultado?.sandbox_init_point ?? resultado?.init_point
+      : resultado?.init_point;
+  if (!respuesta.ok || !resultado?.id || !checkoutUrl) {
     console.error("Mercado Pago rechazó la creación de la suscripción", {
       estado: respuesta.status,
-      mensaje: resultado.message,
+      mensaje: resultado?.message,
     });
-    return NextResponse.redirect(
-      new URL("/panel/planes?facturacion=error", solicitud.url),
-      303,
-    );
+    return volver(solicitud, "error");
   }
 
-  await prisma.suscripcion.upsert({
-    where: { negocioId: contexto.negocio.id },
-    create: {
-      negocioId: contexto.negocio.id,
-      plan: plan.id,
-      precioMensual: plan.precioMensual,
-      proveedorId: resultado.id,
-      estado: "CONFIGURACION_GRATUITA",
-    },
-    update: {
-      plan: plan.id,
-      precioMensual: plan.precioMensual,
-      proveedorId: resultado.id,
-    },
+  await prisma.suscripcion.update({
+    where: { id: suscripcionActual.id },
+    data: { proveedorId: resultado.id },
   });
+  return NextResponse.redirect(checkoutUrl, 303);
+}
 
-  return NextResponse.redirect(resultado.init_point, 303);
+function volver(solicitud: Request, estado: string) {
+  return NextResponse.redirect(
+    new URL(`/panel/planes?facturacion=${estado}`, solicitud.url),
+    303,
+  );
 }

@@ -30,17 +30,18 @@ Falta
 Falta, hice una parte de código
 | H02 | P0 | Web y worker usan Resend; el worker envía los correos | Activar remitente/dominio en Resend y configurar `RESEND_API_KEY` y `EMAIL_REMITENTE` en Railway; la web requiere PostgreSQL |
 
+Listo
+| H03 | P1 | La web guarda autenticación en una bandeja persistente; el worker reintenta envíos y recupera reclamos vencidos | Después de H01/H02: aplicar migración en Railway, desplegar worker y web, y comprobar correo pendiente/enviado/fallido en producción |
 
-| H03 | P1 | La web guarda autenticación en una bandeja persistente; el worker reintenta envíos y recupera reclamos vencidos | Aplicar la migración, desplegar web y worker, y comprobar correo pendiente/enviado/fallido en producción |
+| H04 | P0 | El webhook de Mercado Pago ahora tiene receptor único Next/Vercel, HMAC y bandeja PostgreSQL; Railway worker reclama y reintenta eventos | Aplicar migración, configurar tópicos/secretos y probar duplicados, firma inválida y reinicio del worker en sandbox |
 
-| H04 | P0 | El webhook de Mercado Pago en Nest sólo comprueba que exista el encabezado de firma y registra IDs en memoria | Retirar su exposición o reemplazarlo por validación criptográfica y registro duradero; establecer un receptor oficial |
 | H05 | P0 | En Nest, consulta y confirmación de reserva por ID no tienen guard de sesión ni token específico | Proteger la operación y minimizar respuesta; verificar exposición del servicio Railway. Conocer un ID no debe otorgar permiso de confirmar |
-| H06 | P0 | Checkout/cancelación de plan validan membresía, pero no rol; creación/edición de profesionales tampoco exige rol administrador | Completar autorización de cada lectura y escritura, también al invocar rutas directamente |
+| H06 | P0 | Checkout/cambios de plan exigen rol DUENO o ADMINISTRADOR; cualquier integrante con Plus/Pro puede pausar la renovación automática | Revisar autorización de las demás lecturas y escrituras, también al invocar rutas directamente |
 | H07 | P0 | La reserva pública Next se crea `CONFIRMADA` con `sena: 0` | Implementar cobro de seña si se ofrece esa función, o retirarla explícitamente de la oferta hasta entregarla |
-| H08 | P0 | Webhook web procesa `subscription_preapproval`, pero no registra cuotas desde eventos de pago | Completar cobros reales, fallos, historial, conciliación y derechos del plan; autorización de recurrencia no equivale a cuota cobrada |
+| H08 | P0 | Worker reconcilia `subscription_preapproval`, `subscription_authorized_payment` y `payment`; registra estados e historial por pago | Aplicar migración y validar sandbox. Queda conciliación periódica/manual y prueba operativa de eventos tardíos/reembolsos |
 | H09 | P0 | Suscripción pertenece a Negocio; el contexto elige `membresia.findFirst`; onboarding reutiliza el primer negocio | Resolver qué compra la cuenta cuando se anuncian 1, 2 o ilimitados negocios, implementar selector y límites del servidor |
 | H10 | P0 | Reserva pública actualiza cliente existente por coincidencia de email O teléfono, sin verificar propiedad del contacto | Evitar sobrescribir identidades de clientes por datos enviados sin autenticar; tratar coincidencias conflictivas y consentimiento por separado |
-| H11 | P1 | Cancelación cambia inmediatamente a CANCELADA y a la vez marca `cancelarAlFinal` | Definir y cumplir el acceso hasta final de período pagado; distinguir cancelar renovación y suspender servicio |
+| H11 | P1 | La renovación se pausa/reactiva en Mercado Pago; el acceso pagado se conserva hasta `proximoCobro` | Verificar el ciclo de pausa/reactivación y fecha efectiva en sandbox; documentar términos para clientes |
 | H12 | P1 | Avisos de turnos tienen reintentos limitados y recuperan reclamos abandonados; aún falta panel operativo | Mostrar errores y permitir reintento administrativo; guardar IDs/estados del proveedor cuando estén disponibles |
 | H13 | P1 | El worker excluye demos mediante un slug específico | Usar entorno/indicador de demo; impedir mensajes y cobros reales desde todos los datos ficticios |
 | H14 | P1 | Listados de clientes, productos y compras tienen consultas sin paginación | Búsqueda y paginación del servidor; límites de memoria y exportaciones grandes |
@@ -188,6 +189,8 @@ Stripe y Mercado Pago son proveedores diferentes. Para la integración local ele
 - [ ] Completar `/panel/planes` y `/panel/facturacion` con estado real, cobros, comprobantes y edición de datos facturables.
 - [ ] No almacenar tarjetas/CVV; el proveedor gestiona ese medio de pago.
 - [ ] Validar obligaciones fiscales y emisión del comprobante correspondiente; el registro interno de un pago no reemplaza automáticamente una factura fiscal.
+
+Implementación de código (pendiente de migrar y configurar): Vercel recibe en `/webhooks/mercadopago`, valida HMAC y guarda antes de responder; Railway consume la bandeja cada minuto con reclamo recuperable, backoff y cola de fallidos. El worker consulta el recurso canónico de MP, no confía en el cuerpo del webhook ni en el retorno del navegador. Las solicitudes de plan quedan pendientes hasta un pago aprobado; los pagos guardan el plan/precio/moneda y el estado del proveedor. La ruta anterior de Nest para MP fue retirada; el webhook de Meta no se modificó.
 
 **Terminado cuando:** alta, renovación, rechazo, cambio, baja y reembolso se reflejan correctamente, incluso repitiendo webhooks o interrumpiendo el procesamiento.
 

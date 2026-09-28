@@ -16,6 +16,10 @@ import {
   COLA_VENCER_RETENCION,
   procesarRetencionesVencidas,
 } from "./jobs/vencer-retencion.job.js";
+import {
+  COLA_MERCADOPAGO,
+  procesarEventosMercadoPago,
+} from "./jobs/procesar-mercadopago.job.js";
 
 export async function iniciarWorker(databaseUrl: string) {
   const cola = new PgBoss(databaseUrl);
@@ -37,15 +41,19 @@ export async function iniciarWorker(databaseUrl: string) {
   await cola.createQueue(COLA_ENVIAR_RECORDATORIO);
   await cola.createQueue(COLA_ENVIAR_CORREOS);
   await cola.createQueue(COLA_VENCER_RETENCION);
+  await cola.createQueue(COLA_MERCADOPAGO);
   await cola.schedule(COLA_ENVIAR_RECORDATORIO, "* * * * *", {}, { tz: "UTC" });
   await cola.schedule(COLA_ENVIAR_CORREOS, "* * * * *", {}, { tz: "UTC" });
   await cola.send(COLA_ENVIAR_RECORDATORIO, {});
   await cola.send(COLA_ENVIAR_CORREOS, {});
   await cola.schedule(COLA_VENCER_RETENCION, "* * * * *", {}, { tz: "UTC" });
+  await cola.schedule(COLA_MERCADOPAGO, "* * * * *", {}, { tz: "UTC" });
   await cola.send(COLA_VENCER_RETENCION, {});
+  await cola.send(COLA_MERCADOPAGO, {});
   await cola.work(COLA_ENVIAR_RECORDATORIO, procesarRecordatorios);
   await cola.work(COLA_ENVIAR_CORREOS, procesarCorreosPendientes);
   await cola.work(COLA_VENCER_RETENCION, procesarRetencionesVencidas);
+  await cola.work(COLA_MERCADOPAGO, procesarEventosMercadoPago);
 
   console.log("Worker TurnosRápidos activo.");
 }

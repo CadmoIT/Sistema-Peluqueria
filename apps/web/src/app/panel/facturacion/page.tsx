@@ -4,14 +4,22 @@ import { CreditCard, ReceiptText } from "lucide-react";
 import { formatearPesos, nombrePlan } from "@turnos/config";
 import { obtenerFacturacion } from "@/servicios/panel-datos.service";
 import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
-import { BotonCancelarPlan } from "@/componentes/panel/boton-cancelar-plan";
+import { ControlRenovacionPlan } from "@/componentes/panel/control-renovacion-plan";
 
 export const metadata = { title: "Facturación" };
 
 export default async function PaginaFacturacion() {
   const { negocio, usuario, pagos, sede } = await obtenerFacturacion();
   const suscripcion = negocio.suscripcion;
-  const planPagado = Boolean(suscripcion?.proveedorId);
+  const esPlanDePago = Boolean(
+    suscripcion && ["autogestionado", "pro"].includes(suscripcion.plan),
+  );
+  const planPagado = Boolean(esPlanDePago && suscripcion?.proveedorId);
+  const puedeRenovar = Boolean(
+    suscripcion?.proveedorId &&
+      ["autogestionado", "pro"].includes(suscripcion.plan) &&
+      ["ACTIVA", "EN_GRACIA"].includes(suscripcion.estado),
+  );
 
   return (
     <div className="panel-contenido facturacion-pantalla facturacion-detalle">
@@ -24,10 +32,15 @@ export default async function PaginaFacturacion() {
         <div>
           <h2>{nombrePlan(suscripcion?.plan)}</h2>
           <p>
-            {suscripcion?.estado === "ACTIVA" && suscripcion.proximoCobro
+            {planPagado && suscripcion?.cancelarAlFinal && suscripcion.proximoCobro
+              ? `La renovación está cancelada. Conservás el acceso hasta el ${fecha(suscripcion.proximoCobro)}.`
+              : suscripcion?.estado === "ACTIVA" && suscripcion.proximoCobro
+                && planPagado
               ? `Tu plan se renueva automáticamente el ${fecha(suscripcion.proximoCobro)}.`
               : suscripcion?.pruebaFinalizaEn
                 ? `La prueba finaliza el ${fecha(suscripcion.pruebaFinalizaEn)}.`
+                : esPlanDePago
+                  ? "Este plan no tiene una suscripción de Mercado Pago vinculada."
                 : "Plan gratuito"}
           </p>
         </div>
@@ -45,14 +58,18 @@ export default async function PaginaFacturacion() {
           <div className="facturacion-filas">
             {pagos.map((pago) => (
               <div className="facturacion-fila" key={pago.id}>
-                <span>{nombrePlan(suscripcion?.plan)}</span>
-                <time dateTime={pago.creadoEn.toISOString()}>
-                  {fecha(pago.creadoEn)}
+                <span>{nombrePlan(pago.plan ?? suscripcion?.plan)}</span>
+                <time dateTime={(pago.pagadoEn ?? pago.creadoEn).toISOString()}>
+                  {fecha(pago.pagadoEn ?? pago.creadoEn)}
                 </time>
                 <span className="facturacion-estado">
                   {pago.estado.replaceAll("_", " ")}
                 </span>
-                <strong>{formatearPesos(Number(pago.monto))}</strong>
+                <strong>
+                  {pago.moneda === "ARS"
+                    ? formatearPesos(Number(pago.monto))
+                    : `${pago.moneda} ${Number(pago.monto).toLocaleString("es-AR")}`}
+                </strong>
               </div>
             ))}
           </div>
@@ -103,8 +120,9 @@ export default async function PaginaFacturacion() {
           </p>
         ) : (
           <p>
-            Al contratar un plan, vas a poder asociar tu medio de pago en
-            Mercado Pago.
+            {esPlanDePago
+              ? "Este plan no tiene un medio de pago de Mercado Pago asociado."
+              : "Al contratar un plan, vas a poder asociar tu medio de pago en Mercado Pago."}
           </p>
         )}
         <Link className="facturacion-enlace" href="/panel/planes">
@@ -112,16 +130,19 @@ export default async function PaginaFacturacion() {
         </Link>
       </section>
 
-      {planPagado && suscripcion?.estado !== "CANCELADA" && (
+      {puedeRenovar && (
         <section className="facturacion-bloque facturacion-cancelacion">
           <div>
-            <h2>Cancelar plan</h2>
+            <h2>Renovación automática</h2>
             <p>
-              Al cancelar, tu suscripción dejará de renovarse y Mercado Pago
-              actualizará su estado.
+              {suscripcion?.cancelarAlFinal && suscripcion.proximoCobro
+                ? `Si la mantenés desactivada, conservás el plan hasta el ${fecha(suscripcion.proximoCobro)} y no se realizará el próximo cobro.`
+                : suscripcion?.proximoCobro
+                  ? `Se cobrará automáticamente cada mes. El próximo cobro está previsto para el ${fecha(suscripcion.proximoCobro)}. Podés desactivarla y conservar el acceso hasta esa fecha.`
+                  : "Se cobrará automáticamente cada mes. Podés desactivarla cuando quieras."}
             </p>
           </div>
-          <BotonCancelarPlan />
+          <ControlRenovacionPlan inicialmenteActiva={!suscripcion?.cancelarAlFinal} />
         </section>
       )}
     </div>

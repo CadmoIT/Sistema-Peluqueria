@@ -23,6 +23,8 @@ Hay una diferencia importante entre la infraestructura deseada y la arquitectura
 - `PUBLIC_SITE_DOMAIN=site.turnosrapidos.com.ar` (sin `https://`, sin `*.`)
 - `DATABASE_URL`: conexión externa de Railway PostgreSQL, con TLS y parámetros de conexión moderados para funciones serverless. No usar la URL privada `*.railway.internal` desde Vercel.
 - `BETTER_AUTH_SECRET`: secreto aleatorio de al menos 32 caracteres.
+- `MERCADOPAGO_ACCESS_TOKEN`: credencial privada de la cuenta que cobra las suscripciones de TurnosRápidos.
+- `MERCADOPAGO_WEBHOOK_SECRET`: secreto de firma generado al configurar Webhooks en Mercado Pago. La URL única es `https://turnosrapidos.com.ar/webhooks/mercadopago`; activar `subscription_preapproval`, `subscription_authorized_payment` y `payment`.
 - La web guarda los correos transaccionales pendientes en PostgreSQL. No necesita una clave de Resend; el worker de Railway es quien los envía.
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `CLOUDINARY_UPLOAD_PRESET`
 - Credenciales activas de las integraciones que se vayan a utilizar: Google OAuth/Calendar, cifrado de integraciones, correo, Mercado Pago, Google Maps y Meta/WhatsApp. La lista completa está en `.env.example`.
@@ -65,7 +67,7 @@ pnpm --filter @turnos/config build && pnpm --filter @turnos/contratos build && p
 ```
 
 - Start Command: `pnpm --filter @turnos/worker start`
-- Variables: `DATABASE_URL` privada, `WEB_URL=https://turnosrapidos.com.ar`, `PUBLIC_SITE_DOMAIN=site.turnosrapidos.com.ar`, `RESEND_API_KEY` y `EMAIL_REMITENTE`, además de las credenciales de Google Calendar y WhatsApp que necesiten los avisos. El dominio de envío debe estar verificado en Resend. Ya no se usa Gmail/SMTP para estos correos.
+- Variables: `DATABASE_URL` privada, `WEB_URL=https://turnosrapidos.com.ar`, `PUBLIC_SITE_DOMAIN=site.turnosrapidos.com.ar`, `RESEND_API_KEY` y `EMAIL_REMITENTE`, además de las credenciales de Google Calendar y WhatsApp que necesiten los avisos. Para Mercado Pago, cargar el mismo `MERCADOPAGO_ACCESS_TOKEN` privado que en Vercel. El worker no necesita `MERCADOPAGO_WEBHOOK_SECRET`. El dominio de envío debe estar verificado en Resend. Ya no se usa Gmail/SMTP para estos correos.
 - No generar dominio público para el worker.
 
 En API y worker, configurar watch paths para incluir los directorios de su app, `packages/**`, `prisma/**`, `package.json`, `pnpm-lock.yaml` y `pnpm-workspace.yaml`, así una migración compartida no queda sin deploy.
@@ -90,8 +92,8 @@ La configuración cubre subdominios de la plataforma. Los dominios propios de ca
 
 1. Configurar Cloudinary y Railway PostgreSQL; cargar variables, sin desplegar todavía.
 2. Ejecutar y revisar el backup de producción si ya existe información que conservar.
-3. Aplicar primero las migraciones en Railway con `pnpm db:deploy` como pre-deploy de API y comprobar `/salud`. La migración debe estar activa antes de desplegar el worker y la web: ambos usan la nueva bandeja de correos y los nuevos campos de avisos.
-4. Desplegar worker y web; comprobar que la cola se inicia y procesa los correos guardados en PostgreSQL.
+3. Aplicar primero las migraciones en Railway con `pnpm db:deploy` como pre-deploy de API y comprobar `/salud`. La migración debe estar activa antes de desplegar el worker y la web: usan las bandejas durables de correo y Mercado Pago.
+4. Desplegar worker y web; comprobar que las colas se inician. Antes de habilitar los webhooks live, validar el flujo con credenciales y usuarios de prueba.
 5. Agregar dominio raíz y wildcard, esperar DNS/certificado, y probar login, una carga de imagen, reserva, notificación y un subdominio de prueba.
 6. Mantener R2 hasta confirmar la migración de imágenes históricas.
 

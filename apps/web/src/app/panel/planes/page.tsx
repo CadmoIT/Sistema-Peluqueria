@@ -12,11 +12,21 @@ import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 
 export const metadata = { title: "Planes" };
 
-export default async function PaginaPlanes() {
-  const { negocio } = await obtenerFacturacion();
+export default async function PaginaPlanes({
+  searchParams,
+}: {
+  searchParams: Promise<{ facturacion?: string }>;
+}) {
+  const [{ negocio }, parametros] = await Promise.all([
+    obtenerFacturacion(),
+    searchParams,
+  ]);
   const suscripcion = negocio.suscripcion;
   const planes = [PLAN_GRATIS, ...PLANES, PLAN_PRO];
   const planActual = suscripcion?.plan ?? PLAN_GRATIS.id;
+  const aviso = suscripcion?.planPendiente
+    ? `Estamos verificando el cambio a ${nombrePlan(suscripcion.planPendiente)}. Tu plan actual se mantiene hasta confirmar el primer pago.`
+    : mensajeFacturacion(parametros.facturacion);
 
   return (
     <div className="panel-contenido facturacion-pantalla">
@@ -24,6 +34,7 @@ export default async function PaginaPlanes() {
       <header className="cabecera-seccion facturacion-cabecera">
         <h1>Planes</h1>
       </header>
+      {aviso && <p className="facturacion-aviso" role="status">{aviso}</p>}
       <section
         className="planes-grid planes-grid--panel"
         aria-label="Planes disponibles"
@@ -94,4 +105,23 @@ export default async function PaginaPlanes() {
       </section>
     </div>
   );
+}
+
+function mensajeFacturacion(estado?: string) {
+  switch (estado) {
+    case "retorno":
+      return "Volviste de Mercado Pago. Estamos verificando el pago; el plan se actualizará cuando Mercado Pago lo confirme.";
+    case "error":
+      return "No pudimos iniciar el checkout. No se realizó ningún cambio en tu plan; podés volver a intentarlo.";
+    case "no-configurada":
+      return "La contratación todavía no está habilitada. Contactá al equipo de TurnosRápidos.";
+    case "plan-invalido":
+      return "El plan seleccionado no está disponible.";
+    case "plan-actual":
+      return "Ese ya es el plan activo de tu negocio.";
+    case "cancelacion-en-curso":
+      return "La renovación de tu plan ya está cancelada. Podrás contratar otro plan cuando termine el período vigente.";
+    default:
+      return null;
+  }
 }
