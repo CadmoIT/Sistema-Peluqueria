@@ -41,12 +41,28 @@ export async function iniciarWorker(databaseUrl: string) {
   await cola.schedule(COLA_ENVIAR_RECORDATORIO, "* * * * *", {}, { tz: "UTC" });
   await cola.send(COLA_ENVIAR_RECORDATORIO, {});
   await cola.schedule(COLA_VENCER_RETENCION, "* * * * *", {}, { tz: "UTC" });
-  await cola.schedule(COLA_MERCADOPAGO, "* * * * *", {}, { tz: "UTC" });
+  // Sustituye el cron anterior; la bandeja PostgreSQL sigue siendo durable.
+  await cola.unschedule(COLA_MERCADOPAGO);
   await cola.send(COLA_VENCER_RETENCION, {});
-  await cola.send(COLA_MERCADOPAGO, {});
   await cola.work(COLA_ENVIAR_RECORDATORIO, procesarRecordatorios);
   await cola.work(COLA_VENCER_RETENCION, procesarRetencionesVencidas);
-  await cola.work(COLA_MERCADOPAGO, procesarEventosMercadoPago);
+  let sondeoPagosEnCurso = false;
+  const sondearPagos = async () => {
+    if (sondeoPagosEnCurso) return;
+    sondeoPagosEnCurso = true;
+    try {
+      await procesarEventosMercadoPago([]);
+    } catch (error) {
+      console.error("Falló el sondeo de la bandeja de Mercado Pago.", error);
+    } finally {
+      sondeoPagosEnCurso = false;
+    }
+  };
+  // Atiende también los trabajos encolados antes de retirar el cron.
+  await cola.work(COLA_MERCADOPAGO, sondearPagos);
+  await sondearPagos();
+  const intervaloPagos = setInterval(() => void sondearPagos(), 5_000);
+  intervaloPagos.unref();
 
   let sondeoCorreosEnCurso = false;
   const sondearCorreos = async () => {

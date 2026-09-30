@@ -9,6 +9,7 @@ import {
 } from "@turnos/config";
 import { obtenerFacturacion } from "@/servicios/panel-datos.service";
 import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
+import { ConfirmacionPago } from "@/componentes/panel/confirmacion-pago";
 
 export const metadata = { title: "Planes" };
 
@@ -24,9 +25,13 @@ export default async function PaginaPlanes({
   const suscripcion = negocio.suscripcion;
   const planes = [PLAN_GRATIS, ...PLANES, PLAN_PRO];
   const planActual = suscripcion?.plan ?? PLAN_GRATIS.id;
-  const aviso = mensajeFacturacion(parametros.facturacion) ?? (suscripcion?.planPendiente
-    ? `Estamos verificando el cambio a ${nombrePlan(suscripcion.planPendiente)}. Tu plan actual se mantiene hasta confirmar el primer pago.`
-    : null);
+  const esperandoPago = Boolean(suscripcion?.planPendiente) &&
+    (!parametros.facturacion || parametros.facturacion === "retorno");
+  const aviso = esperandoPago
+    ? `Pago en verificación. Estamos confirmando el cambio a ${nombrePlan(suscripcion!.planPendiente!)}. Esta pantalla se actualizará automáticamente; tu plan actual se mantiene hasta confirmar el pago.`
+    : parametros.facturacion === "retorno" && suscripcion?.estado === "ACTIVA" && suscripcion.proveedorId
+      ? `Tu plan ${nombrePlan(planActual)} está activo.`
+      : mensajeFacturacion(parametros.facturacion);
 
   return (
     <div className="panel-contenido facturacion-pantalla">
@@ -34,7 +39,9 @@ export default async function PaginaPlanes({
       <header className="cabecera-seccion facturacion-cabecera">
         <h1>Planes</h1>
       </header>
-      {aviso && <p className="facturacion-aviso" role="status">{aviso}</p>}
+      {aviso && (esperandoPago
+        ? <ConfirmacionPago mensaje={aviso} />
+        : <p className="facturacion-aviso" role="status">{aviso}</p>)}
       <section
         className="planes-grid planes-grid--panel"
         aria-label="Planes disponibles"
