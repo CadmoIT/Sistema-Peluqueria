@@ -338,6 +338,94 @@
   font: 700 42px/1 var(--fuente-editorial);
 }
 
+.recuperar__caja .mensaje-acceso--error {
+  border-color: #f0b9b9;
+  background: #fff5f5;
+  color: #a32a2a;
+}
+
+.recuperar__etiqueta-codigo {
+  display: block;
+  margin-bottom: -8px;
+  color: #000;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.recuperar__codigo {
+  position: relative;
+  display: grid;
+  padding: 3px;
+  border: 1px solid #9daeb8;
+  border-radius: 12px;
+  outline: 0;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.recuperar__codigo:focus-within {
+  border-color: var(--celeste-marca);
+  box-shadow: 0 0 0 3px rgba(42, 159, 186, 0.18);
+}
+
+.recuperar__casillas {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.recuperar__casillas span {
+  display: grid;
+  min-width: 0;
+  height: 58px;
+  place-items: center;
+  border-radius: 8px;
+  background: #f3f8fb;
+  color: #141d25;
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.recuperar__entrada-codigo {
+  position: absolute;
+  inset: 3px;
+  width: calc(100% - 6px) !important;
+  height: calc(100% - 6px) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: transparent !important;
+  caret-color: transparent;
+  cursor: text;
+  opacity: 0.015;
+}
+
+.recuperar__ayuda-codigo {
+  margin-top: -12px;
+  color: #626d75;
+  font-size: 13px;
+}
+
+.recuperar__caja .reenviar-verificacion {
+  width: 100%;
+  margin-top: -8px;
+  color: var(--celeste-marca);
+}
+
+.recuperar__cambiar-email {
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: #52616b;
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .volver-acceso {
   display: block;
   margin-top: 24px;

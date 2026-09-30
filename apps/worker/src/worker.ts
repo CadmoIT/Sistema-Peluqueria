@@ -8,10 +8,7 @@ import {
   COLA_ENVIAR_RECORDATORIO,
   procesarRecordatorios,
 } from "./jobs/enviar-recordatorio.job.js";
-import {
-  COLA_ENVIAR_CORREOS,
-  procesarCorreosPendientes,
-} from "./jobs/enviar-correos.job.js";
+import { procesarCorreosPendientes } from "./jobs/enviar-correos.job.js";
 import {
   COLA_VENCER_RETENCION,
   procesarRetencionesVencidas,
@@ -39,21 +36,33 @@ export async function iniciarWorker(databaseUrl: string) {
   await cola.send(COLA_SINCRONIZAR_GOOGLE, {});
   await cola.work(COLA_SINCRONIZAR_GOOGLE, sincronizarGoogleCalendar);
   await cola.createQueue(COLA_ENVIAR_RECORDATORIO);
-  await cola.createQueue(COLA_ENVIAR_CORREOS);
   await cola.createQueue(COLA_VENCER_RETENCION);
   await cola.createQueue(COLA_MERCADOPAGO);
   await cola.schedule(COLA_ENVIAR_RECORDATORIO, "* * * * *", {}, { tz: "UTC" });
-  await cola.schedule(COLA_ENVIAR_CORREOS, "* * * * *", {}, { tz: "UTC" });
   await cola.send(COLA_ENVIAR_RECORDATORIO, {});
-  await cola.send(COLA_ENVIAR_CORREOS, {});
   await cola.schedule(COLA_VENCER_RETENCION, "* * * * *", {}, { tz: "UTC" });
   await cola.schedule(COLA_MERCADOPAGO, "* * * * *", {}, { tz: "UTC" });
   await cola.send(COLA_VENCER_RETENCION, {});
   await cola.send(COLA_MERCADOPAGO, {});
   await cola.work(COLA_ENVIAR_RECORDATORIO, procesarRecordatorios);
-  await cola.work(COLA_ENVIAR_CORREOS, procesarCorreosPendientes);
   await cola.work(COLA_VENCER_RETENCION, procesarRetencionesVencidas);
   await cola.work(COLA_MERCADOPAGO, procesarEventosMercadoPago);
+
+  let sondeoCorreosEnCurso = false;
+  const sondearCorreos = async () => {
+    if (sondeoCorreosEnCurso) return;
+    sondeoCorreosEnCurso = true;
+    try {
+      await procesarCorreosPendientes([]);
+    } catch (error) {
+      console.error("Falló el sondeo de la bandeja de correos.", error);
+    } finally {
+      sondeoCorreosEnCurso = false;
+    }
+  };
+  await sondearCorreos();
+  const intervaloCorreos = setInterval(() => void sondearCorreos(), 5_000);
+  intervaloCorreos.unref();
 
   console.log("Worker TurnosRápidos activo.");
 }

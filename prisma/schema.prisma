@@ -754,6 +754,28 @@ model CorreoPendiente {
   @@index([estado, proximoIntentoEn, creadoEn])
 }
 
+model RecuperacionContrasena {
+  id                 String    @id @default(cuid())
+  emailHash          String    @unique
+  codigoHash         String?
+  codigoCifrado      String?
+  tokenResetCifrado  String?
+  codigoExpiraEn     DateTime? @db.Timestamptz
+  intentosCodigo     Int       @default(0)
+  codigoConsumidoEn  DateTime? @db.Timestamptz
+  tokenSesionHash    String?
+  sesionExpiraEn     DateTime? @db.Timestamptz
+  ventanaEnviosDesde DateTime? @db.Timestamptz
+  enviosEnVentana    Int       @default(0)
+  ultimoEnvioEn      DateTime? @db.Timestamptz
+  completadoEn       DateTime? @db.Timestamptz
+  creadoEn           DateTime  @default(now()) @db.Timestamptz
+  actualizadoEn      DateTime  @updatedAt @db.Timestamptz
+
+  @@index([codigoExpiraEn])
+  @@index([sesionExpiraEn])
+}
+
 model ConfiguracionSitio {
   id            String    @id @default(cuid())
   negocioId     String    @unique

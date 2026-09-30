@@ -5,6 +5,12 @@ import { createHash } from "node:crypto";
 import { enviarCorreo } from "./correo";
 import { prisma } from "./prisma";
 import { obtenerSecretoAutenticacion } from "./secreto-autenticacion";
+import {
+  crearOReutilizarCodigo,
+  huellaEmailRecuperacion,
+  reservarEnvioRecuperacion,
+  solicitudInternaAutorizada,
+} from "@/servicios/recuperacion-contrasena.service";
 
 const googleConfigurado = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
@@ -25,16 +31,17 @@ export const autenticacion = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 128,
     requireEmailVerification: true,
-    resetPasswordTokenExpiresIn: 60 * 60,
+    resetPasswordTokenExpiresIn: 10 * 60,
     revokeSessionsOnPasswordReset: true,
-    sendResetPassword: async ({ user, url }) => {
-      await enviarCorreo({
-        destinatario: user.email,
-        asunto: "Restablecé tu contraseña de TurnosRapidos",
-        texto: `Abrí este enlace para elegir una contraseña nueva: ${url}`,
-        claveIdempotencia: claveIdempotenciaCorreo("reset", url),
-        expiraEn: new Date(Date.now() + 60 * 60 * 1000),
-      });
+    sendResetPassword: async ({ user, token }, request) => {
+      const emailHash = huellaEmailRecuperacion(user.email);
+      const permisoInterno =
+        request?.headers.get("x-turnos-reset-budget") ?? null;
+      if (!solicitudInternaAutorizada(permisoInterno, emailHash)) {
+        const limite = await reservarEnvioRecuperacion(emailHash);
+        if (!limite.permitido) return;
+      }
+      await crearOReutilizarCodigo(user.email, token, emailHash);
     },
   },
   emailVerification: {

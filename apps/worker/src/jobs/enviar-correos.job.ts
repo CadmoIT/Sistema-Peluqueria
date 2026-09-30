@@ -39,7 +39,7 @@ export async function procesarCorreosPendientes(_trabajos: Job[]) {
       estado: "FALLIDO",
       texto: "",
       reclamadoEn: null,
-      error: "El enlace de autenticación expiró antes del envío.",
+      error: "El contenido de autenticación expiró antes del envío.",
     },
   });
 
@@ -84,7 +84,7 @@ export async function procesarCorreosPendientes(_trabajos: Job[]) {
           estado: "FALLIDO",
           texto: "",
           reclamadoEn: null,
-          error: "El enlace de autenticación expiró antes del envío.",
+          error: "El contenido de autenticación expiró antes del envío.",
         },
       });
       continue;
