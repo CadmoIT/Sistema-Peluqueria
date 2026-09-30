@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { DIAS_GRACIA_SUSCRIPCION } from "@turnos/config";
 import { prisma } from "../lib/prisma.js";
 import { MAX_INTENTOS_ENTREGA, proximoIntento } from "../lib/reintentos.js";
+import { vincularPagoSuscripcion } from "../lib/vincular-pago-suscripcion.js";
 
 export const COLA_MERCADOPAGO = "procesar-mercadopago";
 const TAMANO_LOTE = 20;
@@ -38,6 +39,17 @@ export async function procesarEventosMercadoPago(_trabajos: Job[]) {
     console.warn("Worker de Mercado Pago en espera: falta el Access Token.");
     return;
   }
+  // Recuperación limitada al fallo histórico corregido: no reactiva otros errores
+  // ni toca eventos procesados o reclamados por otro worker.
+  await prisma.eventoExterno.updateMany({
+    where: {
+      proveedor: "MERCADO_PAGO",
+      tipo: "subscription_authorized_payment",
+      estado: "FALLIDO",
+      error: "El pago no está vinculado a una suscripción identificable.",
+    },
+    data: { estado: "RECIBIDO", intentos: 0, error: null, proximoIntentoEn: null, reclamadoEn: null },
+  });
   const eventos = await prisma.$queryRaw<EventoReclamado[]>`
     WITH por_reclamar AS (
       SELECT "id"
@@ -124,7 +136,7 @@ async function procesarEvento(
       throw new Error(`La factura recurrente ${id} todavía no tiene un pago asociado.`);
     }
     const pago = await obtenerRecurso(`/v1/payments/${encodeURIComponent(String(paymentId))}`);
-    return procesarPago(pago, String(factura.id ?? id));
+    return procesarPago(vincularPagoSuscripcion(pago, factura), String(factura.id ?? id));
   }
   if (evento.tipo === "payment" || evento.tipo === "payments") {
     const pago = await obtenerRecurso(`/v1/payments/${encodeURIComponent(id)}`);
