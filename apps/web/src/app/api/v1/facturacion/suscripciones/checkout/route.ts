@@ -5,6 +5,7 @@ import { PLANES, PLAN_PRO } from "@turnos/config";
 import { prisma } from "@/lib/prisma";
 import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
 import { obtenerContextoApi } from "@/servicios/contexto-api.service";
+import { obtenerCorreoCompradorMercadoPago } from "@/servicios/comprador-mercadopago";
 
 type RespuestaPreapproval = {
   id?: string;
@@ -61,6 +62,16 @@ export async function POST(solicitud: Request) {
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
   const webUrl = process.env.WEB_URL ?? new URL(solicitud.url).origin;
   if (!accessToken) return volver(solicitud, "no-configurada");
+  let correoComprador: string;
+  try {
+    correoComprador = obtenerCorreoCompradorMercadoPago(
+      contexto.usuario.email,
+      process.env.MERCADOPAGO_TEST_PAYER_EMAIL,
+    );
+  } catch {
+    console.error("Configuración inválida de MERCADOPAGO_TEST_PAYER_EMAIL");
+    return volver(solicitud, "error");
+  }
 
   const retornoPlanes = `${webUrl.replace(/\/$/, "")}/panel/planes?facturacion=retorno`;
   const webhookMercadoPago = `${webUrl.replace(/\/$/, "")}/webhooks/mercadopago`;
@@ -137,7 +148,7 @@ export async function POST(solicitud: Request) {
     body: JSON.stringify({
       reason: `TurnosRápidos - ${plan.nombre}`,
       external_reference: contexto.negocio.id,
-      payer_email: contexto.usuario.email,
+      payer_email: correoComprador,
       auto_recurring: {
         frequency: 1,
         frequency_type: "months",

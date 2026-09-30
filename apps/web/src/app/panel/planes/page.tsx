@@ -24,9 +24,9 @@ export default async function PaginaPlanes({
   const suscripcion = negocio.suscripcion;
   const planes = [PLAN_GRATIS, ...PLANES, PLAN_PRO];
   const planActual = suscripcion?.plan ?? PLAN_GRATIS.id;
-  const aviso = suscripcion?.planPendiente
+  const aviso = mensajeFacturacion(parametros.facturacion) ?? (suscripcion?.planPendiente
     ? `Estamos verificando el cambio a ${nombrePlan(suscripcion.planPendiente)}. Tu plan actual se mantiene hasta confirmar el primer pago.`
-    : mensajeFacturacion(parametros.facturacion);
+    : null);
 
   return (
     <div className="panel-contenido facturacion-pantalla">

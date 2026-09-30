@@ -24,6 +24,7 @@ Hay una diferencia importante entre la infraestructura deseada y la arquitectura
 - `DATABASE_URL`: conexión externa de Railway PostgreSQL, con TLS y parámetros de conexión moderados para funciones serverless. No usar la URL privada `*.railway.internal` desde Vercel.
 - `BETTER_AUTH_SECRET`: secreto aleatorio de al menos 32 caracteres.
 - `MERCADOPAGO_ACCESS_TOKEN`: credencial privada de la cuenta que cobra las suscripciones de TurnosRápidos.
+- `MERCADOPAGO_TEST_PAYER_EMAIL`: opcional y solo en la web de Vercel. Para probar con un vendedor ficticio, usar el correo exacto del comprador ficticio (`test_user_…@testuser.com`). No cambia el correo de autenticación ni el destino de los avisos. Todas las contrataciones del entorno usarán ese comprador mientras esté configurado; no habilitar ventas reales así. Eliminar esta variable antes de cambiar a las credenciales del vendedor real. No se necesita en el worker.
 - `MERCADOPAGO_WEBHOOK_SECRET`: secreto de firma generado al configurar Webhooks en Mercado Pago. La URL única es `https://turnosrapidos.com.ar/webhooks/mercadopago`; activar `subscription_preapproval`, `subscription_authorized_payment` y `payment`.
 - La web guarda los correos transaccionales pendientes en PostgreSQL. No necesita una clave de Resend; el worker de Railway es quien los envía.
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `CLOUDINARY_UPLOAD_PRESET`
