@@ -1,5 +1,6 @@
 /** Configura la cola y registra cada trabajo de segundo plano. */
 import PgBoss from "pg-boss";
+import { crearSondeoDurable } from "./lib/sondeo-durable.js";
 import {
   COLA_SINCRONIZAR_GOOGLE,
   sincronizarGoogleCalendar,
@@ -46,36 +47,20 @@ export async function iniciarWorker(databaseUrl: string) {
   await cola.send(COLA_VENCER_RETENCION, {});
   await cola.work(COLA_ENVIAR_RECORDATORIO, procesarRecordatorios);
   await cola.work(COLA_VENCER_RETENCION, procesarRetencionesVencidas);
-  let sondeoPagosEnCurso = false;
-  const sondearPagos = async () => {
-    if (sondeoPagosEnCurso) return;
-    sondeoPagosEnCurso = true;
-    try {
-      await procesarEventosMercadoPago([]);
-    } catch (error) {
-      console.error("Falló el sondeo de la bandeja de Mercado Pago.", error);
-    } finally {
-      sondeoPagosEnCurso = false;
-    }
-  };
+  const sondearPagos = crearSondeoDurable(
+    () => procesarEventosMercadoPago([]),
+    (error) => console.error("Falló el sondeo de la bandeja de Mercado Pago.", error),
+  );
   // Atiende también los trabajos encolados antes de retirar el cron.
   await cola.work(COLA_MERCADOPAGO, sondearPagos);
   await sondearPagos();
   const intervaloPagos = setInterval(() => void sondearPagos(), 5_000);
   intervaloPagos.unref();
 
-  let sondeoCorreosEnCurso = false;
-  const sondearCorreos = async () => {
-    if (sondeoCorreosEnCurso) return;
-    sondeoCorreosEnCurso = true;
-    try {
-      await procesarCorreosPendientes([]);
-    } catch (error) {
-      console.error("Falló el sondeo de la bandeja de correos.", error);
-    } finally {
-      sondeoCorreosEnCurso = false;
-    }
-  };
+  const sondearCorreos = crearSondeoDurable(
+    () => procesarCorreosPendientes([]),
+    (error) => console.error("Falló el sondeo de la bandeja de correos.", error),
+  );
   await sondearCorreos();
   const intervaloCorreos = setInterval(() => void sondearCorreos(), 5_000);
   intervaloCorreos.unref();
