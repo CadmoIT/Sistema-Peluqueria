@@ -1,5 +1,6 @@
 /** Recibe y valida la configuración obligatoria del primer acceso. */
 import { NextResponse } from "next/server";
+import { PLANES, PLAN_GRATIS, PLAN_PRO } from "@turnos/config";
 import { autenticacion } from "@/lib/autenticacion";
 import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
 import { superaLimiteDeclarado } from "@/lib/limite-solicitud";
@@ -10,7 +11,10 @@ type CuerpoConfiguracion = {
   nombreNegocio?: unknown;
   tipoNegocio?: unknown;
   cantidadLocales?: unknown;
+  planId?: unknown;
 };
+
+const planesDisponibles = [PLAN_GRATIS, ...PLANES, PLAN_PRO];
 
 export async function POST(solicitud: Request) {
   if (!esOrigenMismoSitio(solicitud)) {
@@ -41,16 +45,29 @@ export async function POST(solicitud: Request) {
   const tipoNegocio =
     typeof cuerpo?.tipoNegocio === "string" ? cuerpo.tipoNegocio : "";
   const cantidadLocales = Number(cuerpo?.cantidadLocales);
+  const planId = typeof cuerpo?.planId === "string" ? cuerpo.planId : "";
+  const plan = planesDisponibles.find((opcion) => opcion.id === planId);
 
   if (
     nombreNegocio.length < 2 ||
     nombreNegocio.length > 80 ||
     !esRubroValido(tipoNegocio) ||
-    !esCantidadLocalesValida(cantidadLocales)
+    !esCantidadLocalesValida(cantidadLocales) ||
+    !plan
   ) {
     return NextResponse.json(
       { mensaje: "Revisá los datos del negocio antes de continuar." },
       { status: 400 },
+    );
+  }
+
+  if (plan.id !== PLAN_GRATIS.id && !process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    return NextResponse.json(
+      {
+        mensaje:
+          "La contratación de planes pagos todavía no está configurada. Elegí Gratis por 7 días o intentá más tarde.",
+      },
+      { status: 503 },
     );
   }
 
@@ -59,5 +76,5 @@ export async function POST(solicitud: Request) {
     tipoNegocio,
     cantidadLocales,
   });
-  return NextResponse.json(negocio);
+  return NextResponse.json({ ...negocio, planId: plan.id });
 }
