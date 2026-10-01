@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-export function BotonGuardarSitio() {
+export function BotonGuardarSitio({ soloLectura = false }: { soloLectura?: boolean }) {
   const [pendiente, setPendiente] = useState(false);
 
   async function guardar() {
@@ -30,7 +30,7 @@ export function BotonGuardarSitio() {
       type="button"
       className="boton mi-sitio-guardar"
       onClick={guardar}
-      disabled={pendiente}
+      disabled={pendiente || soloLectura}
       aria-busy={pendiente}
     >
       {pendiente ? "Guardando…" : "Guardar"}

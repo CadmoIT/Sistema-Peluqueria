@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { leerTexto } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
-import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
 import {
   eliminarFicha,
   type ResultadoAccion,

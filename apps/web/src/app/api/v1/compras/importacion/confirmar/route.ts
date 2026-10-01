@@ -1,5 +1,6 @@
 /** Confirma una importación de compra reutilizando la misma transacción del formulario manual. */
 import { NextResponse } from "next/server";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
 import { superaLimiteDeclarado } from "@/lib/limite-solicitud";
 import { obtenerContextoApi } from "@/servicios/contexto-api.service";
@@ -16,8 +17,11 @@ export async function POST(solicitud: Request) {
       { mensaje: "La importación es demasiado grande." },
       { status: 413 },
     );
-  if (!(await obtenerContextoApi()))
+  const contexto = await obtenerContextoApi();
+  if (!contexto)
     return NextResponse.json({ mensaje: "Sesión no válida." }, { status: 401 });
+  if (!tieneAccesoOperativo(contexto.negocio.suscripcion))
+    return NextResponse.json({ mensaje: "Activá un plan para importar compras." }, { status: 403 });
   try {
     const entrada = (await solicitud.json()) as {
       filas?: unknown;

@@ -1,3 +1,4 @@
+/** Define el backoff compartido para entregas durables. */
 const ESPERA_ENTRE_INTENTOS_MS = [
   60_000,
   5 * 60_000,

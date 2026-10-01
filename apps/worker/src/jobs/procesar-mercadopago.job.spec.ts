@@ -27,7 +27,13 @@ it("dos eventos de factura para el mismo pago conservan un único pago", async (
     pago: { upsert: async ({ where, create, update }: { where: { proveedorId: string }; create: unknown; update: unknown }) => {
       pagos.set(where.proveedorId, pagos.has(where.proveedorId) ? update : create);
     } },
-    suscripcion: { update: async ({ data }: { data: object }) => Object.assign(suscripcion, data) },
+    suscripcion: {
+      update: async ({ data }: { data: object }) => Object.assign(suscripcion, data),
+      updateMany: async ({ data }: { data: object }) => {
+        if (!("primerPagoEn" in suscripcion)) Object.assign(suscripcion, data);
+        return { count: 1 };
+      },
+    },
     auditoria: { create: async () => ({}) },
   })) as unknown as typeof prisma.$transaction;
   globalThis.fetch = async (url) => Response.json(String(url).includes("authorized_payments")

@@ -10,7 +10,7 @@ import { leerTexto, textoOpcional } from "@/lib/formularios";
 import { sincronizarReservaEnGoogle } from "@/lib/google-calendar";
 import { prisma } from "@/lib/prisma";
 import { fechaLocalAUtc } from "@/servicios/disponibilidad.service";
-import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
 import { fechaValida } from "@/componentes/panel/agenda/agenda-modelo";
 
 export type ResultadoNuevoTurno = { ok: boolean; mensaje: string };

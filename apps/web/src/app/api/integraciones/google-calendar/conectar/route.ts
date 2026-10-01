@@ -1,5 +1,6 @@
 /** Inicia el consentimiento independiente de Google Calendar para el negocio autenticado. */
 import { NextResponse } from "next/server";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { autenticacion } from "@/lib/autenticacion";
 import {
   crearUrlGoogleCalendar,
@@ -29,9 +30,12 @@ export async function GET(solicitud: Request) {
   const sedeId = url.searchParams.get("sedeId");
   const membresia = await prisma.membresia.findFirst({
     where: { usuarioId: sesion.user.id, activo: true },
+    include: { negocio: { include: { suscripcion: true } } },
   });
   if (!membresia)
     return NextResponse.redirect(new URL("/primeros-pasos", solicitud.url));
+  if (!tieneAccesoOperativo(membresia.negocio.suscripcion))
+    return NextResponse.redirect(new URL("/panel/planes?acceso=solo-lectura", solicitud.url));
   if (
     profesionalId &&
     !(await prisma.profesional.findFirst({

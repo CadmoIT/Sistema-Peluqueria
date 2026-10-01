@@ -1,3 +1,4 @@
+/** Actualiza de forma acotada la pantalla mientras se verifica el pago. */
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";

@@ -1,3 +1,4 @@
+/** Verifica la correspondencia entre pago, factura y suscripción. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { vincularPagoSuscripcion } from "./vincular-pago-suscripcion.js";

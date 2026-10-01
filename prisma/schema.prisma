@@ -188,6 +188,7 @@ model Negocio {
   email               String?
   zonaHoraria         String                   @default("America/Argentina/Buenos_Aires")
   publicado           Boolean                  @default(false)
+  sitioRetiradoEn      DateTime?
   politicaContacto    PoliticaContacto         @default(CUALQUIERA)
   configuracion       Json?
   creadoEn            DateTime                 @default(now())
@@ -217,6 +218,8 @@ model Negocio {
   configuracionAvisos ConfiguracionAvisos?
   avisosReserva       AvisoReserva[]
   columnasInventario  ColumnaInventario[]
+
+  @@index([sitioRetiradoEn])
 }
 
 model Membresia {
@@ -687,12 +690,15 @@ model Suscripcion {
   graciaHasta          DateTime?
   pruebaIniciaEn       DateTime?
   pruebaFinalizaEn     DateTime?
+  primerPagoEn         DateTime?
   cancelarAlFinal      Boolean           @default(false)
   planPendiente        String?
   precioPendiente      Decimal?          @db.Decimal(12, 2)
   checkoutIdempotencia String?           @unique
   negocio              Negocio           @relation(fields: [negocioId], references: [id], onDelete: Cascade)
   pagos                Pago[]
+
+  @@index([estado, primerPagoEn, pruebaFinalizaEn])
 }
 
 model ConfiguracionAvisos {

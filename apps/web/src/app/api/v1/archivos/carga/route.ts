@@ -1,6 +1,7 @@
 /** Emite firmas de carga directa para imágenes autenticadas en Cloudinary. */
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { crearFirmaCloudinary } from "@/lib/cloudinary-firma";
 import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
 import { superaLimiteDeclarado } from "@/lib/limite-solicitud";
@@ -24,6 +25,8 @@ export async function POST(solicitud: Request) {
   if (!contexto) {
     return NextResponse.json({ mensaje: "Sesión no válida." }, { status: 401 });
   }
+  if (!tieneAccesoOperativo(contexto.negocio.suscripcion))
+    return NextResponse.json({ mensaje: "Activá un plan para cargar imágenes." }, { status: 403 });
   if (superaLimiteDeclarado(solicitud, 32 * 1024)) {
     return NextResponse.json({ mensaje: "Solicitud demasiado grande." }, { status: 413 });
   }

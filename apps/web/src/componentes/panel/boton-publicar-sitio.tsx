@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-export function BotonPublicarSitio() {
+export function BotonPublicarSitio({ soloLectura = false }: { soloLectura?: boolean }) {
   const [pendiente, setPendiente] = useState(false);
 
   async function publicar() {
@@ -30,7 +30,7 @@ export function BotonPublicarSitio() {
       type="button"
       className="boton mi-sitio-publicar__boton"
       onClick={publicar}
-      disabled={pendiente}
+      disabled={pendiente || soloLectura}
       aria-busy={pendiente}
     >
       {pendiente ? "Publicando…" : "Publicar cambios"}

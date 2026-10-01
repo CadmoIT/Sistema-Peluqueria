@@ -1,3 +1,4 @@
+/** Comprueba que los sondeos no se superpongan y se recuperen de fallos. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { crearSondeoDurable } from "./sondeo-durable.js";

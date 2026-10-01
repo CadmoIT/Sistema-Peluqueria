@@ -1,4 +1,5 @@
 /** Centraliza la marca, los precios y las reglas comerciales compartidas. */
+export * from "./acceso-suscripcion";
 export const MARCA_APP = process.env.MARCA_APP ?? "TurnosRapidos";
 
 export const PLAN_GRATIS = {

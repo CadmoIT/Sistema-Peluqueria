@@ -6,6 +6,7 @@ import {
   PLANES,
   PLAN_GRATIS,
   PLAN_PRO,
+  tieneAccesoOperativo,
 } from "@turnos/config";
 import { obtenerFacturacion } from "@/servicios/panel-datos.service";
 import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
@@ -16,7 +17,7 @@ export const metadata = { title: "Planes" };
 export default async function PaginaPlanes({
   searchParams,
 }: {
-  searchParams: Promise<{ facturacion?: string }>;
+  searchParams: Promise<{ facturacion?: string; acceso?: string }>;
 }) {
   const [{ negocio }, parametros] = await Promise.all([
     obtenerFacturacion(),
@@ -39,6 +40,7 @@ export default async function PaginaPlanes({
       <header className="cabecera-seccion facturacion-cabecera">
         <h1>Planes</h1>
       </header>
+      {parametros.acceso === "solo-lectura" && <p className="facturacion-aviso" role="status">Tu panel está en modo de solo lectura. Elegí Plus o Pro para volver a trabajar con todas las herramientas; tus datos se conservan.</p>}
       {aviso && (esperandoPago
         ? <ConfirmacionPago mensaje={aviso} />
         : <p className="facturacion-aviso" role="status">{aviso}</p>)}
@@ -47,7 +49,7 @@ export default async function PaginaPlanes({
         aria-label="Planes disponibles"
       >
         {planes.map((plan) => {
-          const esActual = plan.id === planActual;
+          const esActual = plan.id === planActual && tieneAccesoOperativo(suscripcion);
           return (
             <article
               key={plan.id}

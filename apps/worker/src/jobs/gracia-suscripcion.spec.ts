@@ -1,3 +1,4 @@
+/** Verifica el vencimiento de gracia sin alterar otros períodos. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Job } from "pg-boss";

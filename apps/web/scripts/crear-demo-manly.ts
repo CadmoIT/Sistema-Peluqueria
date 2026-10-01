@@ -177,7 +177,7 @@ async function crearDemo() {
         politicaContacto: "CUALQUIERA",
         publicado: true,
         membresias: { create: { usuarioId: usuario.id, rol: "DUENO", activo: true } },
-        suscripcion: { create: { plan: "pro", estado: "ACTIVA", precioMensual: 14900 } },
+        suscripcion: { create: { plan: "pro", estado: "ACTIVA", precioMensual: 14900, proximoCobro: new Date(ahora.getTime() + 30 * 86_400_000) } },
       },
     });
 

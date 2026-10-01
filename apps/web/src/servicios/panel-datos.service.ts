@@ -1,5 +1,6 @@
 /** Reúne las consultas del panel y garantiza que siempre estén limitadas al negocio autenticado. */
 import "server-only";
+import { tieneAccesoOperativo } from "@turnos/config";
 
 import { cache } from "react";
 import { periodoReporte, rangoReporte } from "@/lib/reportes-movimientos";
@@ -29,6 +30,15 @@ export const requerirContextoPanel = cache(
     return { usuario: sesion.user, membresia, negocio: membresia.negocio };
   },
 );
+
+/** Las lecturas y facturación conservan el contexto normal; las escrituras usan éste. */
+export async function requerirContextoPanelEditable() {
+  const contexto = await requerirContextoPanel();
+  if (!tieneAccesoOperativo(contexto.negocio.suscripcion)) {
+    redirect("/panel/planes?acceso=solo-lectura");
+  }
+  return contexto;
+}
 
 export async function obtenerResumenPanel(sedeSolicitada?: string) {
   const contexto = await requerirContextoPanel();
@@ -720,8 +730,9 @@ export const obtenerSitioPublico = cache(async function obtenerSitioPublico(
       telefono: true,
       politicaContacto: true,
       publicado: true,
+      sitioRetiradoEn: true,
       suscripcion: {
-        select: { estado: true, pruebaFinalizaEn: true, graciaHasta: true },
+        select: { estado: true, pruebaFinalizaEn: true, graciaHasta: true, proximoCobro: true },
       },
       configuracionSitio: { select: { publicada: true } },
       sedes: {

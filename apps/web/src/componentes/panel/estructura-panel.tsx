@@ -13,17 +13,23 @@ import { obtenerEnlacesPanel, NavegacionPanel } from "./navegacion-panel";
 import { usePerfilNegocio } from "./perfil-negocio-contexto";
 import { NotificacionesPanel } from "./notificaciones-panel";
 import { CuentaPanel } from "./cuenta-panel";
+import { FranjaSuscripcion, type SuscripcionFranja } from "./franja-suscripcion";
+import { usePathname } from "next/navigation";
 
 export function EstructuraPanel({
   children,
   nombreNegocio,
   emailUsuario,
   imagenNegocio,
+  suscripcion,
+  soloLectura,
 }: {
   children: React.ReactNode;
   nombreNegocio: string;
   emailUsuario: string;
   imagenNegocio?: string;
+  suscripcion: SuscripcionFranja | null;
+  soloLectura: boolean;
 }) {
   return (
     <ProveedorNavegacionPanel>
@@ -31,6 +37,8 @@ export function EstructuraPanel({
         nombreNegocio={nombreNegocio}
         emailUsuario={emailUsuario}
         imagenNegocio={imagenNegocio}
+        suscripcion={suscripcion}
+        soloLectura={soloLectura}
       >
         {children}
       </ContenidoEstructuraPanel>
@@ -43,17 +51,22 @@ function ContenidoEstructuraPanel({
   nombreNegocio,
   emailUsuario,
   imagenNegocio,
+  suscripcion,
+  soloLectura,
 }: {
   children: React.ReactNode;
   nombreNegocio: string;
   emailUsuario: string;
   imagenNegocio?: string;
+  suscripcion: SuscripcionFranja | null;
+  soloLectura: boolean;
 }) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [contraido, setContraido] = useState(false);
   const [anchoSidebar, setAnchoSidebar] = useState(248);
   const navegacion = useNavegacionPanel();
   const destino = navegacion?.destino;
+  const ruta = usePathname();
   const enlaces = obtenerEnlacesPanel(usePerfilNegocio());
 
   useEffect(() => {
@@ -112,6 +125,7 @@ function ContenidoEstructuraPanel({
         contraido ? "panel-shell panel-shell--contraido" : "panel-shell"
       }
     >
+      <FranjaSuscripcion suscripcion={suscripcion} />
       <Suspense fallback={null}>
         <NotificacionesPanel />
       </Suspense>
@@ -170,6 +184,9 @@ function ContenidoEstructuraPanel({
           inert={destino ? true : undefined}
           aria-hidden={destino ? true : undefined}
         >
+          {soloLectura && !["/panel/planes", "/panel/facturacion"].includes(ruta) && (
+            <p className="panel-aviso-solo-lectura">Modo de solo lectura: podés consultar y exportar tus datos. Para crear o modificar información, <Link href="/panel/planes">activá un plan</Link>.</p>
+          )}
           {children}
         </div>
       </main>

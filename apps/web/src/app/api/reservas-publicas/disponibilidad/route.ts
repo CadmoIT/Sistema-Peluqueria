@@ -1,5 +1,6 @@
 /** Calcula horarios públicos libres a partir de jornadas, bloqueos y reservas reales. */
 import { NextResponse } from "next/server";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { prisma } from "@/lib/prisma";
 import {
   diaSemanaLocal,
@@ -58,13 +59,14 @@ export async function GET(solicitud: Request) {
     select: {
       id: true,
       publicado: true,
+      sitioRetiradoEn: true,
       zonaHoraria: true,
       suscripcion: {
-        select: { estado: true, pruebaFinalizaEn: true, graciaHasta: true },
+        select: { estado: true, pruebaFinalizaEn: true, graciaHasta: true, proximoCobro: true },
       },
     },
   });
-  if (!negocio || !negocio.publicado || pruebaVencida(negocio.suscripcion)) {
+  if (!negocio || !negocio.publicado || negocio.sitioRetiradoEn || !tieneAccesoOperativo(negocio.suscripcion)) {
     return NextResponse.json(
       { mensaje: "El sitio no está disponible." },
       { status: 404 },
@@ -209,25 +211,6 @@ export async function GET(solicitud: Request) {
   }
 
   return NextResponse.json({ horarios });
-}
-
-function pruebaVencida(
-  suscripcion: {
-    estado: string;
-    pruebaFinalizaEn: Date | null;
-    graciaHasta: Date | null;
-  } | null,
-) {
-  return (
-    suscripcion?.estado === "PAUSADA" ||
-    suscripcion?.estado === "CANCELADA" ||
-    (suscripcion?.estado === "EN_GRACIA" &&
-      !!suscripcion.graciaHasta &&
-      suscripcion.graciaHasta < new Date()) ||
-    (suscripcion?.estado === "CONFIGURACION_GRATUITA" &&
-      !!suscripcion.pruebaFinalizaEn &&
-      suscripcion.pruebaFinalizaEn < new Date())
-  );
 }
 
 function aMinutos(hora: string) {

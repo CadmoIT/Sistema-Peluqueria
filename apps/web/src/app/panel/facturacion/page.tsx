@@ -1,7 +1,7 @@
 /** Muestra el estado de cobro y la información de facturación del negocio. */
 import Link from "next/link";
 import { CreditCard, ReceiptText } from "lucide-react";
-import { formatearPesos, nombrePlan } from "@turnos/config";
+import { formatearPesos, nombrePlan, tieneAccesoOperativo } from "@turnos/config";
 import { obtenerFacturacion } from "@/servicios/panel-datos.service";
 import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 import { ControlRenovacionPlan } from "@/componentes/panel/control-renovacion-plan";
@@ -18,7 +18,7 @@ export default async function PaginaFacturacion() {
   const puedeRenovar = Boolean(
     suscripcion?.proveedorId &&
       ["autogestionado", "pro"].includes(suscripcion.plan) &&
-      ["ACTIVA", "EN_GRACIA"].includes(suscripcion.estado),
+      ["ACTIVA", "EN_GRACIA"].includes(suscripcion.estado) && tieneAccesoOperativo(suscripcion),
   );
 
   return (
@@ -32,7 +32,9 @@ export default async function PaginaFacturacion() {
         <div>
           <h2>{nombrePlan(suscripcion?.plan)}</h2>
           <p>
-            {planPagado && suscripcion?.cancelarAlFinal && suscripcion.proximoCobro
+            {!tieneAccesoOperativo(suscripcion)
+              ? "El período de acceso finalizó. Tus datos están guardados; activá un plan para volver a trabajar."
+              : planPagado && suscripcion?.cancelarAlFinal && suscripcion.proximoCobro
               ? `La renovación está cancelada. Conservás el acceso hasta el ${fecha(suscripcion.proximoCobro)}.`
               : suscripcion?.estado === "ACTIVA" && suscripcion.proximoCobro
                 && planPagado
@@ -148,7 +150,7 @@ export default async function PaginaFacturacion() {
       {puedeRenovar && (
         <section className="facturacion-bloque facturacion-cancelacion">
           <div>
-            <h2>Renovación automática</h2>
+            <h2 id="renovacion-automatica">Renovación automática</h2>
             <p>
               {suscripcion?.cancelarAlFinal && suscripcion.proximoCobro
                 ? `Si la mantenés desactivada, conservás el plan hasta el ${fecha(suscripcion.proximoCobro)} y no se realizará el próximo cobro.`

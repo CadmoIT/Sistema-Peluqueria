@@ -1,3 +1,4 @@
+/** Pruebas aisladas de contratación y control de renovación. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { prisma } from "../lib/prisma";
@@ -10,7 +11,7 @@ test("contratación y renovación con proveedor aislado", async (t) => {
   const env = claves.map((clave) => process.env[clave]);
   const casos = [
     "origen", "sesion", "rol", "plan", "configuracion", "checkout", "reintento", "rechazo", "conexion", "sin-url", "cambio-conexion", "cambio-rechazo",
-    "pausar", "reactivar", "ya-pausada", "cancelada", "referencia", "gratis", "cuerpo", "rechazo-renovacion",
+    "recontratar-vencido", "pausar", "reactivar", "ya-pausada", "cancelada", "referencia", "gratis", "cuerpo", "rechazo-renovacion",
   ];
   try {
     for (const caso of casos) await t.test(caso, async () => {
@@ -25,6 +26,10 @@ test("contratación y renovación con proveedor aislado", async (t) => {
       if (esRenovacion && caso !== "gratis") Object.assign(sub, { plan: "autogestionado", proveedorId: "mp1" });
       if (caso === "reintento") Object.assign(sub, { planPendiente: "autogestionado", precioPendiente: 9900, checkoutIdempotencia: "clave-persistida" });
       if (caso === "configuracion") delete process.env.MERCADOPAGO_ACCESS_TOKEN;
+      if (caso === "recontratar-vencido") Object.assign(sub, {
+        plan: "autogestionado", estado: "CANCELADA", cancelarAlFinal: true, proveedorId: "mp-anterior",
+        proximoCobro: new Date(Date.now() - 86_400_000),
+      });
       const llamadas: RequestInit[] = [];
       const cambios: Record<string, unknown>[] = [];
       prisma.suscripcion.findUnique = (async () => ({ ...sub })) as unknown as typeof original.find;
@@ -48,12 +53,13 @@ test("contratación y renovación con proveedor aislado", async (t) => {
       if (["origen", "rol"].includes(caso)) { assert.equal(resultado.status, 403); assert.equal(llamadas.length, 0); }
       else if (caso === "sesion") { assert.match(resultado.headers.get("location")!, /acceder/); assert.equal(llamadas.length, 0); }
       else if (["plan", "configuracion"].includes(caso)) { assert.equal(llamadas.length, 0); assert.equal(cambios.length, 0); }
-      else if (["checkout", "reintento"].includes(caso)) {
+      else if (["checkout", "reintento", "recontratar-vencido"].includes(caso)) {
         assert.equal(resultado.status, 303); assert.match(resultado.headers.get("location")!, /mercadopago/);
         const cuerpo = JSON.parse(String(llamadas[0]!.body));
         assert.equal(cuerpo.status, "pending"); assert.equal(cuerpo.payer_email, "cliente@example.com");
         assert.equal(cuerpo.auto_recurring.transaction_amount, 9900); assert.equal(cuerpo.external_reference, "n1");
-        assert.equal(sub.plan, "PRUEBA", "checkout no activa un plan sin pago");
+        assert.equal(sub.plan, caso === "recontratar-vencido" ? "autogestionado" : "PRUEBA", "checkout no activa un plan sin pago");
+        assert.equal(sub.cancelarAlFinal, false, "una nueva suscripción inicia con renovación habilitada");
         if (caso === "reintento") assert.equal((llamadas[0]!.headers as Record<string, string>)["X-Idempotency-Key"], "clave-persistida");
       } else if (["rechazo", "conexion", "sin-url", "cambio-conexion", "cambio-rechazo"].includes(caso)) {
         assert.match(resultado.headers.get("location")!, /facturacion=error/); assert.equal(sub.proveedorId, caso.startsWith("cambio-") ? "mp1" : null); assert.equal(sub.plan, "PRUEBA");

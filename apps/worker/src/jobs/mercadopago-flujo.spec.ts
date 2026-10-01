@@ -1,3 +1,4 @@
+/** Aísla el proveedor para probar pagos, reintentos y estados de suscripción. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { prisma } from "../lib/prisma.js";
@@ -42,7 +43,13 @@ test("bandeja, pagos y ciclo de vida con proveedor y almacenamiento simulados", 
       }) as unknown as typeof prisma.suscripcion.updateMany;
       prisma.$transaction = (async (fn: (tx: unknown) => Promise<void>) => fn({
         pago: { upsert: async ({ where, create }: { where: { proveedorId: string }; create: unknown }) => pagos.set(where.proveedorId, create) },
-        suscripcion: { update: async ({ data }: { data: object }) => Object.assign(sub, data) },
+        suscripcion: {
+          update: async ({ data }: { data: object }) => Object.assign(sub, data),
+          updateMany: async ({ data }: { data: object }) => {
+            if (!sub.primerPagoEn) Object.assign(sub, data);
+            return { count: 1 };
+          },
+        },
         auditoria: { create: async () => ({}) },
       })) as unknown as typeof prisma.$transaction;
       globalThis.fetch = async (url) => {

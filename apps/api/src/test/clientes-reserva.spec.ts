@@ -20,7 +20,7 @@ test.each([false, true])(
         findFirst: jest.fn().mockResolvedValue({
           id: "negocio",
           politicaContacto: "EMAIL",
-          suscripcion: null,
+          suscripcion: { estado: "ACTIVA", proximoCobro: new Date("2031-01-01") },
         }),
       },
       servicio: {

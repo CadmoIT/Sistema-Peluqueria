@@ -2,10 +2,11 @@
 import { Prisma } from "@prisma/client";
 import { leerTexto } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
-import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
 
 export async function persistirBorradorSitio(datos: FormData) {
   const { negocio } = await requerirContextoPanel();
+  if (negocio.sitioRetiradoEn) throw new Error("Primero recuperá tu sitio desde Mi sitio.");
   const sedeId = leerTexto(datos, "localId");
   const sede = await prisma.sede.findFirst({
     where: { id: sedeId, negocioId: negocio.id, activa: true },
@@ -132,6 +133,7 @@ function validarEnlaceGoogleMaps(valor: string) {
 /** Publica el último borrador guardado y devuelve los datos necesarios para invalidar las vistas. */
 export async function publicarBorradorSitio() {
   const { negocio } = await requerirContextoPanel();
+  if (negocio.sitioRetiradoEn) throw new Error("Primero recuperá tu sitio desde Mi sitio.");
   const configuracion = await prisma.configuracionSitio.findUnique({
     where: { negocioId: negocio.id },
     select: { borrador: true },

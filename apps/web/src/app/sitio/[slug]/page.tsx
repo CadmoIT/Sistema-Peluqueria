@@ -1,6 +1,6 @@
 /** Resuelve el negocio solicitado y presenta su versión publicada o su suspensión. */
 import { notFound } from "next/navigation";
-import { PLANES } from "@turnos/config";
+import { PLANES, tieneAccesoOperativo } from "@turnos/config";
 import {
   SitioPublico,
   SitioSuspendido,
@@ -18,6 +18,7 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const negocio = await obtenerSitioPublico(slug);
+  if (negocio?.sitioRetiradoEn) return { title: "Sitio no disponible", robots: { index: false, follow: false } };
   return negocio
     ? {
         title: negocio.nombre,
@@ -35,19 +36,10 @@ export default async function PaginaSitio({
   const { slug } = await params;
   const negocio = await obtenerSitioPublico(slug);
   if (!negocio) notFound();
-  const pruebaVencida =
-    negocio.suscripcion?.estado === "CONFIGURACION_GRATUITA" &&
-    negocio.suscripcion.pruebaFinalizaEn &&
-    negocio.suscripcion.pruebaFinalizaEn.getTime() < Date.now();
-  const graciaVencida =
-    negocio.suscripcion?.estado === "EN_GRACIA" &&
-    negocio.suscripcion.graciaHasta &&
-    negocio.suscripcion.graciaHasta.getTime() < Date.now();
+  if (negocio.sitioRetiradoEn) notFound();
   if (
     !negocio.publicado ||
-    pruebaVencida ||
-    graciaVencida ||
-    ["PAUSADA", "CANCELADA"].includes(negocio.suscripcion?.estado ?? "")
+    !tieneAccesoOperativo(negocio.suscripcion)
   ) {
     return (
       <SitioSuspendido

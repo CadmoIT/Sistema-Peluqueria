@@ -262,6 +262,10 @@ async function procesarPago(pagoMP: RecursoMP, facturaId?: string) {
     });
 
     if (estado === "APROBADO") {
+      await tx.suscripcion.updateMany({
+        where: { id: suscripcion.id, primerPagoEn: null },
+        data: { primerPagoEn: fechaAprobada ?? new Date() },
+      });
       await tx.suscripcion.update({
         where: { id: suscripcion.id },
         data: {

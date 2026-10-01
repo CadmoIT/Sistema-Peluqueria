@@ -1,0 +1,46 @@
+/** Avisos compactos de vigencia, sin alterar la altura del encabezado. */
+.panel-shell:has(.panel-franja-suscripcion) { grid-template-rows: auto minmax(0, 1fr); }
+.panel-franja-suscripcion {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 16px;
+  min-height: 32px;
+  color: #14516a;
+  background: linear-gradient(100deg, #eaf7fa, #f2f7fd);
+  border-bottom: 1px solid #d7e9ef;
+  font: 400 12px/1.4 var(--fuente-marca);
+}
+.panel-franja-suscripcion--vencimiento {
+  color: #6e4b14;
+  background: linear-gradient(100deg, #fff7e7, #fffaf1);
+  border-color: #f1e2c5;
+}
+.panel-franja-suscripcion > svg { flex-shrink: 0; }
+.panel-franja-suscripcion a {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.panel-aviso-solo-lectura {
+  margin: 12px clamp(20px, 3vw, 48px) 0;
+  padding: 10px 12px;
+  background: #f4f7f8;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #50616b;
+}
+.panel-aviso-solo-lectura a { text-decoration: underline; }
+.sitio-recuperacion { max-width: 600px; margin: 28px 0; padding: 24px; border: 1px solid #d7e9ef; border-radius: 16px; background: #f5fafb; }
+.sitio-recuperacion p { margin: 12px 0; color: #50616b; }
+@media (max-width: 600px) {
+  .panel-franja-suscripcion { flex-wrap: wrap; gap: 4px 7px; padding: 6px 12px; font-size: 11px; }
+  .panel-franja-suscripcion span { flex: 1; }
+}

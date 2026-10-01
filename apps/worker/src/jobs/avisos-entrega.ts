@@ -1,5 +1,6 @@
 /** Entrega avisos pendientes verificando de nuevo turno, plan y consentimiento. */
 import { prisma } from "../lib/prisma.js";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { enviarCorreoResend, resendConfigurado } from "@turnos/correo";
 import {
   enviarPlantillaWhatsapp,
@@ -100,15 +101,6 @@ export async function entregarAvisos() {
     }
     const ajustes = negocio.configuracionAvisos;
     const suscripcion = negocio.suscripcion;
-    const pruebaVigente =
-      suscripcion?.estado === "CONFIGURACION_GRATUITA" &&
-      Boolean(
-        suscripcion.pruebaFinalizaEn && suscripcion.pruebaFinalizaEn > ahora,
-      );
-    const planVigente =
-      suscripcion?.estado === "ACTIVA" ||
-      (suscripcion?.estado === "EN_GRACIA" &&
-        Boolean(suscripcion.graciaHasta && suscripcion.graciaHasta > ahora));
     const turnoVigente = turnoSigueVigente(
       reserva.estado,
       reserva.inicio,
@@ -137,7 +129,7 @@ export async function entregarAvisos() {
       );
 
     if (
-      (!pruebaVigente && !planVigente) ||
+      !tieneAccesoOperativo(suscripcion, ahora) ||
       !turnoVigente ||
       (aviso.canal === "EMAIL" ? !emailHabilitado : !whatsappHabilitado)
     ) {

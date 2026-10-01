@@ -5,7 +5,7 @@ import { eliminarFicha, type ResultadoAccion } from "@/servicios/eliminacion-fic
 import { revalidatePath } from "next/cache";
 import { leerTexto, textoOpcional } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
-import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
 
 export async function crearProfesional(datos: FormData) {
   const { negocio } = await requerirContextoPanel();

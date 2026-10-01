@@ -1,3 +1,4 @@
+/** Inicia la contratación autenticada sin habilitar acceso antes del pago. */
 import { ejecutarCheckoutMercadoPago } from "@/servicios/checkout-mercadopago";
 import { obtenerContextoApi } from "@/servicios/contexto-api.service";
 

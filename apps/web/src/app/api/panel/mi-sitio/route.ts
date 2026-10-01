@@ -1,5 +1,7 @@
 /** Guarda y publica el borrador autenticado del sitio del negocio. */
 import { NextResponse } from "next/server";
+import { tieneAccesoOperativo } from "@turnos/config";
+import { obtenerContextoApi } from "@/servicios/contexto-api.service";
 import { revalidatePath } from "next/cache";
 import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
 import { superaLimiteDeclarado } from "@/lib/limite-solicitud";
@@ -18,6 +20,12 @@ export async function POST(request: Request) {
       { status: 413 },
     );
   }
+  const contexto = await obtenerContextoApi();
+  if (!contexto) return NextResponse.json({ error: "Sesión no válida." }, { status: 401 });
+  if (!tieneAccesoOperativo(contexto.negocio.suscripcion))
+    return NextResponse.json({ error: "Activá un plan para modificar tu sitio." }, { status: 403 });
+  if (contexto.negocio.sitioRetiradoEn)
+    return NextResponse.json({ error: "Primero recuperá tu sitio desde Mi sitio." }, { status: 403 });
   try {
     const datos = await request.formData();
     const { sedeId } = await persistirBorradorSitio(datos);

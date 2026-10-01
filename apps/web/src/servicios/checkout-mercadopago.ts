@@ -1,7 +1,7 @@
 /** Inicia el checkout recurrente y guarda el cambio como pendiente hasta su confirmación. */
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { PLANES, PLAN_PRO } from "@turnos/config";
+import { PLANES, PLAN_PRO, tieneAccesoOperativo } from "@turnos/config";
 import { prisma } from "@/lib/prisma";
 import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
 import type { obtenerContextoApi } from "@/servicios/contexto-api.service";
@@ -51,11 +51,12 @@ export async function ejecutarCheckoutMercadoPago(solicitud: Request, obtenerCon
   if (
     suscripcionActual.plan === plan.id &&
     suscripcionActual.estado === "ACTIVA" &&
+    tieneAccesoOperativo(suscripcionActual) &&
     !suscripcionActual.cancelarAlFinal
   ) {
     return volver(solicitud, "plan-actual");
   }
-  if (suscripcionActual.cancelarAlFinal) {
+  if (suscripcionActual.cancelarAlFinal && tieneAccesoOperativo(suscripcionActual)) {
     return volver(solicitud, "cancelacion-en-curso");
   }
 
@@ -188,7 +189,7 @@ export async function ejecutarCheckoutMercadoPago(solicitud: Request, obtenerCon
 
   await prisma.suscripcion.update({
     where: { id: suscripcionActual.id },
-    data: { proveedorId: resultado.id },
+    data: { proveedorId: resultado.id, cancelarAlFinal: false },
   });
   return NextResponse.redirect(checkoutUrl, 303);
 }

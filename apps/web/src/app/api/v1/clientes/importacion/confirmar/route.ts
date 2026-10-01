@@ -1,5 +1,6 @@
 /** Guarda filas revisadas en una transacción sin reemplazar datos existentes. */
 import { NextResponse } from "next/server";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
 import { superaLimiteDeclarado } from "@/lib/limite-solicitud";
 import { Prisma } from "@prisma/client";
@@ -26,6 +27,8 @@ export async function POST(solicitud: Request) {
   const contexto = await obtenerContextoApi();
   if (!contexto)
     return NextResponse.json({ mensaje: "Sesión no válida." }, { status: 401 });
+  if (!tieneAccesoOperativo(contexto.negocio.suscripcion))
+    return NextResponse.json({ mensaje: "Tu panel está en modo de solo lectura. Activá un plan para importar clientes." }, { status: 403 });
   try {
     const entrada = leerSolicitudImportacion(await solicitud.json());
     const resultado = await prisma.$transaction(

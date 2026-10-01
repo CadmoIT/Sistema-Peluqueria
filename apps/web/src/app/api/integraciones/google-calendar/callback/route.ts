@@ -1,5 +1,6 @@
 /** Completa OAuth de Google Calendar, cifra los tokens y ejecuta la primera sincronización. */
 import { NextResponse } from "next/server";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { after } from "next/server";
 import { autenticacion } from "@/lib/autenticacion";
 import {
@@ -39,8 +40,11 @@ export async function GET(solicitud: Request) {
         negocioId: estado.negocioId,
         activo: true,
       },
+      include: { negocio: { include: { suscripcion: true } } },
     });
     if (!membresia) throw new Error("La membresía ya no está activa.");
+    if (!tieneAccesoOperativo(membresia.negocio.suscripcion))
+      return NextResponse.redirect(new URL("/panel/planes?acceso=solo-lectura", solicitud.url));
     const conexionId = await guardarConexionGoogle(estado, tokens);
     after(() => sincronizarTurnosGoogle(conexionId));
     return NextResponse.redirect(retorno("conectado"));

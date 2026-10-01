@@ -1,5 +1,6 @@
 /** Protege el panel con sesión válida y carga sus estilos específicos. */
 import { Toaster } from "sonner";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { requerirContextoPanel } from "@/servicios/panel-datos.service";
 import { EstructuraPanel } from "@/componentes/panel/estructura-panel";
 import { obtenerPerfilNegocio } from "@/lib/perfiles-negocio";
@@ -13,6 +14,7 @@ import "./panel-mi-sitio.css";
 import "./panel-responsive.css";
 import "./panel-tipografia.css";
 import "./panel-formularios.css";
+import "./panel-suscripcion.css";
 import "../sitio/sitio.css";
 
 export default async function LayoutPanel({
@@ -37,6 +39,15 @@ export default async function LayoutPanel({
         nombreNegocio={membresia.negocio.nombre}
         emailUsuario={usuario.email}
         imagenNegocio={imagenNegocio}
+        suscripcion={membresia.negocio.suscripcion ? {
+          estado: membresia.negocio.suscripcion.estado,
+          plan: membresia.negocio.suscripcion.plan,
+          cancelarAlFinal: membresia.negocio.suscripcion.cancelarAlFinal,
+          pruebaFinalizaEn: membresia.negocio.suscripcion.pruebaFinalizaEn?.toISOString() ?? null,
+          proximoCobro: membresia.negocio.suscripcion.proximoCobro?.toISOString() ?? null,
+          graciaHasta: membresia.negocio.suscripcion.graciaHasta?.toISOString() ?? null,
+        } : null}
+        soloLectura={!tieneAccesoOperativo(membresia.negocio.suscripcion)}
       >
         {children}
         <Toaster

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { leerTexto } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
 import { resolverColumnas } from "@/lib/columnas-inventario";
-import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
 import { ajustarExistencia, guardarValoresLibres } from "@/servicios/inventario-operaciones.service";
 import { eliminarFicha, type ResultadoAccion } from "@/servicios/eliminacion-fichas.service";
 function revalidar() { for (const ruta of ["inventario", "caja", "resumen", "reportes"]) revalidatePath(`/panel/${ruta}`); }

@@ -1,5 +1,6 @@
 /** Programa confirmaciones y recordatorios para todos los orígenes de reservas. */
 import type { CanalAviso, TipoAviso } from "@prisma/client";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { prisma } from "../lib/prisma.js";
 import { correspondeRecordatorio, hayConsentimientoWhatsapp, UN_DIA_MS } from "./avisos-reglas.js";
 
@@ -33,11 +34,7 @@ export async function programarAvisos() {
     if (!reserva.cliente || !reserva.profesionalId) continue;
     const suscripcion = reserva.negocio.suscripcion;
     const ajustes = reserva.negocio.configuracionAvisos;
-    const pruebaVigente = suscripcion?.estado === "CONFIGURACION_GRATUITA" &&
-      Boolean(suscripcion.pruebaFinalizaEn && suscripcion.pruebaFinalizaEn > ahora);
-    const planVigente = suscripcion?.estado === "ACTIVA" ||
-      (suscripcion?.estado === "EN_GRACIA" && Boolean(suscripcion.graciaHasta && suscripcion.graciaHasta > ahora));
-    if (!pruebaVigente && !planVigente) continue;
+    if (!tieneAccesoOperativo(suscripcion, ahora)) continue;
 
     const permiteWhatsapp = hayConsentimientoWhatsapp(
       suscripcion?.plan,

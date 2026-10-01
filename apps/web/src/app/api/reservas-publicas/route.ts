@@ -1,5 +1,6 @@
 /** Valida y crea reservas públicas para el negocio resuelto por slug. */
 import { randomUUID } from "node:crypto";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { after, NextResponse } from "next/server";
 import { Prisma, type Cliente } from "@prisma/client";
 import { sincronizarReservaEnGoogle } from "@/lib/google-calendar";
@@ -90,26 +91,20 @@ export async function POST(solicitud: Request) {
     select: {
       id: true,
       publicado: true,
+      sitioRetiradoEn: true,
       politicaContacto: true,
       zonaHoraria: true,
       suscripcion: {
-        select: { estado: true, pruebaFinalizaEn: true, graciaHasta: true },
+        select: { estado: true, pruebaFinalizaEn: true, graciaHasta: true, proximoCobro: true },
       },
     },
   });
-  if (!negocio || !negocio.publicado)
+  if (!negocio || !negocio.publicado || negocio.sitioRetiradoEn)
     return respuesta("Este sitio no está disponible.", 404);
   if (
-    negocio.suscripcion?.estado === "PAUSADA" ||
-    negocio.suscripcion?.estado === "CANCELADA" ||
-    (negocio.suscripcion?.estado === "EN_GRACIA" &&
-      negocio.suscripcion.graciaHasta &&
-      negocio.suscripcion.graciaHasta < new Date()) ||
-    (negocio.suscripcion?.estado === "CONFIGURACION_GRATUITA" &&
-      negocio.suscripcion.pruebaFinalizaEn &&
-      negocio.suscripcion.pruebaFinalizaEn < new Date())
+    !tieneAccesoOperativo(negocio.suscripcion)
   )
-    return respuesta("La prueba de este negocio finalizó.", 403);
+    return respuesta("Este sitio no está recibiendo reservas.", 403);
   const aceptaWhatsapp = entrada.aceptaWhatsapp === true && Boolean(telefono);
   if (negocio.politicaContacto === "EMAIL" && !email)
     return respuesta("Ingresá tu correo para reservar.", 400);

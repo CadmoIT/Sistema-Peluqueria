@@ -1,3 +1,4 @@
+/** Reconcilia el identificador de suscripción sin aceptar relaciones contradictorias. */
 type Recurso = { id?: string | number; preapproval_id?: string | number };
 type Factura = Recurso & { payment?: { id?: string | number } };
 

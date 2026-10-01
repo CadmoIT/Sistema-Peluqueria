@@ -1,5 +1,6 @@
 /** Consulta en PostgreSQL la versión pública y publicada de cada negocio. */
 import { Injectable } from "@nestjs/common";
+import { tieneAccesoOperativo } from "@turnos/config";
 import type { NegocioPublico } from "@turnos/contratos";
 import type { NegociosRepository } from "../contracts/negocios.repository";
 import { PrismaService } from "../../services/prisma.service";
@@ -12,12 +13,13 @@ export class NegociosPrismaRepository implements NegociosRepository {
     const negocio = await this.prisma.negocio.findFirst({
       where: { slug, publicado: true },
       include: {
+        suscripcion: true,
         sedes: { where: { activa: true } },
         servicios: { where: { activo: true }, include: { categoria: true } },
         profesionales: { where: { activo: true } },
       },
     });
-    if (!negocio) return null;
+    if (!negocio || negocio.sitioRetiradoEn || !tieneAccesoOperativo(negocio.suscripcion)) return null;
     const sede = negocio.sedes[0];
     return {
       id: negocio.id,

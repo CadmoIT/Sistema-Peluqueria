@@ -17,7 +17,7 @@ export async function obtenerContextoApi() {
       usuarioId: sesion.user.id,
       activo: true,
     },
-    include: { negocio: true },
+    include: { negocio: { include: { suscripcion: true } } },
   });
 
   if (!membresia) return null;

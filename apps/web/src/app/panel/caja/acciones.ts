@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { leerTexto } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
-import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
 import { resolverAtribucion, vender } from "@/servicios/ventas-operaciones.service";
 import type { ResultadoAccion } from "@/servicios/eliminacion-fichas.service";
 function revalidar() { for (const ruta of ["caja", "inventario", "resumen", "reportes"]) revalidatePath(`/panel/${ruta}`); }

@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { leerTexto, textoOpcional } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
-import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
 import { esTipoNegocio, puedeCambiarTipoNegocio } from "@/lib/perfiles-negocio";
 import { guardarRubroNegocio } from "@/servicios/rubro-negocio.service";
 

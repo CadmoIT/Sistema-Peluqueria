@@ -1,3 +1,4 @@
+/** Impide mezclar compradores reales y ficticios en la configuración. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { obtenerCorreoCompradorMercadoPago } from "./comprador-mercadopago";

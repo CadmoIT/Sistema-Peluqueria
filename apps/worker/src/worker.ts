@@ -1,5 +1,6 @@
 /** Configura la cola y registra cada trabajo de segundo plano. */
 import PgBoss from "pg-boss";
+import { COLA_RETIRAR_SITIOS, retirarSitiosSinPlan } from "./jobs/retirar-sitios.job.js";
 import { crearSondeoDurable } from "./lib/sondeo-durable.js";
 import {
   COLA_SINCRONIZAR_GOOGLE,
@@ -27,6 +28,10 @@ export async function iniciarWorker(databaseUrl: string) {
   });
 
   await cola.start();
+  await cola.createQueue(COLA_RETIRAR_SITIOS);
+  await cola.schedule(COLA_RETIRAR_SITIOS, "* * * * *", {}, { tz: "UTC" });
+  await cola.work(COLA_RETIRAR_SITIOS, retirarSitiosSinPlan);
+  await cola.send(COLA_RETIRAR_SITIOS, {});
   await cola.createQueue(COLA_SINCRONIZAR_GOOGLE);
   await cola.schedule(
     COLA_SINCRONIZAR_GOOGLE,

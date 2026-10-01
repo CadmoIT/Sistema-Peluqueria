@@ -1,5 +1,6 @@
 /** Actualiza bajo demanda los calendarios conectados del negocio autenticado. */
 import { NextResponse } from "next/server";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { autenticacion } from "@/lib/autenticacion";
 import {
   sincronizarConexionGoogle,
@@ -21,9 +22,12 @@ export async function POST(solicitud: Request) {
     return NextResponse.json({ mensaje: "Sesión requerida" }, { status: 401 });
   const membresia = await prisma.membresia.findFirst({
     where: { usuarioId: sesion.user.id, activo: true },
+    include: { negocio: { include: { suscripcion: true } } },
   });
   if (!membresia)
     return NextResponse.json({ mensaje: "Negocio requerido" }, { status: 403 });
+  if (!tieneAccesoOperativo(membresia.negocio.suscripcion))
+    return NextResponse.json({ mensaje: "Activá un plan para sincronizar calendarios." }, { status: 403 });
   if (!googleCalendarConfigurado())
     return NextResponse.json(
       { ok: false, mensaje: "Google Calendar todavía no está configurado." },

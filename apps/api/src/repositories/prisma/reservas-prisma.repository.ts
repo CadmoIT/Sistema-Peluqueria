@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma, type Cliente } from "@prisma/client";
+import { tieneAccesoOperativo } from "@turnos/config";
 import { Reserva } from "../../domain/entities/reserva.entity";
 import type { CrearReservaDto } from "../../dto/reservas/crear-reserva.dto";
 import type { ReservasRepository } from "../contracts/reservas.repository";
@@ -20,6 +21,11 @@ export class ReservasPrismaRepository implements ReservasRepository {
       where: { id: reserva.id },
     });
     if (existente) {
+      const negocio = await this.prisma.negocio.findUnique({
+        where: { id: existente.negocioId }, include: { suscripcion: true },
+      });
+      if (!negocio || !negocio.publicado || negocio.sitioRetiradoEn || !tieneAccesoOperativo(negocio.suscripcion))
+        throw new NotFoundException("El sitio no está recibiendo reservas.");
       await this.prisma.reserva.update({
         where: { id: reserva.id },
         data: { estado: reserva.estado },
@@ -111,18 +117,8 @@ export class ReservasPrismaRepository implements ReservasRepository {
           });
           if (!negocio)
             throw new NotFoundException("El negocio no está disponible.");
-          const pruebaVencida =
-            negocio.suscripcion?.estado === "CONFIGURACION_GRATUITA" &&
-            negocio.suscripcion.pruebaFinalizaEn &&
-            negocio.suscripcion.pruebaFinalizaEn < new Date();
-          const graciaVencida =
-            negocio.suscripcion?.estado === "EN_GRACIA" &&
-            negocio.suscripcion.graciaHasta &&
-            negocio.suscripcion.graciaHasta < new Date();
           if (
-            pruebaVencida ||
-            graciaVencida ||
-            ["PAUSADA", "CANCELADA"].includes(negocio.suscripcion?.estado ?? "")
+            negocio.sitioRetiradoEn || !tieneAccesoOperativo(negocio.suscripcion)
           ) {
             throw new NotFoundException(
               "El sitio no está recibiendo reservas.",

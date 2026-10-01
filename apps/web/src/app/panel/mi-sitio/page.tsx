@@ -10,6 +10,8 @@ import { obtenerSitioEditable } from "@/servicios/panel-datos.service";
 import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 import { ExternalLink } from "lucide-react";
 import { enlaceSitioPublico } from "@/lib/dominios-publicos";
+import { puedeRecuperarSitio, tieneAccesoOperativo } from "@turnos/config";
+import { RecuperarSitio } from "@/componentes/panel/recuperar-sitio";
 
 export const metadata = { title: "Mi sitio" };
 
@@ -19,6 +21,13 @@ export default async function PaginaMiSitio({
   searchParams: Promise<{ local?: string }>;
 }) {
   const datos = await obtenerSitioEditable();
+  if (datos.negocio.sitioRetiradoEn) return (
+    <div className="panel-contenido">
+      <VistaPanelLista ruta="/panel/mi-sitio" />
+      <header className="cabecera-seccion"><h1>Mi sitio</h1></header>
+      <RecuperarSitio habilitado={puedeRecuperarSitio(datos.negocio.suscripcion)} />
+    </div>
+  );
   const parametros = await searchParams;
   const localSeleccionado =
     datos.sedes.find((sede) => sede.id === parametros.local) ?? datos.sedes[0];
@@ -72,9 +81,9 @@ export default async function PaginaMiSitio({
               valor={localSeleccionado?.id ?? ""}
             />
           )}
-          <BotonGuardarSitio />
+          <BotonGuardarSitio soloLectura={!tieneAccesoOperativo(datos.negocio.suscripcion)} />
           <div className="mi-sitio-publicar">
-            <BotonPublicarSitio />
+            <BotonPublicarSitio soloLectura={!tieneAccesoOperativo(datos.negocio.suscripcion)} />
           </div>
           <a
             className="mi-sitio-pagina-web"
