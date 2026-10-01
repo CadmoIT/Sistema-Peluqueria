@@ -25,10 +25,10 @@ export function FranjaSuscripcion({ suscripcion }: { suscripcion: SuscripcionFra
     graciaHasta: suscripcion.graciaHasta ? new Date(suscripcion.graciaHasta) : null,
   } : null, ahora);
   if (!aviso) return null;
-  const Icono = aviso.tipo === "vencimiento" ? Clock3 : Sparkles;
+  const Icono = aviso.tipo === "vencido" ? Sparkles : Clock3;
   return <aside className={`panel-franja-suscripcion panel-franja-suscripcion--${aviso.tipo}`} aria-label="Estado de tu plan">
     <Icono size={14} aria-hidden="true" />
-    <span>{aviso.texto}</span>
+    <span suppressHydrationWarning>{aviso.texto}</span>
     <Link href={aviso.href}>{aviso.accion}<ArrowUpRight size={14} aria-hidden="true" /></Link>
   </aside>;
 }

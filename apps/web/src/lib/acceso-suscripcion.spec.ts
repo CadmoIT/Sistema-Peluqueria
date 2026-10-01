@@ -7,6 +7,30 @@ const ahora = new Date("2026-10-01T12:00:00Z");
 const fecha = (dias: number) => new Date(ahora.getTime() + dias * DIA_MS);
 const activa = { plan: "autogestionado", estado: "ACTIVA", proximoCobro: fecha(2), cancelarAlFinal: false };
 
+test("la prueba avisa desde exactamente cinco días, sin depender de la renovación", () => {
+  const prueba = { estado: "CONFIGURACION_GRATUITA", pruebaFinalizaEn: fecha(5), cancelarAlFinal: false };
+  assert.equal(avisoSuscripcion({ ...prueba, pruebaFinalizaEn: new Date(fecha(5).getTime() + 1) }, ahora), null);
+  const aviso = avisoSuscripcion(prueba, ahora);
+  assert.equal(aviso?.tipo, "prueba");
+  assert.equal(aviso?.texto, "Tu prueba termina en 5 días, 0 horas y 0 minutos.");
+  assert.equal(aviso?.href, "/panel/planes");
+});
+
+test("el contador descompone días, horas y minutos y actualiza las fronteras", () => {
+  const fin = new Date(ahora.getTime() + 2 * DIA_MS + 3 * 3_600_000 + 20 * 60_000);
+  const prueba = { estado: "CONFIGURACION_GRATUITA", pruebaFinalizaEn: fin };
+  assert.equal(avisoSuscripcion(prueba, ahora)?.texto, "Tu prueba termina en 2 días, 3 horas y 20 minutos.");
+  assert.equal(avisoSuscripcion(prueba, new Date(ahora.getTime() + 60_000))?.texto, "Tu prueba termina en 2 días, 3 horas y 19 minutos.");
+  assert.equal(avisoSuscripcion(prueba, new Date(fin.getTime() - 1))?.texto, "Tu prueba termina en 0 días, 0 horas y 1 minuto.");
+  assert.equal(avisoSuscripcion(prueba, fin)?.tipo, "vencido");
+  assert.equal(avisoSuscripcion(prueba, new Date(fin.getTime() + 1))?.tipo, "vencido");
+});
+
+test("el contador utiliza singular cuando queda un día, una hora y un minuto", () => {
+  const prueba = { estado: "CONFIGURACION_GRATUITA", pruebaFinalizaEn: new Date(ahora.getTime() + DIA_MS + 3_600_000 + 60_000) };
+  assert.equal(avisoSuscripcion(prueba, ahora)?.texto, "Tu prueba termina en 1 día, 1 hora y 1 minuto.");
+});
+
 test("la franja sólo avisa los últimos tres días con renovación desactivada", () => {
   assert.equal(avisoSuscripcion(activa, ahora), null);
   assert.equal(avisoSuscripcion({ ...activa, cancelarAlFinal: true, proximoCobro: fecha(3.001) }, ahora), null);
