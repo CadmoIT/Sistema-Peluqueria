@@ -544,6 +544,8 @@ export async function obtenerFacturacion() {
         plan: true,
         moneda: true,
         estadoProveedor: true,
+        suscripcionId: true,
+        proveedorId: true,
         detalleProveedor: true,
         pagadoEn: true,
         creadoEn: true,

@@ -11,6 +11,7 @@ import {
 import { obtenerFacturacion } from "@/servicios/panel-datos.service";
 import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 import { ConfirmacionPago } from "@/componentes/panel/confirmacion-pago";
+import { hayPagoEnVerificacion } from "@/lib/pago-en-verificacion";
 
 export const metadata = { title: "Planes" };
 
@@ -19,18 +20,18 @@ export default async function PaginaPlanes({
 }: {
   searchParams: Promise<{ facturacion?: string; acceso?: string }>;
 }) {
-  const [{ negocio }, parametros] = await Promise.all([
+  const [{ negocio, pagos }, parametros] = await Promise.all([
     obtenerFacturacion(),
     searchParams,
   ]);
   const suscripcion = negocio.suscripcion;
   const planes = [PLAN_GRATIS, ...PLANES, PLAN_PRO];
   const planActual = suscripcion?.plan ?? PLAN_GRATIS.id;
-  const esperandoPago = Boolean(suscripcion?.planPendiente) &&
+  const esperandoPago = hayPagoEnVerificacion(suscripcion, pagos) &&
     (!parametros.facturacion || parametros.facturacion === "retorno");
   const aviso = esperandoPago
     ? `Pago en verificación. Estamos confirmando el cambio a ${nombrePlan(suscripcion!.planPendiente!)}. Esta pantalla se actualizará automáticamente; tu plan actual se mantiene hasta confirmar el pago.`
-    : parametros.facturacion === "retorno" && suscripcion?.estado === "ACTIVA" && suscripcion.proveedorId
+    : parametros.facturacion === "retorno" && !suscripcion?.planPendiente && suscripcion?.estado === "ACTIVA" && suscripcion.proveedorId
       ? `Tu plan ${nombrePlan(planActual)} está activo.`
       : mensajeFacturacion(parametros.facturacion);
 
@@ -119,7 +120,7 @@ export default async function PaginaPlanes({
 function mensajeFacturacion(estado?: string) {
   switch (estado) {
     case "retorno":
-      return "Volviste de Mercado Pago. Estamos verificando el pago; el plan se actualizará cuando Mercado Pago lo confirme.";
+      return null;
     case "error":
       return "No pudimos iniciar el checkout. No se realizó ningún cambio en tu plan; podés volver a intentarlo.";
     case "no-configurada":
