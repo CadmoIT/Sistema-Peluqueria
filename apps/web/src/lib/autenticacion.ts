@@ -52,8 +52,8 @@ export const autenticacion = betterAuth({
       await enviarCorreo({
         destinatario: user.email,
         asunto: "Verificá tu cuenta de TurnosRapidos",
-        texto: textoVerificacion(user.name, url),
-        html: htmlVerificacion(user.name, url),
+        texto: textoVerificacion(url),
+        html: htmlVerificacion(url),
         claveIdempotencia: claveIdempotenciaCorreo("verificar", url),
         expiraEn: new Date(Date.now() + 60 * 60 * 1000),
       });
@@ -132,14 +132,12 @@ function claveIdempotenciaCorreo(tipo: string, enlace: string) {
   return `${tipo}-${huella}`;
 }
 
-function textoVerificacion(nombre: string, url: string) {
-  const saludo = nombre.trim() ? `Hola ${nombre.trim()},` : "¡Hola!";
-  return `${saludo}\n\n¡Te damos la bienvenida a Turnos Rápidos! Nos alegra que te sumes.\n\nPara confirmar que esta dirección de email es tuya y activar tu cuenta, hacé clic en el siguiente enlace:\n${url}\n\nEl enlace es válido durante una hora. Si no creaste una cuenta en Turnos Rápidos, podés ignorar este mensaje.\n\n¡Gracias por elegirnos!\nEl equipo de Turnos Rápidos`;
+function textoVerificacion(url: string) {
+  return `¡Hola!\n\n¡Te damos la bienvenida a Turnos Rápidos! Nos alegra que te sumes.\n\nPara confirmar que esta dirección de email es tuya y activar tu cuenta, hacé clic en el siguiente enlace:\n${url}\n\nEl enlace es válido durante una hora. Si no creaste una cuenta en Turnos Rápidos, podés ignorar este mensaje.\n\n¡Gracias por elegirnos!\nEl equipo de Turnos Rápidos`;
 }
 
-function htmlVerificacion(nombre: string, url: string) {
+function htmlVerificacion(url: string) {
   const baseUrl = (process.env.WEB_URL ?? process.env.BETTER_AUTH_URL ?? "https://turnosrapidos.com.ar").replace(/\/+$/, "");
-  const saludo = nombre.trim() ? `Hola ${escaparHtml(nombre.trim())},` : "¡Hola!";
   const enlace = escaparHtml(url);
   const logo = `${baseUrl}/marca/favicon.png`;
 
@@ -152,7 +150,7 @@ function htmlVerificacion(nombre: string, url: string) {
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;">
           <tr><td style="height:7px;background:#0798bd;font-size:0;line-height:0;">&nbsp;</td></tr>
           <tr><td style="padding:36px 36px 20px;">
-            <p style="margin:0 0 18px;font-size:16px;line-height:1.5;">${saludo}</p>
+            <p style="margin:0 0 18px;font-size:16px;line-height:1.5;">¡Hola!</p>
             <h1 style="margin:0 0 16px;font-size:25px;line-height:1.25;color:#123451;">¡Te damos la bienvenida a Turnos Rápidos!</h1>
             <p style="margin:0 0 14px;font-size:16px;line-height:1.65;color:#43566a;">Nos alegra que te sumes. Confirmá que esta dirección de email es tuya para activar tu cuenta y empezar a configurar tu negocio.</p>
             <p style="margin:26px 0;text-align:center;">
