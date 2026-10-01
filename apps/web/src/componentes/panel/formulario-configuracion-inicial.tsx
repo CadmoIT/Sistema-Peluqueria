@@ -25,7 +25,7 @@ export function FormularioConfiguracionInicial({
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [tipoNegocio, setTipoNegocio] = useState(tipoNegocioInicial);
-  const [planId, setPlanId] = useState(PLAN_GRATIS.id);
+  const [planId, setPlanId] = useState<(typeof planesDisponibles)[number]["id"]>(PLAN_GRATIS.id);
   const perfil = obtenerPerfilNegocio({ tipoNegocio });
 
   async function continuar(evento: FormEvent<HTMLFormElement>) {
