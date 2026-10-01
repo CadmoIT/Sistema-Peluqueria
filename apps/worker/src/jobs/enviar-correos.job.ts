@@ -12,6 +12,7 @@ type CorreoReclamado = {
   destinatario: string;
   asunto: string;
   texto: string;
+  html: string | null;
   responderA: string | null;
   claveIdempotencia: string;
   intentos: number;
@@ -38,6 +39,7 @@ export async function procesarCorreosPendientes(_trabajos: Job[]) {
     data: {
       estado: "FALLIDO",
       texto: "",
+      html: null,
       reclamadoEn: null,
       error: "El contenido de autenticación expiró antes del envío.",
     },
@@ -72,7 +74,7 @@ export async function procesarCorreosPendientes(_trabajos: Job[]) {
     FROM por_reclamar
     WHERE correo."id" = por_reclamar."id"
     RETURNING correo."id", correo."destinatario", correo."asunto",
-      correo."texto", correo."responderA", correo."claveIdempotencia",
+      correo."texto", correo."html", correo."responderA", correo."claveIdempotencia",
       correo."intentos", correo."expiraEn"
   `;
 
@@ -83,6 +85,7 @@ export async function procesarCorreosPendientes(_trabajos: Job[]) {
         data: {
           estado: "FALLIDO",
           texto: "",
+          html: null,
           reclamadoEn: null,
           error: "El contenido de autenticación expiró antes del envío.",
         },
@@ -95,6 +98,7 @@ export async function procesarCorreosPendientes(_trabajos: Job[]) {
         destinatario: correo.destinatario,
         asunto: correo.asunto,
         texto: correo.texto,
+        html: correo.html ?? undefined,
         responderA: correo.responderA,
         claveIdempotencia: correo.claveIdempotencia,
       });
@@ -105,6 +109,7 @@ export async function procesarCorreosPendientes(_trabajos: Job[]) {
           enviadoEn: new Date(),
           proveedorId,
           texto: "",
+          html: null,
           reclamadoEn: null,
           error: null,
         },
@@ -125,6 +130,7 @@ export async function procesarCorreosPendientes(_trabajos: Job[]) {
         data: {
           estado: siguiente ? "PENDIENTE" : "FALLIDO",
           texto: siguiente ? undefined : "",
+          html: siguiente ? undefined : null,
           proximoIntentoEn: siguiente,
           reclamadoEn: null,
           error: mensaje,

@@ -738,6 +738,7 @@ model CorreoPendiente {
   destinatario      String
   asunto            String
   texto             String                @db.Text
+  html              String?               @db.Text
   responderA        String?
   claveIdempotencia String                @unique
   estado            EstadoCorreoPendiente @default(PENDIENTE)
