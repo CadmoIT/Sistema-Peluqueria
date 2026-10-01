@@ -36,9 +36,19 @@ Los mensajes de error simulados son esperados: las pruebas comprueban su recuper
 
 - Compra ficticia aprobada, entrega real de webhooks 200 y activación de Plus.
 - Usuario confirmó desactivación/reactivación de renovación, conservando el período pagado.
+- Capturas confirmaron renovación visible en Plus, oculta en Gratis e historial del pago en Plus. Esto no certifica los permisos de todas las funciones del servidor.
+- Se detectó que "Administrar suscripción" apuntaba a planes. Se corrigió a "Cambiar plan" y se agregó un enlace separado a `https://www.mercadopago.com.ar/subscriptions`, solo con plan pagado asociado, en otra pestaña. La URL respondió redirigiendo al login oficial; falta verificar autenticado con el comprador que permite ver y gestionar su suscripción. No es un enlace directo a una suscripción ni garantiza por sí solo que pueda editar la tarjeta.
 - La mejora de sondeo cada cinco segundos y actualización visual necesita verificación después de desplegar la versión correspondiente.
 
 ## Pendientes: ejecutar después de aprobar las pruebas automatizadas
+
+### Pausa acordada el 01/10/2026
+
+El usuario reportó HTTP 503 en `railway.com/.railway/__challenge` desde distintos navegadores. Esto no confirma por sí solo que el worker o PostgreSQL estén caídos. Se posponen las comprobaciones que requieren acceso a Railway, especialmente reinicio/recuperación, inspección de eventos, concurrencia y vencimiento en datos aislados. Vercel figura Ready según el usuario.
+
+Al terminar la última prueba que pueda hacerse sin Railway, recordar expresamente retomar estas verificaciones antes de pasar a credenciales reales. No se ha realizado todavía la prueba de recuperación por reinicio. No se creó una automatización ni un aviso programado.
+
+Comprobación real del endpoint Vercel el 01/10/2026: POST con firma deliberadamente inválida respondió 401 y `Firma inválida.`. POST sin firma también respondió 401. Se utilizaron identificadores ficticios y no se enviaron firmas válidas ni se consultaron pagos reales. La inspección directa de PostgreSQL para confirmar ausencia de registros queda pendiente; el código rechaza ambas solicitudes antes de la inserción.
 
 Usar un entorno separado con vendedor/comprador ficticios. No alterar fechas ni detener servicios que atiendan clientes reales.
 

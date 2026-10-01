@@ -126,8 +126,23 @@ export default async function PaginaFacturacion() {
           </p>
         )}
         <Link className="facturacion-enlace" href="/panel/planes">
-          {planPagado ? "Administrar suscripción" : "Ver planes"}
+          {planPagado ? "Cambiar plan" : "Ver planes"}
         </Link>
+        {planPagado && (
+          <p>
+            <a
+              className="facturacion-enlace"
+              href="https://www.mercadopago.com.ar/subscriptions"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Ver suscripciones en Mercado Pago (abre otra pestaña)
+            </a>
+            <br />
+            Iniciá sesión con la cuenta que utilizaste para pagar. La renovación
+            automática también se puede gestionar desde esta página.
+          </p>
+        )}
       </section>
 
       {puedeRenovar && (
