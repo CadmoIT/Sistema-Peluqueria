@@ -15,6 +15,10 @@ export function FormularioAcceso() {
   const router = useRouter();
   const { iniciarIngreso, cancelarIngreso } = useCargaAplicacion();
   const registro = parametros.get("modo") !== "ingreso";
+  const callbackURL = obtenerDestinoSeguro(
+    parametros.get("callbackURL"),
+    registro ? "/primeros-pasos" : "/panel",
+  );
   const [verContrasena, setVerContrasena] = useState(false);
   const [verRepeticion, setVerRepeticion] = useState(false);
   const [cargando, setCargando] = useState(false);
@@ -59,7 +63,7 @@ export function FormularioAcceso() {
             name: nombre,
             email,
             password,
-            callbackURL: "/panel",
+            callbackURL,
           })
         : await clienteAutenticacion.signIn.email({
             email,
@@ -72,6 +76,10 @@ export function FormularioAcceso() {
         if (!registro) cancelarIngreso();
         if (resultado.error.code === "EMAIL_NOT_VERIFIED") {
           setEmailVerificacion(email);
+          setMensaje(
+            "Esta cuenta todavía necesita confirmar su email. Revisá tu correo para continuar.",
+          );
+          return;
         }
         setMensaje(
           resultado.error.message ?? "No pudimos completar la operación.",
@@ -82,12 +90,12 @@ export function FormularioAcceso() {
       if (registro) {
         setEmailVerificacion(email);
         setMensaje(
-          "Te enviamos un enlace para verificar tu email. Revisá tu bandeja de entrada para continuar.",
+          "Te enviamos un enlace de confirmación. Cuando lo abras, vas a volver para continuar con el alta.",
         );
         return;
       }
 
-      router.push("/panel");
+      router.push(callbackURL);
     } catch {
       setCargando(false);
       cancelarIngreso();
@@ -111,7 +119,7 @@ export function FormularioAcceso() {
     try {
       const resultado = await clienteAutenticacion.signIn.social({
         provider: "google",
-        callbackURL: "/panel",
+        callbackURL,
       });
       if (resultado.error) {
         cancelarIngreso();
@@ -129,7 +137,7 @@ export function FormularioAcceso() {
     setCargando(true);
     const resultado = await clienteAutenticacion.sendVerificationEmail({
       email: emailVerificacion,
-      callbackURL: "/panel",
+      callbackURL,
     });
     setCargando(false);
 
@@ -171,6 +179,50 @@ export function FormularioAcceso() {
 
       <section className="acceso__formulario" aria-labelledby="titulo-acceso">
         <div className="formulario-caja">
+          {emailVerificacion ? (
+            <div className="acceso-verificacion">
+              <div className="acceso-verificacion__icono" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M3.5 6.5h17v11h-17z" />
+                  <path d="m4 7 8 6 8-6" />
+                  <path d="m15.7 17.2 1.6 1.6 3.2-3.6" />
+                </svg>
+              </div>
+              <h1 id="titulo-acceso">Confirmá tu email para continuar</h1>
+              <p>
+                Abrí el enlace que enviamos a <strong>{emailVerificacion}</strong>
+                para confirmar que la cuenta es tuya. Después vas a volver
+                automáticamente para seguir con el alta de tu negocio.
+              </p>
+              {mensaje && (
+                <p className="mensaje-acceso" role="status">
+                  {mensaje}
+                </p>
+              )}
+              <button
+                className="reenviar-verificacion"
+                type="button"
+                disabled={cargando}
+                onClick={reenviarVerificacion}
+              >
+                {cargando ? "Enviando enlace…" : "Reenviar email de confirmación"}
+              </button>
+              <p className="acceso-verificacion__ayuda">
+                Si no lo ves, revisá también la carpeta de correo no deseado.
+              </p>
+              <button
+                className="acceso-verificacion__cambiar"
+                type="button"
+                onClick={() => {
+                  setEmailVerificacion("");
+                  setMensaje("");
+                }}
+              >
+                Volver e ingresar con otro email
+              </button>
+            </div>
+          ) : (
+            <>
           <h1 id="titulo-acceso">
             {registro ? "Creá tu cuenta gratis" : "Qué bueno verte"}
           </h1>
@@ -285,17 +337,6 @@ export function FormularioAcceso() {
               </p>
             )}
 
-            {emailVerificacion && (
-              <button
-                className="reenviar-verificacion"
-                type="button"
-                disabled={cargando}
-                onClick={reenviarVerificacion}
-              >
-                Generar otro enlace de verificación
-              </button>
-            )}
-
             <button
               className="boton boton--primario enviar-acceso"
               disabled={cargando}
@@ -310,7 +351,13 @@ export function FormularioAcceso() {
 
           <p className="cambiar-modo">
             {registro ? "¿Ya tenés una cuenta?" : "¿Es tu primera vez?"}{" "}
-            <Link href={registro ? "/acceder?modo=ingreso" : "/acceder"}>
+            <Link
+              href={
+                registro
+                  ? `/acceder?modo=ingreso&callbackURL=${encodeURIComponent(callbackURL)}`
+                  : `/acceder?callbackURL=${encodeURIComponent(callbackURL)}`
+              }
+            >
               {registro ? "Ingresar" : "Crear una cuenta"}
             </Link>
           </p>
@@ -320,10 +367,36 @@ export function FormularioAcceso() {
             <Link href="/terminos">Términos de uso</Link> y la{" "}
             <Link href="/privacidad">Política de privacidad</Link>.
           </small>
+            </>
+          )}
         </div>
       </section>
 
       <small className="acceso__pie">© 2026 Turnos Rápidos</small>
     </main>
   );
+}
+
+function obtenerDestinoSeguro(destino: string | null, predeterminado: string) {
+  if (
+    !destino ||
+    !destino.startsWith("/") ||
+    destino.startsWith("//") ||
+    destino.includes("\\")
+  ) {
+    return predeterminado;
+  }
+  try {
+    const url = new URL(destino, "https://turnos.invalid");
+    if (
+      url.origin !== "https://turnos.invalid" ||
+      url.pathname === "/acceder" ||
+      url.pathname.startsWith("/api/autenticacion")
+    ) {
+      return predeterminado;
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return predeterminado;
+  }
 }

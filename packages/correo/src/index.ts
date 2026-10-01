@@ -3,6 +3,7 @@ export type CorreoTransaccional = {
   destinatario: string;
   asunto: string;
   texto: string;
+  html?: string;
   responderA?: string | null;
   claveIdempotencia?: string;
   expiraEn?: Date;
@@ -38,6 +39,7 @@ export async function enviarCorreoResend(
       to: [correo.destinatario],
       subject: correo.asunto,
       text: correo.texto,
+      ...(correo.html ? { html: correo.html } : {}),
       ...(correo.responderA ? { reply_to: correo.responderA } : {}),
     }),
   });
