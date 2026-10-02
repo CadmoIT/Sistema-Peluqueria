@@ -65,6 +65,9 @@ export const autenticacion = betterAuth({
           clientId: process.env.GOOGLE_CLIENT_ID!,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
           requireEmailVerification: true,
+          // Turnos Rápidos exige una confirmación propia antes de habilitar cuentas nuevas.
+          // Better Auth conserva la verificación guardada para usuarios que ya existen.
+          mapProfileToUser: () => ({ emailVerified: false }),
         },
       }
     : {},
