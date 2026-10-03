@@ -163,9 +163,9 @@ export async function publicarBorradorSitio() {
 
   return {
     negocio,
-    subdominios: sedes.flatMap((sede) =>
+    subdominios: [negocio.subdominio ?? negocio.slug, ...sedes.flatMap((sede) =>
       sede.subdominio ? [sede.subdominio] : [],
-    ),
+    )],
   };
 }
 

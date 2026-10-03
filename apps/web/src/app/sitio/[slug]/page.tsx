@@ -7,6 +7,7 @@ import {
   type DatosSitioPublico,
 } from "@/componentes/sitio/sitio-publico";
 import { obtenerSitioPublico } from "@/servicios/panel-datos.service";
+import { SelectorSucursales } from "@/componentes/sitio/selector-sucursales";
 
 const planPublicacionInicial =
   PLANES.find((plan) => plan.id === "autogestionado") ?? PLANES[0];
@@ -31,9 +32,9 @@ export async function generateMetadata({
 export default async function PaginaSitio({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; sedeId?: string }>;
 }) {
-  const { slug } = await params;
+  const { slug, sedeId } = await params;
   const negocio = await obtenerSitioPublico(slug);
   if (!negocio) notFound();
   if (negocio.sitioRetiradoEn) notFound();
@@ -56,13 +57,20 @@ export default async function PaginaSitio({
   const sedeDelSubdominio = negocio.sedes.find(
     (sede) => sede.subdominio === slug,
   );
+  const sedeSeleccionada = sedeId
+    ? negocio.sedes.find((sede) => sede.id === sedeId)
+    : sedeDelSubdominio ?? (negocio.sedes.length === 1 ? negocio.sedes[0] : undefined);
+  if (sedeId && !sedeSeleccionada) notFound();
+  if (!sedeSeleccionada) {
+    return <SelectorSucursales nombre={negocio.nombre} slug={negocio.subdominio ?? negocio.slug} sedes={negocio.sedes} />;
+  }
   const configuracionesPorLocal = esMapa(publicadaBase.locales)
     ? publicadaBase.locales
     : {};
-  const publicada = sedeDelSubdominio
+  const publicada = sedeSeleccionada
     ? {
         ...publicadaBase,
-        ...(configuracionesPorLocal[sedeDelSubdominio.id] ?? {}),
+        ...(configuracionesPorLocal[sedeSeleccionada.id] ?? {}),
       }
     : publicadaBase;
   const cadena = (campo: string, alternativa = "") =>
@@ -75,7 +83,7 @@ export default async function PaginaSitio({
     publicada.versionSecciones,
   );
   const datos: DatosSitioPublico = {
-    slug,
+    slug: negocio.slug,
     nombre: negocio.nombre,
     descripcion:
       negocio.descripcion ??
@@ -104,12 +112,12 @@ export default async function PaginaSitio({
       instagram: cadena("instagram"),
       googleMapsUrl: cadena(
         "googleMapsUrl",
-        sedeDelSubdominio?.googleMapsUrl ?? negocio.sedes[0]?.googleMapsUrl ?? "",
+        sedeSeleccionada?.googleMapsUrl ?? "",
       ),
       hero,
       secciones,
     },
-    sedes: (sedeDelSubdominio ? [sedeDelSubdominio] : negocio.sedes).map(
+    sedes: [sedeSeleccionada].map(
       (sede) => ({
         id: sede.id,
         nombre: sede.nombre,
@@ -127,8 +135,7 @@ export default async function PaginaSitio({
     servicios: negocio.servicios
       .filter(
         (servicio) =>
-          !sedeDelSubdominio ||
-          servicio.sedes.some((sede) => sede.sedeId === sedeDelSubdominio.id),
+          servicio.sedes.some((sede) => sede.sedeId === sedeSeleccionada.id),
       )
       .map((servicio) => ({
         id: servicio.id,
@@ -143,7 +150,7 @@ export default async function PaginaSitio({
           (asignacion) => asignacion.profesionalId,
         ),
       })),
-    profesionales: negocio.profesionales.map((profesional) => ({
+    profesionales: negocio.profesionales.filter((profesional) => profesional.sedes.some((sede) => sede.sedeId === sedeSeleccionada.id)).map((profesional) => ({
         id: profesional.id,
         nombre: profesional.nombre,
         apellido: profesional.apellido,

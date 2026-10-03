@@ -12,6 +12,7 @@ import { ExternalLink } from "lucide-react";
 import { enlaceSitioPublico } from "@/lib/dominios-publicos";
 import { puedeRecuperarSitio, tieneAccesoOperativo } from "@turnos/config";
 import { RecuperarSitio } from "@/componentes/panel/recuperar-sitio";
+import { EditorSubdominio } from "@/componentes/panel/editor-subdominio";
 
 export const metadata = { title: "Mi sitio" };
 
@@ -88,7 +89,8 @@ export default async function PaginaMiSitio({
           <a
             className="mi-sitio-pagina-web"
             href={enlaceSitioPublico(
-              localSeleccionado?.subdominio ?? datos.negocio.slug,
+              datos.negocio.subdominio ?? datos.negocio.slug,
+              datos.sedes.length > 1 ? localSeleccionado?.id : undefined,
             )}
             target="_blank"
             rel="noreferrer"
@@ -98,6 +100,7 @@ export default async function PaginaMiSitio({
           </a>
         </div>
       </header>
+      {datos.puedeEditarSubdominio && <EditorSubdominio actual={datos.negocio.subdominio ?? datos.negocio.slug} dominio={process.env.PUBLIC_SITE_DOMAIN ?? "turnosrapidos.com.ar"} soloLectura={!tieneAccesoOperativo(datos.negocio.suscripcion)} />}
       <EditorSitio
         inicial={inicial}
         localId={localSeleccionado?.id ?? ""}

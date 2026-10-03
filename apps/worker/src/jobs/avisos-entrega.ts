@@ -160,7 +160,7 @@ export async function entregarAvisos() {
         minute: "2-digit",
         hourCycle: "h23",
       }).format(reserva.inicio),
-      enlace: enlacePublico(reserva.sede.subdominio ?? negocio.slug),
+      enlace: enlacePublico(negocio.subdominio ?? negocio.slug, reserva.sedeId),
     };
 
     try {
@@ -245,7 +245,8 @@ export async function entregarAvisos() {
   }
 }
 
-function enlacePublico(slug: string) {
+function enlacePublico(slug: string, sedeId?: string) {
+  const ruta = sedeId ? `/sucursal/${encodeURIComponent(sedeId)}` : "";
   const dominio = process.env.PUBLIC_SITE_DOMAIN?.trim();
   if (dominio) {
     const host = dominio
@@ -253,9 +254,9 @@ function enlacePublico(slug: string) {
       .replace(/^https?:\/\//, "")
       .replace(/^\*\./, "")
       .replace(/\/+$/, "");
-    return `https://${slug}.${host}`;
+    return `https://${slug}.${host}${ruta}`;
   }
-  return `${(process.env.WEB_URL ?? "http://localhost:3000").replace(/\/$/, "")}/sitio/${slug}`;
+  return `${(process.env.WEB_URL ?? "http://localhost:3000").replace(/\/$/, "")}/sitio/${slug}${ruta}`;
 }
 
 function completar(texto: string, variables: Record<string, string>) {

@@ -12,11 +12,12 @@ export default defineConfig({
   testDir: "./e2e-suscripcion", workers: 1, timeout: 120_000, reporter: "list",
   use: { ...devices["Desktop Chrome"], baseURL, screenshot: "only-on-failure", trace: "retain-on-failure" },
   webServer: {
-    command: "pnpm exec next dev -p 3107", url: `${baseURL}/acceder`, timeout: 120_000, reuseExistingServer: false,
+    command: "pnpm exec next dev -H 127.0.0.1 -p 3107", url: `${baseURL}/acceder`, timeout: 120_000, reuseExistingServer: false,
     env: {
       DATABASE_URL: process.env.DATABASE_URL!, WEB_URL: baseURL, BETTER_AUTH_URL: baseURL,
       BETTER_AUTH_SECRET: "clave-publica-exclusiva-pruebas-locales-sin-cuentas-reales",
       MERCADOPAGO_ACCESS_TOKEN: "", MERCADOPAGO_TEST_PAYER_EMAIL: "",
+      PUBLIC_SITE_DOMAIN: "",
     },
   },
 });

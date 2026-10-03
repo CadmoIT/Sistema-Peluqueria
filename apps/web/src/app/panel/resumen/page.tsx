@@ -42,8 +42,7 @@ export default async function PaginaPanel({
     ? formatoProximoTurno(datos.proximo.inicio, datos.negocio.zonaHoraria)
     : null;
   const sedeSitio =
-    datos.sedes.find((sede) => sede.id === datos.localSeleccionado) ??
-    datos.sedes[0];
+    datos.sedes.find((sede) => sede.id === datos.localSeleccionado);
 
   return (
     <div className="panel-contenido resumen-pagina">
@@ -64,7 +63,8 @@ export default async function PaginaPanel({
               <Link
                 className="enlace-sitio-resumen"
                 href={enlaceSitioPublico(
-                  sedeSitio?.subdominio ?? datos.negocio.slug,
+                  datos.negocio.subdominio ?? datos.negocio.slug,
+                  datos.sedes.length > 1 ? sedeSitio?.id : undefined,
                 )}
                 target="_blank"
                 rel="noreferrer"

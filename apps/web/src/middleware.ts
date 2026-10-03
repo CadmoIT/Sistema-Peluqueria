@@ -19,10 +19,10 @@ export function middleware(solicitud: NextRequest) {
     const slug = host.slice(0, -sufijo.length);
     if (
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) &&
-      solicitud.nextUrl.pathname === "/"
+      (solicitud.nextUrl.pathname === "/" || /^\/sucursal\/[a-zA-Z0-9-]+\/?$/.test(solicitud.nextUrl.pathname))
     ) {
       const destino = solicitud.nextUrl.clone();
-      destino.pathname = `/sitio/${slug}`;
+      destino.pathname = `/sitio/${slug}${solicitud.nextUrl.pathname === "/" ? "" : solicitud.nextUrl.pathname}`;
       return NextResponse.rewrite(destino);
     }
   }

@@ -1,6 +1,7 @@
 /** Reúne las consultas del panel y garantiza que siempre estén limitadas al negocio autenticado. */
 import "server-only";
 import { tieneAccesoOperativo } from "@turnos/config";
+import { claveNombreNegocio } from "@/lib/subdominio-negocio";
 
 import { cache } from "react";
 import { periodoReporte, rangoReporte } from "@/lib/reportes-movimientos";
@@ -490,7 +491,7 @@ export async function obtenerEquipo(sedeSolicitada?: string) {
 }
 
 export async function obtenerSitioEditable() {
-  const { negocio } = await requerirContextoPanel();
+  const { negocio, membresia } = await requerirContextoPanel();
   const [configuracion, sedes, servicios, profesionales] = await Promise.all([
     prisma.configuracionSitio.findUnique({ where: { negocioId: negocio.id } }),
     prisma.sede.findMany({
@@ -505,7 +506,11 @@ export async function obtenerSitioEditable() {
       where: { negocioId: negocio.id, activo: true },
     }),
   ]);
-  return { negocio, configuracion, sedes, servicios, profesionales };
+  const clave = claveNombreNegocio(negocio.nombre);
+  const nombresRepetidos = clave ? await prisma.negocio.count({ where: { nombreClave: clave, id: { not: negocio.id } } }) : 0;
+  return { negocio, configuracion, sedes, servicios, profesionales,
+    puedeEditarSubdominio: nombresRepetidos > 0 && ["DUENO", "ADMIN"].includes(membresia.rol),
+  };
 }
 
 export async function obtenerConfiguracionNegocio() {
@@ -722,11 +727,12 @@ export const obtenerSitioPublico = cache(async function obtenerSitioPublico(
 ) {
   return prisma.negocio.findFirst({
     where: {
-      OR: [{ slug }, { sedes: { some: { subdominio: slug, activa: true } } }],
+      OR: [{ slug }, { subdominio: slug }, { subdominiosAnteriores: { some: { nombre: slug } } }, { sedes: { some: { subdominio: slug, activa: true } } }],
     },
     select: {
       id: true,
       slug: true,
+      subdominio: true,
       nombre: true,
       descripcion: true,
       telefono: true,

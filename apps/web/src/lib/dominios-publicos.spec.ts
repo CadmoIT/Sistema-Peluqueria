@@ -29,3 +29,17 @@ test("construye subdominios seguros para el dominio de producción", () => {
     else delete process.env.PUBLIC_SITE_DOMAIN;
   }
 });
+
+test("identifica sucursales por ruta y nunca agrega local-1 al negocio", () => {
+  const anterior = process.env.PUBLIC_SITE_DOMAIN;
+  try {
+    process.env.PUBLIC_SITE_DOMAIN = "turnosrapidos.com.ar";
+    assert.equal(enlaceSitioPublico("barberstudio"), "https://barberstudio.turnosrapidos.com.ar");
+    assert.equal(enlaceSitioPublico("barberstudio", "sede123"), "https://barberstudio.turnosrapidos.com.ar/sucursal/sede123");
+    delete process.env.PUBLIC_SITE_DOMAIN;
+    assert.equal(enlaceSitioPublico("barberstudio", "sede123"), "/sitio/barberstudio/sucursal/sede123");
+  } finally {
+    if (anterior !== undefined) process.env.PUBLIC_SITE_DOMAIN = anterior;
+    else delete process.env.PUBLIC_SITE_DOMAIN;
+  }
+});

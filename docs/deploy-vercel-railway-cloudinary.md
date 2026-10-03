@@ -20,7 +20,7 @@ Hay una diferencia importante entre la infraestructura deseada y la arquitectura
 
 - `NODE_ENV=production`
 - `WEB_URL=https://turnosrapidos.com.ar` y `BETTER_AUTH_URL=https://turnosrapidos.com.ar`
-- `PUBLIC_SITE_DOMAIN=site.turnosrapidos.com.ar` (sin `https://`, sin `*.`)
+- `PUBLIC_SITE_DOMAIN=turnosrapidos.com.ar` (sin `https://`, sin `*.`). El negocio usa `{negocio}.turnosrapidos.com.ar` y las sedes usan `/sucursal/{id}`; ver [guía actual](subdominios-negocios.md).
 - `DATABASE_URL`: conexión externa de Railway PostgreSQL, con TLS y parámetros de conexión moderados para funciones serverless. No usar la URL privada `*.railway.internal` desde Vercel.
 - `BETTER_AUTH_SECRET`: secreto aleatorio de al menos 32 caracteres.
 - `MERCADOPAGO_ACCESS_TOKEN`: credencial privada de la cuenta que cobra las suscripciones de TurnosRápidos.
@@ -81,9 +81,9 @@ Las imágenes antiguas guardadas en R2 no se copian solas. Mantener temporalment
 
 ## Dominio raíz y subdominios en Vercel
 
-1. Agregar el dominio raíz de la plataforma al proyecto web y configurar `PUBLIC_SITE_DOMAIN=site.turnosrapidos.com.ar` en producción.
-2. Agregar el wildcard `*.site.turnosrapidos.com.ar` al mismo proyecto. El middleware toma el host y reescribe el subdominio `{sede}` internamente a `/sitio/{sede}`; los enlaces de “Mi sitio”, Resumen y avisos usan ese host en producción.
-3. Completar la verificación DNS que indique Vercel. Se puede conservar Cloudflare como DNS autoritativo: la documentación actual permite delegar únicamente `_acme-challenge.site` con los dos registros NS de Vercel, habilitar Vercel DNS en el panel del dominio sin cambiar los nameservers del registrador y crear el CNAME `*.site` hacia el destino indicado por Vercel. Mantener inicialmente ese CNAME en DNS Only. Los NS delegados deben permanecer para la renovación automática. Alternativamente se pueden usar los nameservers de Vercel para todo el dominio. Seguir la sección oficial [Use wildcard domains with an external DNS provider](https://vercel.com/docs/domains/working-with-domains/add-a-domain#use-wildcard-domains-with-an-external-dns-provider). Cloudflare Universal SSL en configuración completa no cubre por defecto nombres de segundo nivel como `negocio.site.turnosrapidos.com.ar`; habilitar su proxy requiere resolver por separado esa cobertura de certificado.
+1. Agregar el dominio raíz de la plataforma al proyecto web y configurar `PUBLIC_SITE_DOMAIN=turnosrapidos.com.ar` en producción, tanto en la web como en el worker.
+2. Agregar el wildcard `*.turnosrapidos.com.ar` al mismo proyecto. El middleware resuelve el negocio y su ruta opcional `/sucursal/{id}`. Los enlaces de Mi sitio, Resumen y avisos usan ese dominio.
+3. Mantener Cloudflare como DNS autoritativo, delegar `_acme-challenge` con los dos registros NS de Vercel y agregar el CNAME `*` hacia el destino de Vercel, DNS Only. No cambiar los nameservers del registrador ni eliminar registros de correo. Mantener los NS delegados para renovar el certificado. Seguir [la guía oficial](https://vercel.com/docs/domains/working-with-domains/add-a-domain#use-wildcard-domains-with-an-external-dns-provider).
 4. Mantener `/sitio/{slug}` como URL local y ruta de respaldo.
 5. Verificar que cada `Sede.subdominio` esté libre, activo y corresponda a un negocio publicado antes de anunciarlo.
 

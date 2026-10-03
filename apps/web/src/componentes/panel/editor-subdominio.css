@@ -1,0 +1,9 @@
+/* Mantiene legible la edición excepcional de direcciones en escritorio y móvil. */
+.editor-subdominio { padding: 20px; margin-bottom: 24px; border: 1px solid #d5e5eb; border-radius: 16px; background: #f6fafb; }
+.editor-subdominio h2 { margin: 0 0 8px; font-size: 18px; }
+.editor-subdominio p { color: #526b77; font-size: 14px; line-height: 1.5; }
+.editor-subdominio form { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; }
+.editor-subdominio label { display: grid; gap: 6px; flex: 1 1 240px; min-width: 0; max-width: 460px; }
+.editor-subdominio input { width: 100%; min-width: 0; box-sizing: border-box; padding: 10px 12px; border: 1px solid #b7cdd7; border-radius: 8px; background: white; }
+.editor-subdominio small { color: #526b77; overflow-wrap: anywhere; }
+.editor-subdominio input:focus-visible { outline: 2px solid #126b82; outline-offset: 2px; }

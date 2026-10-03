@@ -182,6 +182,9 @@ model Verificacion {
 model Negocio {
   id                  String                   @id @default(cuid())
   slug                String                   @unique
+  subdominio          String?                  @unique
+  nombreClave         String                   @default("")
+  subdominiosAnteriores SubdominioAnterior[]
   nombre              String
   descripcion         String?
   telefono            String?
@@ -220,6 +223,15 @@ model Negocio {
   columnasInventario  ColumnaInventario[]
 
   @@index([sitioRetiradoEn])
+  @@index([nombreClave])
+}
+
+model SubdominioAnterior {
+  nombre    String  @id
+  negocioId String
+  negocio   Negocio @relation(fields: [negocioId], references: [id], onDelete: Cascade)
+
+  @@index([negocioId])
 }
 
 model Membresia {
