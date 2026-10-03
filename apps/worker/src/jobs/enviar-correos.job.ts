@@ -79,6 +79,35 @@ export async function procesarCorreosPendientes(_trabajos: Job[]) {
   `;
 
   for (const correo of correos) {
+    // La invitación puede cancelarse después de reclamar el lote y antes de entregarlo.
+    if (correo.claveIdempotencia.startsWith("equipo-")) {
+      const invitacion = await prisma.invitacionEquipo.findUnique({
+        where: { correoClave: correo.claveIdempotencia },
+        select: {
+          estado: true,
+          expiraEn: true,
+          profesional: { select: { activo: true } },
+        },
+      });
+      if (
+        !invitacion ||
+        invitacion.estado !== "PENDIENTE" ||
+        invitacion.expiraEn <= new Date() ||
+        !invitacion.profesional.activo
+      ) {
+        await prisma.correoPendiente.update({
+          where: { id: correo.id },
+          data: {
+            estado: "FALLIDO",
+            texto: "",
+            html: null,
+            reclamadoEn: null,
+            error: "La invitación ya no está disponible para entregar.",
+          },
+        });
+        continue;
+      }
+    }
     if (correo.expiraEn && correo.expiraEn <= new Date()) {
       await prisma.correoPendiente.update({
         where: { id: correo.id },

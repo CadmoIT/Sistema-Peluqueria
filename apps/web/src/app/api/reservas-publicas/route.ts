@@ -7,6 +7,7 @@ import { sincronizarReservaEnGoogle } from "@/lib/google-calendar";
 import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
 import { superaLimiteDeclarado } from "@/lib/limite-solicitud";
 import { prisma } from "@/lib/prisma";
+import { vincularClienteEquipo } from "@/servicios/clientes-equipo.service";
 import { estaDentroDelHorario } from "@/servicios/disponibilidad.service";
 
 type Entrada = {
@@ -95,15 +96,18 @@ export async function POST(solicitud: Request) {
       politicaContacto: true,
       zonaHoraria: true,
       suscripcion: {
-        select: { estado: true, pruebaFinalizaEn: true, graciaHasta: true, proximoCobro: true },
+        select: {
+          estado: true,
+          pruebaFinalizaEn: true,
+          graciaHasta: true,
+          proximoCobro: true,
+        },
       },
     },
   });
   if (!negocio || !negocio.publicado || negocio.sitioRetiradoEn)
     return respuesta("Este sitio no está disponible.", 404);
-  if (
-    !tieneAccesoOperativo(negocio.suscripcion)
-  )
+  if (!tieneAccesoOperativo(negocio.suscripcion))
     return respuesta("Este sitio no está recibiendo reservas.", 403);
   const aceptaWhatsapp = entrada.aceptaWhatsapp === true && Boolean(telefono);
   if (negocio.politicaContacto === "EMAIL" && !email)
@@ -181,6 +185,40 @@ export async function POST(solicitud: Request) {
   try {
     const reserva = await prisma.$transaction(
       async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "Profesional" WHERE "id"=${profesional.id} AND "negocioId"=${negocio.id} FOR UPDATE`;
+        const asignado = await tx.profesionalSede.findFirst({
+          where: {
+            profesionalId: profesional.id,
+            sedeId: sede.id,
+            profesional: { activo: true, negocioId: negocio.id },
+            sede: { activa: true, negocioId: negocio.id },
+          },
+        });
+        const jornadas = await tx.horarioProfesional.findMany({
+          where: {
+            negocioId: negocio.id,
+            profesionalId: profesional.id,
+            sedeId: sede.id,
+          },
+        });
+        const apertura = await tx.horarioSede.findMany({
+          where: { negocioId: negocio.id, sedeId: sede.id, activo: true },
+        });
+        if (
+          !asignado ||
+          !estaDentroDelHorario(inicio, fin, jornadas, negocio.zonaHoraria) ||
+          !estaDentroDelHorario(
+            inicio,
+            fin,
+            apertura.map((h) => ({
+              diaSemana: h.diaSemana,
+              comienza: h.abre,
+              termina: h.cierra,
+            })),
+            negocio.zonaHoraria,
+          )
+        )
+          throw new Error("HORARIO_OCUPADO");
         const ocupada = await tx.reserva.findFirst({
           where: {
             negocioId: negocio.id,
@@ -216,27 +254,17 @@ export async function POST(solicitud: Request) {
         if (ocupada || bloqueo || bloqueoInterno) {
           throw new Error("HORARIO_OCUPADO");
         }
-        let existente =
+        const coincidencias =
           email || telefono
-            ? await tx.cliente.findFirst({
-                where: {
-                  negocioId: negocio.id,
-                  OR: [
-                    ...(email ? [{ email }] : []),
-                    ...(telefono ? [{ telefono }] : []),
-                  ],
-                },
-              })
-            : null;
-        if (!existente && (email || telefono)) {
-          const coincidencias = await tx.$queryRaw<Cliente[]>(Prisma.sql`
+            ? await tx.$queryRaw<Cliente[]>(Prisma.sql`
             SELECT * FROM "Cliente" WHERE "negocioId" = ${negocio.id} AND (
               ${email ? Prisma.sql`LOWER(TRIM("email")) = ${email}` : Prisma.sql`FALSE`}
               OR ${telefono ? Prisma.sql`regexp_replace("telefono", '[^+0-9]', '', 'g') = ${telefono}` : Prisma.sql`FALSE`}
-            ) ORDER BY "creadoEn" ASC LIMIT 1
-          `);
-          existente = coincidencias[0] ?? null;
-        }
+            ) ORDER BY "creadoEn" ASC LIMIT 2
+          `)
+            : [];
+        if (coincidencias.length > 1) throw new Error("CONTACTO_AMBIGUO");
+        const existente = coincidencias[0] ?? null;
         const cliente = existente
           ? await tx.cliente.update({
               where: { id: existente.id },
@@ -260,6 +288,7 @@ export async function POST(solicitud: Request) {
                 consentimientoWhatsappEn: aceptaWhatsapp ? new Date() : null,
               },
             });
+        await vincularClienteEquipo(tx, profesional.id, cliente.id);
         return tx.reserva.create({
           data: {
             negocioId: negocio.id,
@@ -293,6 +322,11 @@ export async function POST(solicitud: Request) {
     after(() => sincronizarReservaEnGoogle(reserva.id));
     return NextResponse.json({ codigo: reserva.codigo }, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message === "CONTACTO_AMBIGUO")
+      return respuesta(
+        "No pudimos identificar el contacto. Comunicate con el negocio para reservar.",
+        409,
+      );
     if (error instanceof Error && error.message === "HORARIO_OCUPADO")
       return respuesta("Ese horario acaba de ocuparse. Elegí otro.", 409);
     return respuesta("No pudimos confirmar el turno.", 500);

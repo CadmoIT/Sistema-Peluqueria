@@ -108,10 +108,24 @@ export function FormularioTurno({
         </select>
       </label>
       {!clienteId && (
-        <label>
-          Nombre del cliente
-          <input name="clienteNombre" />
-        </label>
+        <>
+          <label>
+            Nombre del cliente
+            <input name="clienteNombre" />
+          </label>
+          <label>
+            Email exacto del cliente
+            <input type="email" name="clienteEmail" />
+          </label>
+          <label>
+            Teléfono del cliente
+            <input name="clienteTelefono" type="tel" />
+          </label>
+          <small>
+            Si el contacto ya existe, usamos su misma ficha sin mostrar turnos
+            de otros integrantes.
+          </small>
+        </>
       )}
       <label>
         Observación <small>(opcional)</small>

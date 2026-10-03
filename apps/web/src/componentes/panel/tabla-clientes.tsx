@@ -2,6 +2,7 @@
 "use client";
 import { useMemo, useRef, useState, useTransition, useEffect } from "react";
 import { useCierreExterior } from "@/componentes/interaccion/cierre-exterior";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Download, Edit3, Search, Trash2, X } from "lucide-react";
@@ -13,6 +14,7 @@ import {
 import { coincideCliente, type DatosCliente } from "@/lib/clientes-archivo";
 import { CamposCliente } from "./campos-cliente";
 import { ImportadorClientes } from "./importador-clientes";
+import { useRolEquipo } from "./contexto-equipo";
 import { FormularioAccion } from "./formulario-accion";
 export type ClienteFila = DatosCliente & {
   id: string;
@@ -20,6 +22,7 @@ export type ClienteFila = DatosCliente & {
   visitas: number;
 };
 export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
+  const empleado = useRolEquipo() === "PROFESIONAL";
   const router = useRouter();
   const [guardando, iniciar] = useTransition();
   const [busqueda, setBusqueda] = useState("");
@@ -85,7 +88,7 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
             <a href={`/api/v1/clientes/exportar?${query}&formato=csv`}>CSV</a>
           </div>
         </details>
-        <ImportadorClientes />
+        {!empleado && <ImportadorClientes />}
       </div>
       <div className="clientes-listado" role="table" aria-label="Clientes">
         <div className="tabla-panel__cabecera tabla-clientes" role="row">
@@ -103,8 +106,10 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
             key={cliente.id}
           >
             <strong role="cell">
-              {[cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||
-                "Sin dato"}
+              <Link href={`/panel/clientes/${cliente.id}`}>
+                {[cliente.nombre, cliente.apellido].filter(Boolean).join(" ") ||
+                  "Sin dato"}
+              </Link>
             </strong>
             <span role="cell">{cliente.email || "Sin dato"}</span>
             <span role="cell">{cliente.telefono || "Sin dato"}</span>
@@ -140,7 +145,8 @@ export function TablaClientes({ clientes }: { clientes: ClienteFila[] }) {
                 className="accion-icono accion-icono--eliminar"
                 aria-label="Eliminar cliente"
                 title="Eliminar cliente"
-                disabled={guardando}
+                disabled={guardando || empleado}
+                hidden={empleado}
                 onClick={() => {
                   setError("");
                   setArchivando(cliente);

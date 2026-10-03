@@ -1,0 +1,45 @@
+/* Identifica cuentas aceptadas sin confundirlas con invitaciones pendientes. */
+.lista-equipo > .equipo-cuenta-vinculada {
+  border: 1px solid #8ac9b2;
+  box-shadow: inset 4px 0 #248660;
+  background: #f7fcfa;
+}
+.equipo-insignia {
+  display: inline-flex;
+  border-radius: 99px;
+  padding: 5px 10px;
+  background: #e4f5ec;
+  color: #176448;
+  font-size: 12px;
+  font-weight: 600;
+}
+.equipo-actividad {
+  width: 100%;
+  border-collapse: collapse;
+}
+.equipo-actividad th,
+.equipo-actividad td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #e4edf0;
+}
+.equipo-operacion {
+  padding: 20px;
+  border: 1px solid #d7e7ec;
+  border-radius: 16px;
+  margin: 16px 0;
+}
+.panel-contexto-activo {
+  padding: 12px 32px 0;
+  color: #56717c;
+  font-size: 12px;
+}
+.panel-contexto-activo a {
+  color: inherit;
+  text-decoration: none;
+}
+@media (max-width: 700px) {
+  .panel-contexto-activo {
+    padding: 8px 16px;
+  }
+}

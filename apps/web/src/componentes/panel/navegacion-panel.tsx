@@ -20,6 +20,7 @@ import { LogoTurnosRapidos } from "@/componentes/layout/logo-turnos-rapidos";
 import { usePerfilNegocio } from "./perfil-negocio-contexto";
 import { obtenerIconoServicios } from "./iconos-rubro";
 import { PERFILES_NEGOCIO, type PerfilNegocio } from "@/lib/perfiles-negocio";
+import { useRolEquipo } from "./contexto-equipo";
 
 export const enlacesPanel = [
   { texto: "Resumen", href: "/panel/resumen", icono: LayoutDashboard },
@@ -36,14 +37,18 @@ export const enlacesPanel = [
   { texto: "Caja", href: "/panel/caja", icono: WalletCards },
   { texto: "Reportes", href: "/panel/reportes", icono: BarChart3 },
   { texto: "Mi sitio", href: "/panel/mi-sitio", icono: Store },
+  { texto: "Actividad", href: "/panel/actividad", icono: CalendarDays },
+  { texto: "Mi cuenta", href: "/panel/mi-cuenta", icono: ContactRound },
 ] as const;
 
-export function obtenerEnlacesPanel(perfil: PerfilNegocio) {
-  return enlacesPanel.map((enlace) =>
-    enlace.href === "/panel/servicios"
-      ? { ...enlace, icono: obtenerIconoServicios(perfil.iconoServicios) }
-      : enlace,
-  );
+export function obtenerEnlacesPanel(perfil: PerfilNegocio, rol = "DUENO") {
+  return enlacesPanel
+    .filter((e) => rol !== "PROFESIONAL" || e.href !== "/panel/equipo")
+    .map((enlace) =>
+      enlace.href === "/panel/servicios"
+        ? { ...enlace, icono: obtenerIconoServicios(perfil.iconoServicios) }
+        : enlace,
+    );
 }
 
 export function NavegacionPanel({
@@ -62,7 +67,7 @@ export function NavegacionPanel({
   anchoSidebar?: number;
 }) {
   const ruta = usePathname();
-  const enlaces = obtenerEnlacesPanel(usePerfilNegocio());
+  const enlaces = obtenerEnlacesPanel(usePerfilNegocio(), useRolEquipo());
   return (
     <aside
       className={contraido ? "nav-panel nav-panel--contraido" : "nav-panel"}
@@ -121,43 +126,43 @@ export function NavegacionPanel({
       </nav>
       {!movil && (
         <div
-            className="nav-panel__redimensionar"
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Cambiar ancho del sidebar"
-            aria-valuemin={76}
-            aria-valuemax={380}
-            aria-valuenow={anchoSidebar}
-            tabIndex={0}
-            onKeyDown={(evento) => {
-              if (evento.key === "ArrowLeft") {
-                evento.preventDefault();
-                onAnchoChange?.(anchoSidebar - 8);
-              }
-              if (evento.key === "ArrowRight") {
-                evento.preventDefault();
-                onAnchoChange?.(anchoSidebar + 8);
-              }
-            }}
-            onPointerDown={(evento) => {
+          className="nav-panel__redimensionar"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Cambiar ancho del sidebar"
+          aria-valuemin={76}
+          aria-valuemax={380}
+          aria-valuenow={anchoSidebar}
+          tabIndex={0}
+          onKeyDown={(evento) => {
+            if (evento.key === "ArrowLeft") {
               evento.preventDefault();
-              const inicioX = evento.clientX;
-              const inicioAncho = anchoSidebar;
-              const mover = (movimiento: PointerEvent) => {
-                onAnchoChange?.(inicioAncho + movimiento.clientX - inicioX);
-              };
-              const terminar = () => {
-                window.removeEventListener("pointermove", mover);
-                window.removeEventListener("pointerup", terminar);
-                document.body.style.cursor = "";
-                document.body.style.userSelect = "";
-              };
-              document.body.style.cursor = "col-resize";
-              document.body.style.userSelect = "none";
-              window.addEventListener("pointermove", mover);
-              window.addEventListener("pointerup", terminar, { once: true });
-            }}
-          />
+              onAnchoChange?.(anchoSidebar - 8);
+            }
+            if (evento.key === "ArrowRight") {
+              evento.preventDefault();
+              onAnchoChange?.(anchoSidebar + 8);
+            }
+          }}
+          onPointerDown={(evento) => {
+            evento.preventDefault();
+            const inicioX = evento.clientX;
+            const inicioAncho = anchoSidebar;
+            const mover = (movimiento: PointerEvent) => {
+              onAnchoChange?.(inicioAncho + movimiento.clientX - inicioX);
+            };
+            const terminar = () => {
+              window.removeEventListener("pointermove", mover);
+              window.removeEventListener("pointerup", terminar);
+              document.body.style.cursor = "";
+              document.body.style.userSelect = "";
+            };
+            document.body.style.cursor = "col-resize";
+            document.body.style.userSelect = "none";
+            window.addEventListener("pointermove", mover);
+            window.addEventListener("pointerup", terminar, { once: true });
+          }}
+        />
       )}
     </aside>
   );

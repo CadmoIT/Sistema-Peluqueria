@@ -16,6 +16,9 @@ import "./panel-tipografia.css";
 import "./panel-formularios.css";
 import "./panel-suscripcion.css";
 import "../sitio/sitio.css";
+import { ProveedorEquipo } from "@/componentes/panel/contexto-equipo";
+import { ActualizacionEquipo } from "@/componentes/panel/actualizacion-equipo";
+import "./equipo-cuentas.css";
 
 export default async function LayoutPanel({
   children,
@@ -34,29 +37,46 @@ export default async function LayoutPanel({
       : "";
   const perfil = obtenerPerfilNegocio(membresia.negocio.configuracion);
   return (
-    <ProveedorPerfilNegocio tipoNegocio={perfil.tipoNegocio}>
-      <EstructuraPanel
-        nombreNegocio={membresia.negocio.nombre}
-        emailUsuario={usuario.email}
-        imagenNegocio={imagenNegocio}
-        suscripcion={membresia.negocio.suscripcion ? {
-          estado: membresia.negocio.suscripcion.estado,
-          plan: membresia.negocio.suscripcion.plan,
-          cancelarAlFinal: membresia.negocio.suscripcion.cancelarAlFinal,
-          pruebaFinalizaEn: membresia.negocio.suscripcion.pruebaFinalizaEn?.toISOString() ?? null,
-          proximoCobro: membresia.negocio.suscripcion.proximoCobro?.toISOString() ?? null,
-          graciaHasta: membresia.negocio.suscripcion.graciaHasta?.toISOString() ?? null,
-        } : null}
-        soloLectura={!tieneAccesoOperativo(membresia.negocio.suscripcion)}
-      >
-        {children}
-        <Toaster
-          position="bottom-right"
-          richColors
-          closeButton
-          toastOptions={{ className: "toast-turnos" }}
+    <ProveedorEquipo rol={membresia.rol}>
+      <ProveedorPerfilNegocio tipoNegocio={perfil.tipoNegocio}>
+        <ActualizacionEquipo
+          negocioId={membresia.negocioId}
+          versionInicial={membresia.negocio.versionEquipo.toString()}
         />
-      </EstructuraPanel>
-    </ProveedorPerfilNegocio>
+        <EstructuraPanel
+          nombreNegocio={membresia.negocio.nombre}
+          emailUsuario={usuario.email}
+          imagenNegocio={imagenNegocio}
+          suscripcion={
+            membresia.negocio.suscripcion
+              ? {
+                  estado: membresia.negocio.suscripcion.estado,
+                  plan: membresia.negocio.suscripcion.plan,
+                  cancelarAlFinal:
+                    membresia.negocio.suscripcion.cancelarAlFinal,
+                  pruebaFinalizaEn:
+                    membresia.negocio.suscripcion.pruebaFinalizaEn?.toISOString() ??
+                    null,
+                  proximoCobro:
+                    membresia.negocio.suscripcion.proximoCobro?.toISOString() ??
+                    null,
+                  graciaHasta:
+                    membresia.negocio.suscripcion.graciaHasta?.toISOString() ??
+                    null,
+                }
+              : null
+          }
+          soloLectura={!tieneAccesoOperativo(membresia.negocio.suscripcion)}
+        >
+          {children}
+          <Toaster
+            position="bottom-right"
+            richColors
+            closeButton
+            toastOptions={{ className: "toast-turnos" }}
+          />
+        </EstructuraPanel>
+      </ProveedorPerfilNegocio>
+    </ProveedorEquipo>
   );
 }

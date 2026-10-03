@@ -8,6 +8,7 @@ import {
   googleCalendarConfigurado,
 } from "@/lib/google-calendar";
 import { prisma } from "@/lib/prisma";
+import { resolverContextoEquipo } from "@/servicios/contexto-equipo.service";
 
 export async function POST(solicitud: Request) {
   if (solicitud.headers.get("origin") !== new URL(solicitud.url).origin)
@@ -20,14 +21,15 @@ export async function POST(solicitud: Request) {
   });
   if (!sesion)
     return NextResponse.json({ mensaje: "Sesión requerida" }, { status: 401 });
-  const membresia = await prisma.membresia.findFirst({
-    where: { usuarioId: sesion.user.id, activo: true },
-    include: { negocio: { include: { suscripcion: true } } },
-  });
+  const contexto = await resolverContextoEquipo(sesion.user);
+  const membresia = contexto?.membresia;
   if (!membresia)
     return NextResponse.json({ mensaje: "Negocio requerido" }, { status: 403 });
   if (!tieneAccesoOperativo(membresia.negocio.suscripcion))
-    return NextResponse.json({ mensaje: "Activá un plan para sincronizar calendarios." }, { status: 403 });
+    return NextResponse.json(
+      { mensaje: "Activá un plan para sincronizar calendarios." },
+      { status: 403 },
+    );
   if (!googleCalendarConfigurado())
     return NextResponse.json(
       { ok: false, mensaje: "Google Calendar todavía no está configurado." },
@@ -39,6 +41,9 @@ export async function POST(solicitud: Request) {
   const conexiones = await prisma.conexionGoogleCalendar.findMany({
     where: {
       negocioId: membresia.negocioId,
+      ...(contexto!.identidad.rol === "PROFESIONAL"
+        ? { profesionalId: contexto!.identidad.profesionalId }
+        : {}),
       ...(conexionId ? { id: conexionId } : {}),
       estado: { in: ["ACTIVA", "ERROR"] },
     },

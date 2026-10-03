@@ -12,12 +12,14 @@ export function FiltrosReportes({
   atribucion,
   sedes,
   profesionales,
+  personal = false,
 }: {
   periodo: string;
   local: string;
   atribucion: string;
   sedes: Opcion[];
   profesionales: Opcion[];
+  personal?: boolean;
 }) {
   const router = useRouter(),
     params = useSearchParams(),
@@ -59,24 +61,26 @@ export function FiltrosReportes({
             />
           </label>
         )}
-        <label className="filtro-discreto">
-          Atribución
-          <FiltroSelect
-            ariaLabel="Profesional o atribución"
-            value={atribucion}
-            onChange={(e) => cambiar("profesional", e.target.value)}
-          >
-            <option value="">Todos</option>
-            <option value="local">Local</option>
-            {profesionales.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre}
-              </option>
-            ))}
-            <option value="sin-asignar">Sin asignar</option>
-            <option value="eliminado">Profesional eliminado</option>
-          </FiltroSelect>
-        </label>
+        {!personal && (
+          <label className="filtro-discreto">
+            Atribución
+            <FiltroSelect
+              ariaLabel="Profesional o atribución"
+              value={atribucion}
+              onChange={(e) => cambiar("profesional", e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="local">Local</option>
+              {profesionales.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+              <option value="sin-asignar">Sin asignar</option>
+              <option value="eliminado">Profesional eliminado</option>
+            </FiltroSelect>
+          </label>
+        )}
       </div>
       {pendiente && (
         <div className="reportes-cargando" role="status">

@@ -13,6 +13,10 @@ import { enlaceSitioPublico } from "@/lib/dominios-publicos";
 import { puedeRecuperarSitio, tieneAccesoOperativo } from "@turnos/config";
 import { RecuperarSitio } from "@/componentes/panel/recuperar-sitio";
 import { EditorSubdominio } from "@/componentes/panel/editor-subdominio";
+import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { lecturasEquipo } from "@/servicios/lecturas-equipo.service";
+import { prisma } from "@/lib/prisma";
+import { SitioEmpleado } from "@/componentes/panel/pantallas-equipo";
 
 export const metadata = { title: "Mi sitio" };
 
@@ -21,14 +25,54 @@ export default async function PaginaMiSitio({
 }: {
   searchParams: Promise<{ local?: string }>;
 }) {
+  const c = await requerirContextoPanel();
+  if (c.membresia.rol !== "DUENO") {
+    const sedes = await lecturasEquipo(c).sede.findMany({
+      where: { negocioId: c.negocio.id, activa: true },
+      select: { id: true, nombre: true },
+    });
+    if (c.identidad.profesionalId)
+      return (
+        <SitioEmpleado
+          sedes={sedes}
+          slug={c.negocio.subdominio ?? c.negocio.slug}
+          profesionalId={c.identidad.profesionalId}
+          variasSucursales={
+            (await prisma.sede.count({
+              where: { negocioId: c.negocio.id, activa: true },
+            })) > 1
+          }
+          publicado={
+            c.negocio.publicado &&
+            !c.negocio.sitioRetiradoEn &&
+            tieneAccesoOperativo(c.negocio.suscripcion)
+          }
+        />
+      );
+    return (
+      <div className="panel-contenido">
+        <VistaPanelLista ruta="/panel/mi-sitio" />
+        <h1>Mi sitio</h1>
+        <p>Sólo el dueño puede editar y publicar el sitio.</p>
+        <a href={enlaceSitioPublico(c.negocio.subdominio ?? c.negocio.slug)}>
+          Abrir sitio del negocio
+        </a>
+      </div>
+    );
+  }
   const datos = await obtenerSitioEditable();
-  if (datos.negocio.sitioRetiradoEn) return (
-    <div className="panel-contenido">
-      <VistaPanelLista ruta="/panel/mi-sitio" />
-      <header className="cabecera-seccion"><h1>Mi sitio</h1></header>
-      <RecuperarSitio habilitado={puedeRecuperarSitio(datos.negocio.suscripcion)} />
-    </div>
-  );
+  if (datos.negocio.sitioRetiradoEn)
+    return (
+      <div className="panel-contenido">
+        <VistaPanelLista ruta="/panel/mi-sitio" />
+        <header className="cabecera-seccion">
+          <h1>Mi sitio</h1>
+        </header>
+        <RecuperarSitio
+          habilitado={puedeRecuperarSitio(datos.negocio.suscripcion)}
+        />
+      </div>
+    );
   const parametros = await searchParams;
   const localSeleccionado =
     datos.sedes.find((sede) => sede.id === parametros.local) ?? datos.sedes[0];
@@ -61,8 +105,7 @@ export default async function PaginaMiSitio({
       datos.sedes.find((sede) => sede.telefono?.trim())?.telefono ||
       "",
     instagram: base.instagram ?? "",
-    googleMapsUrl:
-      base.googleMapsUrl ?? localSeleccionado?.googleMapsUrl ?? "",
+    googleMapsUrl: base.googleMapsUrl ?? localSeleccionado?.googleMapsUrl ?? "",
     hero: normalizarHero(base.hero),
     secciones: normalizarSecciones(base.secciones, base.versionSecciones),
     versionSecciones: 2,
@@ -82,9 +125,13 @@ export default async function PaginaMiSitio({
               valor={localSeleccionado?.id ?? ""}
             />
           )}
-          <BotonGuardarSitio soloLectura={!tieneAccesoOperativo(datos.negocio.suscripcion)} />
+          <BotonGuardarSitio
+            soloLectura={!tieneAccesoOperativo(datos.negocio.suscripcion)}
+          />
           <div className="mi-sitio-publicar">
-            <BotonPublicarSitio soloLectura={!tieneAccesoOperativo(datos.negocio.suscripcion)} />
+            <BotonPublicarSitio
+              soloLectura={!tieneAccesoOperativo(datos.negocio.suscripcion)}
+            />
           </div>
           <a
             className="mi-sitio-pagina-web"
@@ -100,7 +147,13 @@ export default async function PaginaMiSitio({
           </a>
         </div>
       </header>
-      {datos.puedeEditarSubdominio && <EditorSubdominio actual={datos.negocio.subdominio ?? datos.negocio.slug} dominio={process.env.PUBLIC_SITE_DOMAIN ?? "turnosrapidos.com.ar"} soloLectura={!tieneAccesoOperativo(datos.negocio.suscripcion)} />}
+      {datos.puedeEditarSubdominio && (
+        <EditorSubdominio
+          actual={datos.negocio.subdominio ?? datos.negocio.slug}
+          dominio={process.env.PUBLIC_SITE_DOMAIN ?? "turnosrapidos.com.ar"}
+          soloLectura={!tieneAccesoOperativo(datos.negocio.suscripcion)}
+        />
+      )}
       <EditorSitio
         inicial={inicial}
         localId={localSeleccionado?.id ?? ""}
@@ -149,22 +202,24 @@ function esMapa(
 
 function normalizarHero(valor: unknown): BorradorSitio["hero"] {
   if (!Array.isArray(valor)) return [];
-  return valor.flatMap((imagen) => {
-    if (typeof imagen === "string") {
-      return imagen ? [{ url: imagen, alt: "", focoX: 50, focoY: 50 }] : [];
-    }
-    if (!imagen || typeof imagen !== "object") return [];
-    const candidata = imagen as Record<string, unknown>;
-    if (typeof candidata.url !== "string" || !candidata.url) return [];
-    return [
-      {
-        url: candidata.url,
-        alt: typeof candidata.alt === "string" ? candidata.alt : "",
-        focoX: typeof candidata.focoX === "number" ? candidata.focoX : 50,
-        focoY: typeof candidata.focoY === "number" ? candidata.focoY : 50,
-      },
-    ];
-  }).slice(0, 1);
+  return valor
+    .flatMap((imagen) => {
+      if (typeof imagen === "string") {
+        return imagen ? [{ url: imagen, alt: "", focoX: 50, focoY: 50 }] : [];
+      }
+      if (!imagen || typeof imagen !== "object") return [];
+      const candidata = imagen as Record<string, unknown>;
+      if (typeof candidata.url !== "string" || !candidata.url) return [];
+      return [
+        {
+          url: candidata.url,
+          alt: typeof candidata.alt === "string" ? candidata.alt : "",
+          focoX: typeof candidata.focoX === "number" ? candidata.focoX : 50,
+          focoY: typeof candidata.focoY === "number" ? candidata.focoY : 50,
+        },
+      ];
+    })
+    .slice(0, 1);
 }
 
 function normalizarSecciones(
@@ -182,7 +237,11 @@ function normalizarSecciones(
     (seccion): seccion is BorradorSitio["secciones"][number] =>
       typeof seccion === "string" && permitidas.includes(seccion as never),
   );
-  if (version !== 2 && secciones.includes("ubicacion") && !secciones.includes("contacto")) {
+  if (
+    version !== 2 &&
+    secciones.includes("ubicacion") &&
+    !secciones.includes("contacto")
+  ) {
     secciones.splice(secciones.indexOf("ubicacion"), 0, "contacto");
   }
   return secciones;

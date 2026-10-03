@@ -21,11 +21,23 @@ export async function POST(request: Request) {
     );
   }
   const contexto = await obtenerContextoApi();
-  if (!contexto) return NextResponse.json({ error: "Sesión no válida." }, { status: 401 });
+  if (!contexto)
+    return NextResponse.json({ error: "Sesión no válida." }, { status: 401 });
+  if (contexto.membresia.rol !== "DUENO")
+    return NextResponse.json(
+      { error: "Sólo el dueño puede editar el sitio." },
+      { status: 403 },
+    );
   if (!tieneAccesoOperativo(contexto.negocio.suscripcion))
-    return NextResponse.json({ error: "Activá un plan para modificar tu sitio." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Activá un plan para modificar tu sitio." },
+      { status: 403 },
+    );
   if (contexto.negocio.sitioRetiradoEn)
-    return NextResponse.json({ error: "Primero recuperá tu sitio desde Mi sitio." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Primero recuperá tu sitio desde Mi sitio." },
+      { status: 403 },
+    );
   try {
     const datos = await request.formData();
     const { sedeId } = await persistirBorradorSitio(datos);

@@ -3,7 +3,7 @@ import "server-only";
 
 import { headers } from "next/headers";
 import { autenticacion } from "@/lib/autenticacion";
-import { prisma } from "@/lib/prisma";
+import { resolverContextoEquipo } from "./contexto-equipo.service";
 
 export async function obtenerContextoApi() {
   const sesion = await autenticacion.api.getSession({
@@ -12,19 +12,5 @@ export async function obtenerContextoApi() {
 
   if (!sesion) return null;
 
-  const membresia = await prisma.membresia.findFirst({
-    where: {
-      usuarioId: sesion.user.id,
-      activo: true,
-    },
-    include: { negocio: { include: { suscripcion: true } } },
-  });
-
-  if (!membresia) return null;
-
-  return {
-    usuario: sesion.user,
-    membresia,
-    negocio: membresia.negocio,
-  };
+  return resolverContextoEquipo(sesion.user);
 }

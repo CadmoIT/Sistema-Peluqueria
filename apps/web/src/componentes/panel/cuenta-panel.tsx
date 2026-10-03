@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { clienteAutenticacion } from "@/lib/cliente-autenticacion";
 import { EnlacePanel as Link } from "./navegacion-carga-panel";
+import { useRolEquipo } from "./contexto-equipo";
 
 const opcionesCuenta = [
   {
@@ -61,6 +62,7 @@ export function CuentaPanel({
   const menuRef = useRef<HTMLDetailsElement>(null);
   const [animacionMenu, setAnimacionMenu] = useState(0);
   const pathname = usePathname();
+  const rol = useRolEquipo();
 
   function cerrarMenu() {
     menuRef.current?.removeAttribute("open");
@@ -116,19 +118,29 @@ export function CuentaPanel({
           </span>
         </div>
         <div className="panel-cuenta__opciones">
-          {opcionesCuenta.map(({ texto, href, icono: Icono }) => (
-            <Link
-              key={href}
-              href={href}
-              className="panel-cuenta__opcion"
-              onClick={cerrarMenu}
-            >
-              <span className="panel-cuenta__opcion-icono" aria-hidden>
-                <Icono />
-              </span>
-              <span>{texto}</span>
-            </Link>
-          ))}
+          <Link href="/panel/mi-cuenta">Mi cuenta y negocios</Link>
+          {opcionesCuenta
+            .filter(
+              (o) =>
+                rol === "DUENO" ||
+                (rol === "ADMINISTRADOR" &&
+                  o.href !== "/panel/planes" &&
+                  o.href !== "/panel/facturacion") ||
+                o.href === "/panel/configuracion/seguridad",
+            )
+            .map(({ texto, href, icono: Icono }) => (
+              <Link
+                key={href}
+                href={href}
+                className="panel-cuenta__opcion"
+                onClick={cerrarMenu}
+              >
+                <span className="panel-cuenta__opcion-icono" aria-hidden>
+                  <Icono />
+                </span>
+                <span>{texto}</span>
+              </Link>
+            ))}
         </div>
         <button
           type="button"

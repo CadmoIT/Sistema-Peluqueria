@@ -18,15 +18,24 @@ export async function POST(solicitud: Request) {
       { status: 413 },
     );
   const contexto = await obtenerContextoApi();
+  if (contexto?.membresia.rol === "PROFESIONAL")
+    return NextResponse.json(
+      { mensaje: "Esta operación es administrativa." },
+      { status: 403 },
+    );
   if (!contexto)
     return NextResponse.json({ mensaje: "Sesión no válida." }, { status: 401 });
   if (!tieneAccesoOperativo(contexto.negocio.suscripcion))
-    return NextResponse.json({ mensaje: "Activá un plan para importar compras." }, { status: 403 });
+    return NextResponse.json(
+      { mensaje: "Activá un plan para importar compras." },
+      { status: 403 },
+    );
   try {
     const entrada = (await solicitud.json()) as {
       filas?: unknown;
       sedeId?: unknown;
       proveedor?: unknown;
+      idempotencia?: unknown;
     };
     if (!Array.isArray(entrada.filas) || !entrada.filas.length)
       return NextResponse.json(
@@ -37,6 +46,7 @@ export async function POST(solicitud: Request) {
     datos.set("items", JSON.stringify(entrada.filas));
     datos.set("sedeId", String(entrada.sedeId ?? ""));
     datos.set("proveedor", String(entrada.proveedor ?? ""));
+    datos.set("idempotencia", String(entrada.idempotencia ?? ""));
     const resultado = await registrarCompra(datos);
     return NextResponse.json(resultado, { status: resultado.ok ? 200 : 400 });
   } catch {

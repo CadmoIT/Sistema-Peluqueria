@@ -7,10 +7,12 @@ export function SelectorSucursales({
   nombre,
   slug,
   sedes,
+  profesionalInicial = "",
 }: {
   nombre: string;
   slug: string;
   sedes: readonly { id: string; nombre: string; direccion: string }[];
+  profesionalInicial?: string;
 }) {
   return (
     <main className="selector-sucursales">
@@ -23,7 +25,12 @@ export function SelectorSucursales({
         {sedes.map((sede) => (
           <a
             key={sede.id}
-            href={enlaceSitioPublico(slug, sede.id)}
+            href={
+              enlaceSitioPublico(slug, sede.id) +
+              (profesionalInicial
+                ? `?profesional=${encodeURIComponent(profesionalInicial)}`
+                : "")
+            }
             className="selector-sucursales__tarjeta"
           >
             <MapPin aria-hidden="true" />

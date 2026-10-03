@@ -22,13 +22,47 @@ export class ReservasPrismaRepository implements ReservasRepository {
     });
     if (existente) {
       const negocio = await this.prisma.negocio.findUnique({
-        where: { id: existente.negocioId }, include: { suscripcion: true },
+        where: { id: existente.negocioId },
+        include: { suscripcion: true },
       });
-      if (!negocio || !negocio.publicado || negocio.sitioRetiradoEn || !tieneAccesoOperativo(negocio.suscripcion))
+      if (
+        !negocio ||
+        !negocio.publicado ||
+        negocio.sitioRetiradoEn ||
+        !tieneAccesoOperativo(negocio.suscripcion)
+      )
         throw new NotFoundException("El sitio no está recibiendo reservas.");
-      await this.prisma.reserva.update({
-        where: { id: reserva.id },
-        data: { estado: reserva.estado },
+      await this.prisma.$transaction(async (tx) => {
+        const profesional = existente.profesionalId
+          ? await tx.profesional.findFirst({
+              where: {
+                id: existente.profesionalId,
+                negocioId: existente.negocioId,
+                activo: true,
+                sedes: { some: { sedeId: existente.sedeId } },
+              },
+            })
+          : null;
+        if (!profesional)
+          throw new NotFoundException("El profesional ya no está disponible.");
+        await tx.reserva.update({
+          where: { id: reserva.id },
+          data: { estado: reserva.estado },
+        });
+        if (existente.clienteId && reserva.estado === "CONFIRMADA")
+          await tx.profesionalCliente.upsert({
+            where: {
+              profesionalId_clienteId: {
+                profesionalId: profesional.id,
+                clienteId: existente.clienteId,
+              },
+            },
+            create: {
+              profesionalId: profesional.id,
+              clienteId: existente.clienteId,
+            },
+            update: {},
+          });
       });
       return;
     }
@@ -118,7 +152,8 @@ export class ReservasPrismaRepository implements ReservasRepository {
           if (!negocio)
             throw new NotFoundException("El negocio no está disponible.");
           if (
-            negocio.sitioRetiradoEn || !tieneAccesoOperativo(negocio.suscripcion)
+            negocio.sitioRetiradoEn ||
+            !tieneAccesoOperativo(negocio.suscripcion)
           ) {
             throw new NotFoundException(
               "El sitio no está recibiendo reservas.",
@@ -152,6 +187,66 @@ export class ReservasPrismaRepository implements ReservasRepository {
             0,
           );
           const fin = new Date(inicio.getTime() + minutos * 60_000);
+          const profesional = await tx.profesional.findFirst({
+            where: {
+              id: reserva.datos.profesionalId,
+              negocioId: negocio.id,
+              activo: true,
+              sedes: { some: { sedeId: reserva.datos.sedeId } },
+            },
+            include: { horarios: { where: { sedeId: reserva.datos.sedeId } } },
+          });
+          const sede = await tx.sede.findFirst({
+            where: {
+              id: reserva.datos.sedeId,
+              negocioId: negocio.id,
+              activa: true,
+            },
+            include: { horarios: { where: { activo: true } } },
+          });
+          if (
+            !profesional ||
+            !sede ||
+            !periodoDentro(
+              inicio,
+              fin,
+              negocio.zonaHoraria,
+              profesional.horarios.map((h) => ({
+                diaSemana: h.diaSemana,
+                abre: h.comienza,
+                cierra: h.termina,
+              })),
+            ) ||
+            !periodoDentro(inicio, fin, negocio.zonaHoraria, sede.horarios)
+          )
+            throw new NotFoundException(
+              "El profesional o el horario no están disponibles.",
+            );
+          const bloqueos = await tx.bloqueoAgenda.count({
+            where: {
+              negocioId: negocio.id,
+              profesionalId: profesional.id,
+              inicio: { lt: fin },
+              fin: { gt: inicio },
+            },
+          });
+          const externos = await tx.eventoCalendarioExterno.count({
+            where: {
+              cancelado: false,
+              conexion: {
+                negocioId: negocio.id,
+                OR: [
+                  { profesionalId: profesional.id },
+                  { profesionalId: null, sedeId: sede.id },
+                  { profesionalId: null, sedeId: null },
+                ],
+              },
+              inicio: { lt: fin },
+              fin: { gt: inicio },
+            },
+          });
+          if (bloqueos || externos)
+            throw new ConflictException("El horario está bloqueado.");
           const ocupada = await tx.reserva.findFirst({
             where: {
               negocioId: negocio.id,
@@ -169,32 +264,24 @@ export class ReservasPrismaRepository implements ReservasRepository {
             /[^+\d]/g,
             "",
           );
-          let clienteExistente =
+          const coincidencias =
             email || telefono
-              ? await tx.cliente.findFirst({
-                  where: {
-                    negocioId: negocio.id,
-                    OR: [
-                      ...(email ? [{ email }] : []),
-                      ...(telefono ? [{ telefono }] : []),
-                    ],
-                  },
-                })
-              : null;
-          if (!clienteExistente && (email || telefono)) {
-            const coincidencias = await tx.$queryRaw<Cliente[]>(Prisma.sql`
-              SELECT * FROM "Cliente" WHERE "negocioId" = ${negocio.id} AND (
-                ${email ? Prisma.sql`LOWER(TRIM("email")) = ${email}` : Prisma.sql`FALSE`}
-                OR ${telefono ? Prisma.sql`regexp_replace("telefono", '[^+0-9]', '', 'g') = ${telefono}` : Prisma.sql`FALSE`}
-              ) ORDER BY "creadoEn" ASC LIMIT 1
-            `);
-            clienteExistente = coincidencias[0] ?? null;
-          }
+              ? await tx.$queryRaw<Cliente[]>(Prisma.sql`
+            SELECT * FROM "Cliente" WHERE "negocioId" = ${negocio.id} AND (
+              ${email ? Prisma.sql`LOWER(TRIM("email")) = ${email}` : Prisma.sql`FALSE`}
+              OR ${telefono ? Prisma.sql`regexp_replace("telefono", '[^+0-9]', '', 'g') = ${telefono}` : Prisma.sql`FALSE`}
+            ) ORDER BY "creadoEn" ASC LIMIT 2
+          `)
+              : [];
+          if (coincidencias.length > 1)
+            throw new ConflictException(
+              "El contacto es ambiguo. Comunicate con el negocio.",
+            );
+          const clienteExistente = coincidencias[0] ?? null;
           const cliente = clienteExistente
             ? await tx.cliente.update({
                 where: { id: clienteExistente.id },
                 data: {
-                  
                   nombre:
                     limpiar(reserva.datos.cliente.nombre) ??
                     clienteExistente.nombre,
@@ -290,4 +377,48 @@ function validarContacto(
       "Ingresá un correo o teléfono para reservar.",
     );
   }
+}
+
+function periodoDentro(
+  inicio: Date,
+  fin: Date,
+  zonaHoraria: string,
+  horarios: Array<{ diaSemana: number; abre: string; cierra: string }>,
+) {
+  if (
+    !Number.isFinite(inicio.getTime()) ||
+    !Number.isFinite(fin.getTime()) ||
+    fin <= inicio
+  )
+    return false;
+  const formato = new Intl.DateTimeFormat("en-CA", {
+    timeZone: zonaHoraria,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "short",
+    hourCycle: "h23",
+  });
+  const partes = (fecha: Date) => {
+    const p = formato.formatToParts(fecha),
+      v = (tipo: Intl.DateTimeFormatPartTypes) =>
+        p.find((x) => x.type === tipo)?.value ?? "";
+    return {
+      fecha: [v("year"), v("month"), v("day")].join("-"),
+      hora: v("hour") + ":" + v("minute"),
+      dia: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(
+        v("weekday"),
+      ),
+    };
+  };
+  const a = partes(inicio),
+    b = partes(fin);
+  return (
+    a.fecha === b.fecha &&
+    horarios.some(
+      (h) => h.diaSemana === a.dia && h.abre <= a.hora && h.cierra >= b.hora,
+    )
+  );
 }

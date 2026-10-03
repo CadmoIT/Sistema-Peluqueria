@@ -20,7 +20,11 @@ test.each([false, true])(
         findFirst: jest.fn().mockResolvedValue({
           id: "negocio",
           politicaContacto: "EMAIL",
-          suscripcion: { estado: "ACTIVA", proximoCobro: new Date("2031-01-01") },
+          zonaHoraria: "America/Argentina/Buenos_Aires",
+          suscripcion: {
+            estado: "ACTIVA",
+            proximoCobro: new Date("2031-01-01"),
+          },
         }),
       },
       servicio: {
@@ -37,6 +41,28 @@ test.each([false, true])(
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn().mockResolvedValue({}),
       },
+      profesional: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: "profesional",
+          horarios: Array.from({ length: 7 }, (_, diaSemana) => ({
+            diaSemana,
+            comienza: "00:00",
+            termina: "23:59",
+          })),
+        }),
+      },
+      sede: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: "local",
+          horarios: Array.from({ length: 7 }, (_, diaSemana) => ({
+            diaSemana,
+            abre: "00:00",
+            cierra: "23:59",
+          })),
+        }),
+      },
+      bloqueoAgenda: { count: jest.fn().mockResolvedValue(0) },
+      eventoCalendarioExterno: { count: jest.fn().mockResolvedValue(0) },
       cliente: {
         findFirst: jest.fn().mockResolvedValue(antiguo ? null : cliente),
         update: jest.fn().mockResolvedValue(cliente),
@@ -69,9 +95,6 @@ test.each([false, true])(
         },
       }),
     );
-    expect(tx.cliente.findFirst).toHaveBeenCalledWith({
-      where: { negocioId: "negocio", OR: [{ email: "cliente@ejemplo.com" }] },
-    });
     expect(tx.cliente.update).toHaveBeenCalledWith({
       where: { id: "cliente" },
       data: {
@@ -81,7 +104,7 @@ test.each([false, true])(
       },
     });
     expect(tx.cliente.create).not.toHaveBeenCalled();
-    expect(tx.$queryRaw).toHaveBeenCalledTimes(antiguo ? 1 : 0);
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
     expect(tx.reserva.create.mock.calls[0][0].data.clienteId).toBe("cliente");
   },
 );

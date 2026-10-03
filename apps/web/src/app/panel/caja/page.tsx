@@ -7,6 +7,7 @@ import { FormularioAccion } from "@/componentes/panel/formulario-accion";
 import { MetricasOperativas } from "@/componentes/panel/metricas-operativas";
 import { obtenerCaja } from "@/servicios/panel-datos.service";
 import { FiltroLocalUrl } from "@/componentes/panel/filtro-local";
+import { requerirContextoPanel } from "@/servicios/panel-datos.service";
 
 export const metadata = { title: "Caja" };
 export default async function PaginaCaja({
@@ -16,6 +17,8 @@ export default async function PaginaCaja({
 }) {
   const parametros = await searchParams;
   const datos = await obtenerCaja(parametros.local);
+  const empleado =
+    (await requerirContextoPanel()).membresia.rol === "PROFESIONAL";
   const ingresos = datos.movimientos
     .filter((m) => m.tipo === "INGRESO")
     .reduce((s, m) => s + Number(m.monto), 0);
@@ -27,7 +30,13 @@ export default async function PaginaCaja({
       <VistaPanelLista ruta="/panel/caja" />
       <header className="cabecera-seccion">
         <div>
-          <h1>Caja</h1>
+          <h1>{empleado ? "Mis cobros y ventas" : "Caja"}</h1>
+          {empleado && (
+            <p>
+              Importes efectivamente cobrados y atribuidos a vos. No representan
+              sueldo ni comisión.
+            </p>
+          )}
         </div>
         <div className="acciones-seccion">
           {datos.sedes.length > 1 && (
@@ -49,7 +58,11 @@ export default async function PaginaCaja({
               <h2>Movimiento de caja</h2>
               <label>
                 Tipo
-                <select value="INGRESO" disabled aria-label="Tipo de movimiento">
+                <select
+                  value="INGRESO"
+                  disabled
+                  aria-label="Tipo de movimiento"
+                >
                   <option value="INGRESO">Ingreso</option>
                 </select>
               </label>
@@ -76,7 +89,13 @@ export default async function PaginaCaja({
                   </select>
                 </label>
               )}
-              {datos.profesionales.length ? (
+              {empleado ? (
+                <input
+                  type="hidden"
+                  name="atribucion"
+                  value={datos.profesionales[0]?.id ?? ""}
+                />
+              ) : datos.profesionales.length ? (
                 <label>
                   Atribuir movimiento a
                   <select name="atribucion" required defaultValue="">

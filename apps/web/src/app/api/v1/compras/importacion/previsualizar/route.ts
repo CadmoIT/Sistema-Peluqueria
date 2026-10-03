@@ -16,8 +16,14 @@ export async function POST(solicitud: Request) {
       { mensaje: "El archivo supera el límite de 5 MB." },
       { status: 413 },
     );
-  if (!(await obtenerContextoApi()))
+  const contexto = await obtenerContextoApi();
+  if (!contexto)
     return NextResponse.json({ mensaje: "Sesión no válida." }, { status: 401 });
+  if (contexto.membresia.rol === "PROFESIONAL")
+    return NextResponse.json(
+      { mensaje: "No tenés permiso para importar productos." },
+      { status: 403 },
+    );
   const archivo = (await solicitud.formData()).get("archivo");
   if (!(archivo instanceof File))
     return NextResponse.json(

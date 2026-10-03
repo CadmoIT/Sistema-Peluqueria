@@ -1,63 +1,35 @@
 /** Crea profesionales vinculados exclusivamente con el negocio autenticado. */
 "use server";
+import { mensajeErrorEquipo } from "@/lib/errores-equipo";
 
-import { eliminarFicha, type ResultadoAccion } from "@/servicios/eliminacion-fichas.service";
+import {
+  eliminarFicha,
+  type ResultadoAccion,
+} from "@/servicios/eliminacion-fichas.service";
 import { revalidatePath } from "next/cache";
 import { leerTexto, textoOpcional } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
 import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
+import {
+  invitarEquipo,
+  cancelarInvitacionEquipo,
+  revocarAccesoEquipo,
+} from "@/servicios/invitaciones-equipo.service";
+import { exigirPermisoEquipo, emailEquipoValido } from "@/lib/permisos-equipo";
+import { invitacionesEquipoHabilitadas } from "@/servicios/invitaciones-equipo.service";
+import type { ContextoEquipo } from "@/servicios/contexto-equipo.service";
+import { registrarActividadEquipo } from "@/servicios/actividad-equipo.service";
 
 export async function crearProfesional(datos: FormData) {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const email = validarEmailInvitacion(contexto, datos);
   const asignaciones = await obtenerAsignaciones(negocio.id, datos);
 
-  await prisma.profesional.create({
-    data: {
-      negocioId: negocio.id,
-      nombre: leerTexto(datos, "nombre"),
-      apellido: textoOpcional(leerTexto(datos, "apellido")),
-      especialidad: textoOpcional(leerTexto(datos, "especialidad")),
-      biografia: textoOpcional(leerTexto(datos, "biografia")),
-      foto: textoOpcional(leerTexto(datos, "foto")),
-      sedes: {
-        create: asignaciones.sedeIds.map((sedeId) => ({ sedeId })),
-      },
-      servicios: {
-        create: asignaciones.servicioIds.map((servicioId) => ({ servicioId })),
-      },
-      horarios: {
-        create: asignaciones.dias.map((diaSemana) => ({
-          negocioId: negocio.id,
-          sedeId: asignaciones.horarioSedeId!,
-          diaSemana,
-          comienza: asignaciones.comienza,
-          termina: asignaciones.termina,
-        })),
-      },
-    },
-  });
-
-  revalidatePath("/panel/equipo");
-  revalidatePath(`/sitio/${negocio.slug}`);
-}
-
-export async function actualizarProfesional(datos: FormData) {
-  const { negocio } = await requerirContextoPanel();
-  const id = leerTexto(datos, "id");
-  const profesional = await prisma.profesional.findFirst({
-    where: { id, negocioId: negocio.id },
-  });
-
-  if (!profesional) throw new Error("El profesional no existe.");
-
-  const asignaciones = await obtenerAsignaciones(negocio.id, datos);
-  await prisma.$transaction([
-    prisma.profesionalSede.deleteMany({ where: { profesionalId: id } }),
-    prisma.profesionalServicio.deleteMany({ where: { profesionalId: id } }),
-    prisma.horarioProfesional.deleteMany({ where: { profesionalId: id } }),
-    prisma.profesional.update({
-      where: { id },
+  const profesional = await prisma.$transaction(async (tx) => {
+    const creado = await tx.profesional.create({
       data: {
+        negocioId: negocio.id,
         nombre: leerTexto(datos, "nombre"),
         apellido: textoOpcional(leerTexto(datos, "apellido")),
         especialidad: textoOpcional(leerTexto(datos, "especialidad")),
@@ -81,23 +53,158 @@ export async function actualizarProfesional(datos: FormData) {
           })),
         },
       },
-    }),
-  ]);
+    });
+
+    await registrarActividadEquipo(tx, contexto, {
+      accion: "CREAR_PROFESIONAL",
+      recurso: "profesional",
+      recursoId: creado.id,
+    });
+    return creado;
+  });
+  revalidatePath("/panel/equipo");
+  revalidatePath(`/sitio/${negocio.slug}`);
+  if (email) {
+    try {
+      await invitarEquipo(prisma, contexto, email, profesional.id);
+    } catch (e) {
+      return {
+        ok: true,
+        mensaje: `Profesional creado. No se envió la invitación: ${mensajeErrorEquipo(e)}`,
+      };
+    }
+  }
+  return {
+    ok: true,
+    mensaje: email
+      ? "Profesional creado e invitación en cola."
+      : "Profesional creado.",
+  };
+}
+
+export async function actualizarProfesional(datos: FormData) {
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const email = validarEmailInvitacion(contexto, datos);
+  const id = leerTexto(datos, "id");
+  const profesional = await prisma.profesional.findFirst({
+    where: { id, negocioId: negocio.id },
+  });
+
+  if (!profesional) throw new Error("El profesional no existe.");
+
+  const asignaciones = await obtenerAsignaciones(negocio.id, datos);
+  await prisma.$transaction(async (tx) => {
+    await tx.profesionalSede.deleteMany({ where: { profesionalId: id } });
+    await tx.profesionalServicio.deleteMany({ where: { profesionalId: id } });
+    await tx.horarioProfesional.deleteMany({ where: { profesionalId: id } });
+    await tx.profesional.update({
+      where: { id },
+      data: {
+        nombre: leerTexto(datos, "nombre"),
+        apellido: textoOpcional(leerTexto(datos, "apellido")),
+        especialidad: textoOpcional(leerTexto(datos, "especialidad")),
+        biografia: textoOpcional(leerTexto(datos, "biografia")),
+        foto: textoOpcional(leerTexto(datos, "foto")),
+        activo: datos.get("activo") === "on",
+        sedes: {
+          create: asignaciones.sedeIds.map((sedeId) => ({ sedeId })),
+        },
+        servicios: {
+          create: asignaciones.servicioIds.map((servicioId) => ({
+            servicioId,
+          })),
+        },
+        horarios: {
+          create: asignaciones.dias.map((diaSemana) => ({
+            negocioId: negocio.id,
+            sedeId: asignaciones.horarioSedeId!,
+            diaSemana,
+            comienza: asignaciones.comienza,
+            termina: asignaciones.termina,
+          })),
+        },
+      },
+    });
+    await registrarActividadEquipo(tx, contexto, {
+      accion: "ACTUALIZAR_PROFESIONAL",
+      recurso: "profesional",
+      recursoId: id,
+    });
+  });
 
   revalidatePath("/panel/equipo");
   revalidatePath("/panel/agenda");
   revalidatePath(`/sitio/${negocio.slug}`);
+
+  if (email) await invitarEquipo(prisma, contexto, email, id);
 }
 
-export async function eliminarProfesional(datos: FormData): Promise<ResultadoAccion> {
-  const { negocio, membresia } = await requerirContextoPanel();
-  if (!["DUENO", "ADMINISTRADOR"].includes(membresia.rol)) return { ok: false, mensaje: "Sólo el dueño o administrador puede eliminar fichas." };
+export async function enviarInvitacion(
+  datos: FormData,
+): Promise<ResultadoAccion> {
+  const c = await requerirContextoPanel("dueno");
   try {
-    const resultado = await eliminarFicha(prisma, negocio.id, "profesional", leerTexto(datos, "id"));
-    for (const ruta of ["equipo", "agenda", "resumen", "servicios", "caja", "reportes", "mi-sitio"]) revalidatePath(`/panel/${ruta}`);
+    await invitarEquipo(
+      prisma,
+      c,
+      leerTexto(datos, "email"),
+      leerTexto(datos, "id"),
+    );
+    revalidatePath("/panel/equipo");
+    return {
+      ok: true,
+      mensaje:
+        "Invitación en cola. La cuenta se vinculará cuando la persona acepte.",
+    };
+  } catch (e) {
+    return { ok: false, mensaje: mensajeErrorEquipo(e) };
+  }
+}
+export async function cancelarInvitacion(datos: FormData) {
+  const c = await requerirContextoPanel("dueno");
+  await cancelarInvitacionEquipo(prisma, c, leerTexto(datos, "id"));
+  revalidatePath("/panel/equipo");
+}
+export async function quitarAcceso(datos: FormData) {
+  const c = await requerirContextoPanel("dueno");
+  await revocarAccesoEquipo(prisma, c, leerTexto(datos, "id"));
+  revalidatePath("/panel/equipo");
+}
+
+export async function eliminarProfesional(
+  datos: FormData,
+): Promise<ResultadoAccion> {
+  const c = await requerirContextoPanel();
+  const { negocio, membresia } = c;
+  if (!["DUENO", "ADMINISTRADOR"].includes(membresia.rol))
+    return {
+      ok: false,
+      mensaje: "Sólo el dueño o administrador puede eliminar fichas.",
+    };
+  try {
+    const resultado = await eliminarFicha(
+      prisma,
+      negocio.id,
+      "profesional",
+      leerTexto(datos, "id"),
+      c,
+    );
+    for (const ruta of [
+      "equipo",
+      "agenda",
+      "resumen",
+      "servicios",
+      "caja",
+      "reportes",
+      "mi-sitio",
+    ])
+      revalidatePath(`/panel/${ruta}`);
     revalidatePath(`/sitio/${negocio.slug}`);
     return resultado;
-  } catch { return { ok: false, mensaje: "No pudimos eliminar el profesional." }; }
+  } catch {
+    return { ok: false, mensaje: "No pudimos eliminar el profesional." };
+  }
 }
 
 async function obtenerAsignaciones(negocioId: string, datos: FormData) {
@@ -150,4 +257,15 @@ async function obtenerAsignaciones(negocioId: string, datos: FormData) {
 
 function horaValida(valor: string, alternativa: string) {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(valor) ? valor : alternativa;
+}
+
+function validarEmailInvitacion(c: ContextoEquipo, datos: FormData) {
+  const email = leerTexto(datos, "emailInvitacion").trim();
+  if (email) {
+    exigirPermisoEquipo(c, "dueno");
+    if (!invitacionesEquipoHabilitadas())
+      throw new Error("Las invitaciones todavía no están habilitadas.");
+    if (!emailEquipoValido(email)) throw new Error("Ingresá un email válido.");
+  }
+  return email;
 }

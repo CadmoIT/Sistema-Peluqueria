@@ -7,6 +7,7 @@ import { X } from "lucide-react";
 import { useCierreExterior } from "@/componentes/interaccion/cierre-exterior";
 import { cambiarEstadoReserva } from "@/app/panel/agenda/acciones";
 import { grupoEstado, type EventoAgenda } from "./agenda-modelo";
+import { CobroTurno } from "./cobro-turno";
 export function DetalleTurno({
   evento,
   zona,
@@ -81,6 +82,10 @@ export function DetalleTurno({
           <X />
         </button>
       </header>
+      {evento.tipo === "reserva" &&
+        ["CONFIRMADA", "COMPLETADA", "AUSENTE"].includes(evento.estado) && (
+          <CobroTurno reservaId={evento.id} />
+        )}
       <dl>
         <div>
           <dt>Servicio</dt>

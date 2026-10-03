@@ -1,7 +1,6 @@
 /** Expone por HTTP los planes y el inicio de una suscripción. */
-import { Body, Controller, Get, Post } from "@nestjs/common";
+import { Controller, Get, Post, GoneException } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { ContratarPlanDto } from "../dto/facturacion/contratar-plan.dto";
 import { RUTAS_API } from "../routes/api.routes";
 import { FacturacionService } from "../services/facturacion.service";
 
@@ -16,7 +15,9 @@ export class FacturacionController {
   }
 
   @Post("suscripciones")
-  contratar(@Body() datos: ContratarPlanDto) {
-    return this.facturacionService.contratar(datos);
+  contratar() {
+    throw new GoneException(
+      "La contratación se realiza desde el panel autenticado del dueño.",
+    );
   }
 }

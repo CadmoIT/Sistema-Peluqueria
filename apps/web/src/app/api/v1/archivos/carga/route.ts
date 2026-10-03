@@ -22,13 +22,24 @@ export async function POST(solicitud: Request) {
     return NextResponse.json({ mensaje: "Origen no válido." }, { status: 403 });
   }
   const contexto = await obtenerContextoApi();
+  if (contexto?.membresia.rol === "PROFESIONAL")
+    return NextResponse.json(
+      { mensaje: "Esta operación es administrativa." },
+      { status: 403 },
+    );
   if (!contexto) {
     return NextResponse.json({ mensaje: "Sesión no válida." }, { status: 401 });
   }
   if (!tieneAccesoOperativo(contexto.negocio.suscripcion))
-    return NextResponse.json({ mensaje: "Activá un plan para cargar imágenes." }, { status: 403 });
+    return NextResponse.json(
+      { mensaje: "Activá un plan para cargar imágenes." },
+      { status: 403 },
+    );
   if (superaLimiteDeclarado(solicitud, 32 * 1024)) {
-    return NextResponse.json({ mensaje: "Solicitud demasiado grande." }, { status: 413 });
+    return NextResponse.json(
+      { mensaje: "Solicitud demasiado grande." },
+      { status: 413 },
+    );
   }
 
   const cuerpo = (await solicitud.json().catch(() => null)) as {

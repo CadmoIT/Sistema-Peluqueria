@@ -10,11 +10,13 @@ export function BotonEliminar({
   nombre,
   advertencia,
   accion,
+  desactivar = false,
 }: {
   id: string;
   nombre: string;
   advertencia: string;
   accion: (datos: FormData) => Promise<ResultadoAccion>;
+  desactivar?: boolean;
 }) {
   const [abierto, abrir] = useState(false);
   return (
@@ -23,25 +25,29 @@ export function BotonEliminar({
         type="button"
         className="accion-icono accion-icono--eliminar"
         onClick={() => abrir(true)}
-        aria-label={`Eliminar ${nombre}`}
-        title={`Eliminar ${nombre}`}
+        aria-label={`${desactivar ? "Desactivar" : "Eliminar"} ${nombre}`}
+        title={`${desactivar ? "Desactivar" : "Eliminar"} ${nombre}`}
       >
         <Trash2 aria-hidden="true" />
       </button>
       {abierto && (
         <DialogoPanel
-          titulo={`¿Eliminar ${nombre}?`}
+          titulo={`¿${desactivar ? "Desactivar" : "Eliminar"} ${nombre}?`}
           cerrar={() => abrir(false)}
         >
           <p>{advertencia}</p>
-          <p>
-            Se perderán los datos de la ficha. No se puede deshacer. Los
-            importes y movimientos históricos se conservarán.
-          </p>
+          {!desactivar && (
+            <p>
+              Se perderán los datos de la ficha. No se puede deshacer. Los
+              importes y movimientos históricos se conservarán.
+            </p>
+          )}
           <FormularioAccion
             accion={accion}
             className="formulario-dialogo"
-            texto="Eliminar definitivamente"
+            texto={
+              desactivar ? "Desactivar profesional" : "Eliminar definitivamente"
+            }
             alGuardar={() => abrir(false)}
           >
             <input name="id" type="hidden" value={id} />

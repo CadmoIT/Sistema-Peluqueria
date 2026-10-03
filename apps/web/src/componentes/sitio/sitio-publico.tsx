@@ -3,11 +3,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import {
-  Clock3,
-  Search,
-  Star,
-} from "lucide-react";
+import { Clock3, Search, Star } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa6";
 import { enlaceInstagram } from "@/lib/enlaces-redes";
 import { GrupoProfesionales } from "@/componentes/sitio/grupo-profesionales";
@@ -76,9 +72,11 @@ export type DatosSitioPublico = {
 export function SitioPublico({
   datos,
   modoVistaPrevia = false,
+  profesionalInicial = "",
 }: {
   datos: DatosSitioPublico;
   modoVistaPrevia?: boolean;
+  profesionalInicial?: string;
 }) {
   const [busqueda, setBusqueda] = useState("");
   const [serviciosElegidos, setServiciosElegidos] = useState<string[]>([]);
@@ -87,12 +85,11 @@ export function SitioPublico({
   const instagram = enlaceInstagram(datos.configuracion.instagram);
   const servicios = useMemo(
     () =>
-      datos.servicios
-        .filter((servicio) =>
-          `${servicio.nombre} ${servicio.categoria}`
-            .toLocaleLowerCase("es")
-            .includes(busqueda.toLocaleLowerCase("es")),
-        ),
+      datos.servicios.filter((servicio) =>
+        `${servicio.nombre} ${servicio.categoria}`
+          .toLocaleLowerCase("es")
+          .includes(busqueda.toLocaleLowerCase("es")),
+      ),
     [busqueda, datos.servicios],
   );
   const categorias = useMemo(
@@ -176,13 +173,18 @@ export function SitioPublico({
                   )}
                   <div>
                     <h2>{datos.configuracion.titulo}</h2>
-                    <p>{datos.configuracion.descripcion || datos.descripcion}</p>
+                    <p>
+                      {datos.configuracion.descripcion || datos.descripcion}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
             {(mostrarUbicacion || mostrarContacto || mostrarEquipo) && (
-              <aside className="publico-identidad__tarjeta" aria-label={`Información de ${sedePrincipal.nombre}`}>
+              <aside
+                className="publico-identidad__tarjeta"
+                aria-label={`Información de ${sedePrincipal.nombre}`}
+              >
                 {mostrarUbicacion && (
                   <div className="publico-identidad__mapa">
                     <iframe
@@ -206,7 +208,12 @@ export function SitioPublico({
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <img className="publico-identidad__icono-maps" src="/iconos/google-maps.png" alt="" /> {sedePrincipal.direccion || "Dirección pendiente"}
+                        <img
+                          className="publico-identidad__icono-maps"
+                          src="/iconos/google-maps.png"
+                          alt=""
+                        />{" "}
+                        {sedePrincipal.direccion || "Dirección pendiente"}
                       </a>
                     )}
                     {mostrarContacto && telefono && (
@@ -231,27 +238,38 @@ export function SitioPublico({
                     )}
                     {mostrarUbicacion && (
                       <>
-                        <div className="publico-horarios" tabIndex={0} aria-label="Ver horarios de atención">
-                          <span><Clock3 /> Ver horario</span>
+                        <div
+                          className="publico-horarios"
+                          tabIndex={0}
+                          aria-label="Ver horarios de atención"
+                        >
+                          <span>
+                            <Clock3 /> Ver horario
+                          </span>
                           <div role="tooltip">
                             <strong>Horarios de atención</strong>
                             {sedePrincipal.horarios
                               .filter((horario) => horario.activo)
                               .map((horario) => (
                                 <span key={horario.diaSemana}>
-                                  {nombreDia(horario.diaSemana)} · {horario.abre} a {horario.cierra}
+                                  {nombreDia(horario.diaSemana)} ·{" "}
+                                  {horario.abre} a {horario.cierra}
                                 </span>
                               ))}
                           </div>
                         </div>
                         {sedePrincipal.googlePuntaje !== null && (
-                          <span className="publico-identidad__valoracion" aria-label={`Puntuación ${sedePrincipal.googlePuntaje} de 5`}>
+                          <span
+                            className="publico-identidad__valoracion"
+                            aria-label={`Puntuación ${sedePrincipal.googlePuntaje} de 5`}
+                          >
                             <span aria-hidden="true">
-                            {Array.from({ length: 5 }, (_, indice) => (
+                              {Array.from({ length: 5 }, (_, indice) => (
                                 <Star key={indice} fill="currentColor" />
                               ))}
                             </span>
-                            {sedePrincipal.googlePuntaje} · {sedePrincipal.googleResenas ?? 0} valoraciones
+                            {sedePrincipal.googlePuntaje} ·{" "}
+                            {sedePrincipal.googleResenas ?? 0} valoraciones
                           </span>
                         )}
                       </>
@@ -259,10 +277,10 @@ export function SitioPublico({
                   </div>
                 )}
                 {mostrarEquipo && datos.profesionales.length > 0 && (
-                <div className="publico-identidad__equipo">
-                  <h3>Profesionales</h3>
-                  <GrupoProfesionales profesionales={datos.profesionales} />
-                </div>
+                  <div className="publico-identidad__equipo">
+                    <h3>Profesionales</h3>
+                    <GrupoProfesionales profesionales={datos.profesionales} />
+                  </div>
                 )}
               </aside>
             )}
@@ -413,6 +431,7 @@ export function SitioPublico({
               politicaContacto={datos.politicaContacto}
               servicios={serviciosSeleccionados}
               profesionales={datos.profesionales}
+              profesionalInicial={profesionalInicial}
               sede={sedePrincipal}
             />
           ) : null}
@@ -429,6 +448,7 @@ function ReservaIntegrada({
   servicios,
   profesionales,
   sede,
+  profesionalInicial,
 }: {
   slug: string;
   nombreNegocio: string;
@@ -436,8 +456,9 @@ function ReservaIntegrada({
   servicios: DatosSitioPublico["servicios"];
   profesionales: DatosSitioPublico["profesionales"];
   sede: DatosSitioPublico["sedes"][number];
+  profesionalInicial: string;
 }) {
-  const [profesionalId, setProfesionalId] = useState("");
+  const [profesionalId, setProfesionalId] = useState(profesionalInicial);
   const [fecha, setFecha] = useState(minimoFecha());
   const [inicio, setInicio] = useState("");
   const [horarios, setHorarios] = useState<

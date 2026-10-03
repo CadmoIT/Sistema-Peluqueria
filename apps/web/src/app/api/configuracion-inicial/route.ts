@@ -6,6 +6,8 @@ import { esOrigenMismoSitio } from "@/lib/origen-solicitud";
 import { superaLimiteDeclarado } from "@/lib/limite-solicitud";
 import { esCantidadLocalesValida, esRubroValido } from "@/lib/registro-inicial";
 import { crearConfiguracionInicial } from "@/servicios/configuracion-inicial.service";
+import { prisma } from "@/lib/prisma";
+import { resolverContextoEquipo } from "@/servicios/contexto-equipo.service";
 
 type CuerpoConfiguracion = {
   nombreNegocio?: unknown;
@@ -34,6 +36,23 @@ export async function POST(solicitud: Request) {
       { mensaje: "Tu sesión venció. Volvé a ingresar." },
       { status: 401 },
     );
+  }
+  // No usar el alta inicial para consultar la primera membresía ni crear un
+  // negocio/prueba nuevos para una cuenta del equipo (incluso revocada).
+  if (await prisma.membresia.count({ where: { usuarioId: sesion.user.id } })) {
+    const contexto = await resolverContextoEquipo(sesion.user);
+    if (!contexto)
+      return NextResponse.json(
+        { mensaje: "Elegí un negocio disponible desde Mi cuenta." },
+        { status: 409 },
+      );
+    return NextResponse.json({
+      id: contexto.negocio.id,
+      nombre: contexto.negocio.nombre,
+      slug: contexto.negocio.slug,
+      planId: contexto.negocio.suscripcion?.plan ?? "PRUEBA",
+      versionEquipo: contexto.negocio.versionEquipo.toString(),
+    });
   }
   const cuerpo = (await solicitud
     .json()
@@ -76,5 +95,10 @@ export async function POST(solicitud: Request) {
     tipoNegocio,
     cantidadLocales,
   });
-  return NextResponse.json({ ...negocio, planId: plan.id });
+  return NextResponse.json({
+    ...negocio,
+    versionEquipo:
+      "versionEquipo" in negocio ? String(negocio.versionEquipo) : "0",
+    planId: plan.id,
+  });
 }

@@ -19,7 +19,11 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const negocio = await obtenerSitioPublico(slug);
-  if (negocio?.sitioRetiradoEn) return { title: "Sitio no disponible", robots: { index: false, follow: false } };
+  if (negocio?.sitioRetiradoEn)
+    return {
+      title: "Sitio no disponible",
+      robots: { index: false, follow: false },
+    };
   return negocio
     ? {
         title: negocio.nombre,
@@ -31,17 +35,17 @@ export async function generateMetadata({
 
 export default async function PaginaSitio({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; sedeId?: string }>;
+  searchParams?: Promise<{ profesional?: string }>;
 }) {
   const { slug, sedeId } = await params;
+  const profesionalInicial = (await searchParams)?.profesional ?? "";
   const negocio = await obtenerSitioPublico(slug);
   if (!negocio) notFound();
   if (negocio.sitioRetiradoEn) notFound();
-  if (
-    !negocio.publicado ||
-    !tieneAccesoOperativo(negocio.suscripcion)
-  ) {
+  if (!negocio.publicado || !tieneAccesoOperativo(negocio.suscripcion)) {
     return (
       <SitioSuspendido
         nombre={negocio.nombre}
@@ -59,10 +63,36 @@ export default async function PaginaSitio({
   );
   const sedeSeleccionada = sedeId
     ? negocio.sedes.find((sede) => sede.id === sedeId)
-    : sedeDelSubdominio ?? (negocio.sedes.length === 1 ? negocio.sedes[0] : undefined);
+    : (sedeDelSubdominio ??
+      (negocio.sedes.length === 1 ? negocio.sedes[0] : undefined));
   if (sedeId && !sedeSeleccionada) notFound();
+  if (
+    profesionalInicial &&
+    !negocio.profesionales.some(
+      (p) =>
+        p.id === profesionalInicial &&
+        (!sedeSeleccionada ||
+          p.sedes.some((s) => s.sedeId === sedeSeleccionada.id)),
+    )
+  )
+    notFound();
   if (!sedeSeleccionada) {
-    return <SelectorSucursales nombre={negocio.nombre} slug={negocio.subdominio ?? negocio.slug} sedes={negocio.sedes} />;
+    return (
+      <SelectorSucursales
+        nombre={negocio.nombre}
+        slug={negocio.subdominio ?? negocio.slug}
+        sedes={
+          profesionalInicial
+            ? negocio.sedes.filter((s) =>
+                negocio.profesionales
+                  .find((p) => p.id === profesionalInicial)
+                  ?.sedes.some((a) => a.sedeId === s.id),
+              )
+            : negocio.sedes
+        }
+        profesionalInicial={profesionalInicial}
+      />
+    );
   }
   const configuracionesPorLocal = esMapa(publicadaBase.locales)
     ? publicadaBase.locales
@@ -92,14 +122,8 @@ export default async function PaginaSitio({
     configuracion: {
       titulo: cadena("titulo", negocio.nombre),
       descripcion: cadena("descripcion", negocio.descripcion ?? ""),
-      colorTitulo: cadena(
-        "colorTitulo",
-        cadena("colorTexto", "#111111"),
-      ),
-      colorSubtitulo: cadena(
-        "colorSubtitulo",
-        cadena("colorTexto", "#111111"),
-      ),
+      colorTitulo: cadena("colorTitulo", cadena("colorTexto", "#111111")),
+      colorSubtitulo: cadena("colorSubtitulo", cadena("colorTexto", "#111111")),
       colorPrincipal: cadena("colorPrincipal", "#111111"),
       colorFondo: cadena("colorFondo", "#ffffff"),
       colorTexto: cadena("colorTexto", "#111111"),
@@ -117,25 +141,22 @@ export default async function PaginaSitio({
       hero,
       secciones,
     },
-    sedes: [sedeSeleccionada].map(
-      (sede) => ({
-        id: sede.id,
-        nombre: sede.nombre,
-        subdominio: sede.subdominio,
-        direccion: sede.direccion,
-        telefono: sede.telefono,
-        latitud: sede.latitud ? Number(sede.latitud) : null,
-        longitud: sede.longitud ? Number(sede.longitud) : null,
-        googlePuntaje: sede.googlePuntaje ? Number(sede.googlePuntaje) : null,
-        googleResenas: sede.googleResenas,
-        googleMapsUrl: sede.googleMapsUrl,
-        horarios: sede.horarios,
-      }),
-    ),
+    sedes: [sedeSeleccionada].map((sede) => ({
+      id: sede.id,
+      nombre: sede.nombre,
+      subdominio: sede.subdominio,
+      direccion: sede.direccion,
+      telefono: sede.telefono,
+      latitud: sede.latitud ? Number(sede.latitud) : null,
+      longitud: sede.longitud ? Number(sede.longitud) : null,
+      googlePuntaje: sede.googlePuntaje ? Number(sede.googlePuntaje) : null,
+      googleResenas: sede.googleResenas,
+      googleMapsUrl: sede.googleMapsUrl,
+      horarios: sede.horarios,
+    })),
     servicios: negocio.servicios
-      .filter(
-        (servicio) =>
-          servicio.sedes.some((sede) => sede.sedeId === sedeSeleccionada.id),
+      .filter((servicio) =>
+        servicio.sedes.some((sede) => sede.sedeId === sedeSeleccionada.id),
       )
       .map((servicio) => ({
         id: servicio.id,
@@ -150,7 +171,11 @@ export default async function PaginaSitio({
           (asignacion) => asignacion.profesionalId,
         ),
       })),
-    profesionales: negocio.profesionales.filter((profesional) => profesional.sedes.some((sede) => sede.sedeId === sedeSeleccionada.id)).map((profesional) => ({
+    profesionales: negocio.profesionales
+      .filter((profesional) =>
+        profesional.sedes.some((sede) => sede.sedeId === sedeSeleccionada.id),
+      )
+      .map((profesional) => ({
         id: profesional.id,
         nombre: profesional.nombre,
         apellido: profesional.apellido,
@@ -163,7 +188,7 @@ export default async function PaginaSitio({
         ),
       })),
   };
-  return <SitioPublico datos={datos} />;
+  return <SitioPublico datos={datos} profesionalInicial={profesionalInicial} />;
 }
 
 function esMapa(
@@ -176,22 +201,24 @@ function normalizarHero(
   valor: unknown,
 ): DatosSitioPublico["configuracion"]["hero"] {
   if (!Array.isArray(valor)) return [];
-  return valor.flatMap((imagen) => {
-    if (typeof imagen === "string") {
-      return imagen ? [{ url: imagen, alt: "", focoX: 50, focoY: 50 }] : [];
-    }
-    if (!imagen || typeof imagen !== "object") return [];
-    const candidata = imagen as Record<string, unknown>;
-    if (typeof candidata.url !== "string" || !candidata.url) return [];
-    return [
-      {
-        url: candidata.url,
-        alt: typeof candidata.alt === "string" ? candidata.alt : "",
-        focoX: typeof candidata.focoX === "number" ? candidata.focoX : 50,
-        focoY: typeof candidata.focoY === "number" ? candidata.focoY : 50,
-      },
-    ];
-  }).slice(0, 1);
+  return valor
+    .flatMap((imagen) => {
+      if (typeof imagen === "string") {
+        return imagen ? [{ url: imagen, alt: "", focoX: 50, focoY: 50 }] : [];
+      }
+      if (!imagen || typeof imagen !== "object") return [];
+      const candidata = imagen as Record<string, unknown>;
+      if (typeof candidata.url !== "string" || !candidata.url) return [];
+      return [
+        {
+          url: candidata.url,
+          alt: typeof candidata.alt === "string" ? candidata.alt : "",
+          focoX: typeof candidata.focoX === "number" ? candidata.focoX : 50,
+          focoY: typeof candidata.focoY === "number" ? candidata.focoY : 50,
+        },
+      ];
+    })
+    .slice(0, 1);
 }
 
 function normalizarSecciones(
@@ -210,7 +237,11 @@ function normalizarSecciones(
       typeof seccion === "string" &&
       permitidas.includes(seccion as (typeof permitidas)[number]),
   );
-  if (version !== 2 && secciones.includes("ubicacion") && !secciones.includes("contacto")) {
+  if (
+    version !== 2 &&
+    secciones.includes("ubicacion") &&
+    !secciones.includes("contacto")
+  ) {
     secciones.splice(secciones.indexOf("ubicacion"), 0, "contacto");
   }
   return secciones;

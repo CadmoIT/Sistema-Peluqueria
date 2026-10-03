@@ -1,4 +1,6 @@
 /** Elimina fichas del negocio en una transacción y conserva referencias históricas neutras. */
+import type { ContextoEquipo } from "./contexto-equipo.service";
+import { registrarActividadEquipo } from "./actividad-equipo.service";
 import { Prisma, type PrismaClient } from "@prisma/client";
 export type TipoFicha = "cliente" | "profesional" | "producto" | "servicio";
 export type ResultadoAccion = { ok: boolean; mensaje: string; codigo?: string };
@@ -7,7 +9,10 @@ export async function eliminarFicha(
   negocioId: string,
   tipo: TipoFicha,
   id: string,
+  contexto?: ContextoEquipo,
 ): Promise<ResultadoAccion> {
+  if (contexto && contexto.negocio.id !== negocioId)
+    throw new Error("El negocio no está disponible.");
   return db.$transaction(async (tx) => {
     const tabla =
       tipo === "cliente"
@@ -22,7 +27,7 @@ export async function eliminarFicha(
     );
     if (!fichas.length)
       return { ok: false, mensaje: "La ficha ya no está disponible." };
-    if (tipo !== "producto" && tipo !== "servicio") {
+    if (tipo === "cliente") {
       const futuros = await tx.reserva.findMany({
         where: {
           negocioId,
@@ -69,17 +74,8 @@ export async function eliminarFicha(
       });
       await tx.cliente.delete({ where: { id } });
     } else if (tipo === "profesional") {
-      const profesional = await tx.profesional.findUniqueOrThrow({
-        where: { id },
-        select: { membresiaId: true },
-      });
-      if (profesional.membresiaId)
-        await tx.membresia.updateMany({
-          where: { id: profesional.membresiaId, negocioId, rol: "PROFESIONAL" },
-          data: { activo: false },
-        });
-      // La cascada retira conexiones exclusivas locales, sin tocar calendarios remotos.
-      await tx.profesional.delete({ where: { id } });
+      // Suspende sin revocar el acceso; conserva turnos y atribución histórica.
+      await tx.profesional.update({ where: { id }, data: { activo: false } });
     } else if (tipo === "producto") {
       const existencias = await tx.existencia.findMany({
         where: { negocioId, productoId: id },
@@ -109,10 +105,19 @@ export async function eliminarFicha(
         };
       await tx.servicio.delete({ where: { id } });
     }
+    if (contexto)
+      await registrarActividadEquipo(tx, contexto, {
+        accion:
+          tipo === "profesional" ? "DESACTIVAR_PROFESIONAL" : "ELIMINAR_FICHA",
+        recurso: tipo,
+        recursoId: id,
+      });
     return {
       ok: true,
       mensaje:
-        "Ficha eliminada definitivamente. Los movimientos históricos se conservaron.",
+        tipo === "profesional"
+          ? "Profesional desactivado. Sus turnos e historial se conservaron; revisá los turnos futuros desde Agenda."
+          : "Ficha eliminada definitivamente. Los movimientos históricos se conservaron.",
     };
   });
 }

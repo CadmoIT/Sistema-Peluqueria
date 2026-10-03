@@ -51,7 +51,7 @@ export async function cambiarSubdominio(
   rol: string,
   solicitado: string,
 ) {
-  if (!["DUENO", "ADMIN"].includes(rol))
+  if (rol !== "DUENO")
     return {
       ok: false,
       mensaje: "Sólo el dueño o un administrador puede cambiar esta dirección.",

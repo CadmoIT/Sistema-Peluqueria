@@ -7,6 +7,7 @@ import { obtenerCatalogo } from "@/servicios/panel-datos.service";
 import { obtenerPerfilNegocio } from "@/lib/perfiles-negocio";
 import { FiltroLocalUrl } from "@/componentes/panel/filtro-local";
 import "./servicios.css";
+import { requerirContextoPanel } from "@/servicios/panel-datos.service";
 export const metadata = { title: "Servicios" };
 export default async function PaginaServicios({
   searchParams,
@@ -15,6 +16,27 @@ export default async function PaginaServicios({
 }) {
   const parametros = await searchParams;
   const datos = await obtenerCatalogo(parametros.local);
+  if ((await requerirContextoPanel()).membresia.rol === "PROFESIONAL")
+    return (
+      <div className="panel-contenido">
+        <VistaPanelLista ruta="/panel/servicios" />
+        <h1>Servicios</h1>
+        <p>
+          Catálogo del negocio. El dueño administra los servicios y precios.
+        </p>
+        {datos.servicios.map((s) => (
+          <article key={s.id} className="equipo-operacion">
+            <h2>{s.nombre}</h2>
+            <p>
+              {s.duracionMinutos} minutos · $ {String(s.precio)} ·{" "}
+              {s.profesionales.length === 0
+                ? "Consultá tu asignación al dueño"
+                : "Asignado a vos"}
+            </p>
+          </article>
+        ))}
+      </div>
+    );
   const perfil = obtenerPerfilNegocio(datos.negocio.configuracion);
   const profesionales = datos.profesionales.map(({ id, nombre, apellido }) => ({
     id,

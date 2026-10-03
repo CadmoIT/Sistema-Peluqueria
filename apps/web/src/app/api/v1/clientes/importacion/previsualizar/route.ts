@@ -17,6 +17,11 @@ export async function POST(solicitud: Request) {
       { status: 413 },
     );
   const contexto = await obtenerContextoApi();
+  if (contexto?.membresia.rol === "PROFESIONAL")
+    return NextResponse.json(
+      { mensaje: "Esta operación es administrativa." },
+      { status: 403 },
+    );
   if (!contexto) {
     return NextResponse.json({ mensaje: "Sesión no válida." }, { status: 401 });
   }

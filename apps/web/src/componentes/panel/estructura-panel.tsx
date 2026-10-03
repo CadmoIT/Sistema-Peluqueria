@@ -13,8 +13,12 @@ import { obtenerEnlacesPanel, NavegacionPanel } from "./navegacion-panel";
 import { usePerfilNegocio } from "./perfil-negocio-contexto";
 import { NotificacionesPanel } from "./notificaciones-panel";
 import { CuentaPanel } from "./cuenta-panel";
-import { FranjaSuscripcion, type SuscripcionFranja } from "./franja-suscripcion";
+import {
+  FranjaSuscripcion,
+  type SuscripcionFranja,
+} from "./franja-suscripcion";
 import { usePathname } from "next/navigation";
+import { useRolEquipo } from "./contexto-equipo";
 
 export function EstructuraPanel({
   children,
@@ -67,7 +71,8 @@ function ContenidoEstructuraPanel({
   const navegacion = useNavegacionPanel();
   const destino = navegacion?.destino;
   const ruta = usePathname();
-  const enlaces = obtenerEnlacesPanel(usePerfilNegocio());
+  const rol = useRolEquipo();
+  const enlaces = obtenerEnlacesPanel(usePerfilNegocio(), useRolEquipo());
 
   useEffect(() => {
     const guardadoContraido =
@@ -142,10 +147,7 @@ function ContenidoEstructuraPanel({
         <button onClick={() => setMenuAbierto(false)} aria-label="Cerrar menú">
           <X />
         </button>
-        <NavegacionPanel
-          movil
-          onNavegar={() => setMenuAbierto(false)}
-        />
+        <NavegacionPanel movil onNavegar={() => setMenuAbierto(false)} />
       </div>
       <NavegacionPanel
         contraido={contraido}
@@ -154,6 +156,17 @@ function ContenidoEstructuraPanel({
         anchoSidebar={anchoSidebar}
       />
       <main className="panel-main">
+        <div className="panel-contexto-activo">
+          <Link href="/seleccionar-negocio">
+            {nombreNegocio} ·{" "}
+            {rol === "PROFESIONAL"
+              ? "Empleado"
+              : rol === "DUENO"
+                ? "Dueño"
+                : "Administrador"}{" "}
+            ▾
+          </Link>
+        </div>
         <div className="panel-cuenta-flotante">
           <CuentaPanel
             nombreNegocio={nombreNegocio}
@@ -184,9 +197,20 @@ function ContenidoEstructuraPanel({
           inert={destino ? true : undefined}
           aria-hidden={destino ? true : undefined}
         >
-          {soloLectura && !["/panel/planes", "/panel/facturacion"].includes(ruta) && (
-            <p className="panel-aviso-solo-lectura">Modo de solo lectura: podés consultar y exportar tus datos. Para crear o modificar información, <Link href="/panel/planes">activá un plan</Link>.</p>
-          )}
+          {soloLectura &&
+            !["/panel/planes", "/panel/facturacion"].includes(ruta) && (
+              <p className="panel-aviso-solo-lectura">
+                Modo de solo lectura: podés consultar y exportar tus datos.{" "}
+                {rol === "DUENO" ? (
+                  <>
+                    Para crear o modificar información,{" "}
+                    <Link href="/panel/planes">activá un plan</Link>.
+                  </>
+                ) : (
+                  "El dueño debe activar el plan para habilitar las modificaciones."
+                )}
+              </p>
+            )}
           {children}
         </div>
       </main>

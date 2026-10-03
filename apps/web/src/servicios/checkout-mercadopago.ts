@@ -15,7 +15,10 @@ type RespuestaPreapproval = {
   message?: string;
 };
 
-export async function ejecutarCheckoutMercadoPago(solicitud: Request, obtenerContexto: typeof obtenerContextoApi) {
+export async function ejecutarCheckoutMercadoPago(
+  solicitud: Request,
+  obtenerContexto: typeof obtenerContextoApi,
+) {
   if (!esOrigenMismoSitio(solicitud)) {
     return NextResponse.json({ mensaje: "Origen no válido." }, { status: 403 });
   }
@@ -26,7 +29,7 @@ export async function ejecutarCheckoutMercadoPago(solicitud: Request, obtenerCon
       303,
     );
   }
-  if (!["DUENO", "ADMINISTRADOR"].includes(contexto.membresia.rol)) {
+  if (contexto.membresia.rol !== "DUENO") {
     return NextResponse.json(
       { mensaje: "Solo una persona administradora puede cambiar el plan." },
       { status: 403 },
@@ -34,7 +37,9 @@ export async function ejecutarCheckoutMercadoPago(solicitud: Request, obtenerCon
   }
 
   const planId = new URL(solicitud.url).searchParams.get("plan");
-  const plan = [...PLANES, PLAN_PRO].find((candidato) => candidato.id === planId);
+  const plan = [...PLANES, PLAN_PRO].find(
+    (candidato) => candidato.id === planId,
+  );
   if (!plan || plan.precioMensual === null || plan.precioMensual <= 0) {
     return volver(solicitud, "plan-invalido");
   }
@@ -56,7 +61,10 @@ export async function ejecutarCheckoutMercadoPago(solicitud: Request, obtenerCon
   ) {
     return volver(solicitud, "plan-actual");
   }
-  if (suscripcionActual.cancelarAlFinal && tieneAccesoOperativo(suscripcionActual)) {
+  if (
+    suscripcionActual.cancelarAlFinal &&
+    tieneAccesoOperativo(suscripcionActual)
+  ) {
     return volver(solicitud, "cancelacion-en-curso");
   }
 
@@ -123,7 +131,10 @@ export async function ejecutarCheckoutMercadoPago(solicitud: Request, obtenerCon
         signal: AbortSignal.timeout(12_000),
       },
     ).catch((error: unknown) => {
-      console.error("No se pudo conectar con Mercado Pago para cambiar el plan", error);
+      console.error(
+        "No se pudo conectar con Mercado Pago para cambiar el plan",
+        error,
+      );
       return null;
     });
     if (!respuestaCambio) return volver(solicitud, "error");
@@ -172,13 +183,12 @@ export async function ejecutarCheckoutMercadoPago(solicitud: Request, obtenerCon
   });
 
   if (!respuesta) return volver(solicitud, "error");
-  const resultado = (await respuesta.json().catch(() => null)) as
-    | RespuestaPreapproval
-    | null;
-  const checkoutUrl =
-    process.env.MERCADOPAGO_ACCESS_TOKEN?.startsWith("TEST-")
-      ? resultado?.sandbox_init_point ?? resultado?.init_point
-      : resultado?.init_point;
+  const resultado = (await respuesta
+    .json()
+    .catch(() => null)) as RespuestaPreapproval | null;
+  const checkoutUrl = process.env.MERCADOPAGO_ACCESS_TOKEN?.startsWith("TEST-")
+    ? (resultado?.sandbox_init_point ?? resultado?.init_point)
+    : resultado?.init_point;
   if (!respuesta.ok || !resultado?.id || !checkoutUrl) {
     console.error("Mercado Pago rechazó la creación de la suscripción", {
       estado: respuesta.status,

@@ -14,6 +14,16 @@ import {
   fechaValida,
 } from "@/componentes/panel/agenda/agenda-modelo";
 import { fechaLocalAUtc, sumarDias } from "./disponibilidad.service";
+import {
+  resolverContextoEquipo,
+  exigirPermisoEquipo,
+} from "./contexto-equipo.service";
+import type { PermisoEquipo } from "@/lib/permisos-equipo";
+import { lecturasEquipo } from "./lecturas-equipo.service";
+import {
+  senasRegistradas,
+  saldoPendienteEquipo,
+} from "./ingresos-equipo.service";
 
 export const requerirContextoPanel = cache(
   async function requerirContextoPanel() {
@@ -22,21 +32,24 @@ export const requerirContextoPanel = cache(
     });
     if (!sesion) redirect("/acceder?modo=ingreso");
 
-    const membresia = await prisma.membresia.findFirst({
-      where: { usuarioId: sesion.user.id, activo: true },
-      include: { negocio: { include: { suscripcion: true } } },
-    });
-    if (!membresia) redirect("/primeros-pasos");
-
-    return { usuario: sesion.user, membresia, negocio: membresia.negocio };
+    const contexto = await resolverContextoEquipo(sesion.user);
+    if (!contexto) redirect("/seleccionar-negocio");
+    return contexto;
   },
 );
 
 /** Las lecturas y facturación conservan el contexto normal; las escrituras usan éste. */
-export async function requerirContextoPanelEditable() {
+export async function requerirContextoPanelEditable(
+  permiso: PermisoEquipo = "administrar",
+) {
   const contexto = await requerirContextoPanel();
+  exigirPermisoEquipo(contexto, permiso);
   if (!tieneAccesoOperativo(contexto.negocio.suscripcion)) {
-    redirect("/panel/planes?acceso=solo-lectura");
+    redirect(
+      contexto.membresia.rol === "DUENO"
+        ? "/panel/planes?acceso=solo-lectura"
+        : "/panel/resumen?acceso=solo-lectura",
+    );
   }
   return contexto;
 }
@@ -44,6 +57,7 @@ export async function requerirContextoPanelEditable() {
 export async function obtenerResumenPanel(sedeSolicitada?: string) {
   const contexto = await requerirContextoPanel();
   const { negocio } = contexto;
+  const prisma = lecturasEquipo(contexto);
   const sedes = await prisma.sede.findMany({
     where: { negocioId: negocio.id, activa: true },
     select: { id: true, nombre: true, subdominio: true },
@@ -165,7 +179,29 @@ export async function obtenerResumenPanel(sedeSolicitada?: string) {
     clientes,
     profesionales,
     servicios,
-    ingresosHoy: Number(ingresos._sum.monto ?? 0),
+    esEmpleado: contexto.identidad.rol === "PROFESIONAL",
+    esDueno: contexto.identidad.rol === "DUENO",
+    saldoPendiente: await saldoPendienteEquipo(contexto, localSeleccionado),
+    ingresosHoy:
+      Number(ingresos._sum.monto ?? 0) -
+      Number(
+        (
+          await prisma.movimientoCaja.aggregate({
+            where: {
+              negocioId: negocio.id,
+              ...filtroSede,
+              tipo: "EGRESO",
+              reversaDeId: { not: null },
+              creadoEn: { gte: inicio, lt: fin },
+            },
+            _sum: { monto: true },
+          })
+        )._sum.monto ?? 0,
+      ) +
+      (await senasRegistradas(contexto, inicio, fin, localSeleccionado)).reduce(
+        (s, p) => s + Number(p.monto),
+        0,
+      ),
     cantidadNegocios,
     proximo,
     sedes,
@@ -174,7 +210,9 @@ export async function obtenerResumenPanel(sedeSolicitada?: string) {
 }
 
 export async function obtenerAgenda(fechaSolicitada?: string) {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const prisma = lecturasEquipo(contexto);
   const fecha = fechaValida(fechaSolicitada)
     ? fechaSolicitada
     : fechaEnZonaAgenda(new Date(), negocio.zonaHoraria);
@@ -324,7 +362,9 @@ export async function obtenerAgenda(fechaSolicitada?: string) {
 }
 
 export async function obtenerClientes(sedeSolicitada?: string) {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const prisma = lecturasEquipo(contexto);
   const sedes = await prisma.sede.findMany({
     where: { negocioId: negocio.id, activa: true },
     select: { id: true, nombre: true },
@@ -374,7 +414,9 @@ export async function obtenerClientes(sedeSolicitada?: string) {
 }
 
 export async function obtenerCatalogo(sedeSolicitada?: string) {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const prisma = lecturasEquipo(contexto);
   const sedes = await prisma.sede.findMany({
     where: { negocioId: negocio.id, activa: true },
     orderBy: { nombre: "asc" },
@@ -427,7 +469,10 @@ export async function obtenerCatalogo(sedeSolicitada?: string) {
 }
 
 export async function obtenerEquipo(sedeSolicitada?: string) {
-  const { negocio } = await requerirContextoPanel();
+  exigirPermisoEquipo(await requerirContextoPanel(), "administrar");
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const prisma = lecturasEquipo(contexto);
   const sedes = await prisma.sede.findMany({
     where: { negocioId: negocio.id, activa: true },
     select: { id: true, nombre: true },
@@ -491,6 +536,7 @@ export async function obtenerEquipo(sedeSolicitada?: string) {
 }
 
 export async function obtenerSitioEditable() {
+  exigirPermisoEquipo(await requerirContextoPanel(), "dueno");
   const { negocio, membresia } = await requerirContextoPanel();
   const [configuracion, sedes, servicios, profesionales] = await Promise.all([
     prisma.configuracionSitio.findUnique({ where: { negocioId: negocio.id } }),
@@ -507,13 +553,24 @@ export async function obtenerSitioEditable() {
     }),
   ]);
   const clave = claveNombreNegocio(negocio.nombre);
-  const nombresRepetidos = clave ? await prisma.negocio.count({ where: { nombreClave: clave, id: { not: negocio.id } } }) : 0;
-  return { negocio, configuracion, sedes, servicios, profesionales,
-    puedeEditarSubdominio: nombresRepetidos > 0 && ["DUENO", "ADMIN"].includes(membresia.rol),
+  const nombresRepetidos = clave
+    ? await prisma.negocio.count({
+        where: { nombreClave: clave, id: { not: negocio.id } },
+      })
+    : 0;
+  return {
+    negocio,
+    configuracion,
+    sedes,
+    servicios,
+    profesionales,
+    puedeEditarSubdominio:
+      nombresRepetidos > 0 && ["DUENO", "ADMIN"].includes(membresia.rol),
   };
 }
 
 export async function obtenerConfiguracionNegocio() {
+  exigirPermisoEquipo(await requerirContextoPanel(), "administrar");
   const contexto = await requerirContextoPanel();
   const [sedes, conexionesGoogle, configuracionAvisos] = await Promise.all([
     prisma.sede.findMany({
@@ -533,6 +590,7 @@ export async function obtenerConfiguracionNegocio() {
 }
 
 export async function obtenerFacturacion() {
+  exigirPermisoEquipo(await requerirContextoPanel(), "dueno");
   const contexto = await requerirContextoPanel();
   const [pagos, sede] = await Promise.all([
     prisma.pago.findMany({
@@ -568,7 +626,9 @@ export async function obtenerFacturacion() {
 }
 
 export async function obtenerInventario() {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const prisma = lecturasEquipo(contexto);
   const [productos, sedes, libres] = await Promise.all([
     prisma.producto.findMany({
       where: { negocioId: negocio.id },
@@ -591,7 +651,9 @@ export async function obtenerInventario() {
 }
 
 export async function obtenerCompras() {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const prisma = lecturasEquipo(contexto);
   const [sedes, productos, compras] = await Promise.all([
     prisma.sede.findMany({
       where: { negocioId: negocio.id, activa: true },
@@ -607,7 +669,9 @@ export async function obtenerCompras() {
       where: { negocioId: negocio.id },
       include: {
         sede: { select: { nombre: true } },
-        items: { select: { id: true, nombre: true, cantidad: true } },
+        items: {
+          select: { id: true, nombre: true, cantidad: true, costo: true },
+        },
       },
       orderBy: { creadoEn: "desc" },
       take: 100,
@@ -617,7 +681,9 @@ export async function obtenerCompras() {
 }
 
 export async function obtenerCaja(sedeSolicitada?: string) {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const prisma = lecturasEquipo(contexto);
   const inicio = inicioDelDia(new Date(), negocio.zonaHoraria);
   const sedes = await prisma.sede.findMany({
     where: { negocioId: negocio.id, activa: true },
@@ -656,7 +722,15 @@ export async function obtenerCaja(sedeSolicitada?: string) {
     negocio,
     servicios,
     productos,
-    movimientos,
+    movimientos: [
+      ...movimientos,
+      ...(await senasRegistradas(
+        contexto,
+        inicio,
+        undefined,
+        localSeleccionado || undefined,
+      )),
+    ],
     sedes,
     profesionales,
     localSeleccionado,
@@ -668,7 +742,9 @@ export async function obtenerReportes(
   sedeId?: string,
   atribucion?: string,
 ) {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel();
+  const { negocio } = contexto;
+  const prisma = lecturasEquipo(contexto);
   const periodo = periodoReporte(entrada),
     rango = rangoReporte(periodo, negocio.zonaHoraria);
   const [sedes, profesionales] = await Promise.all([
@@ -686,10 +762,12 @@ export async function obtenerReportes(
   const localSeleccionado =
     sedes.length > 1 ? sedes.find((s) => s.id === sedeId)?.id : undefined;
   const seleccion =
-    ["local", "sin-asignar", "eliminado"].includes(atribucion ?? "") ||
-    profesionales.some((p) => p.id === atribucion)
-      ? (atribucion ?? "")
-      : "";
+    contexto.identidad.rol === "PROFESIONAL"
+      ? contexto.identidad.profesionalId!
+      : ["local", "sin-asignar", "eliminado"].includes(atribucion ?? "") ||
+          profesionales.some((p) => p.id === atribucion)
+        ? (atribucion ?? "")
+        : "";
   const filtro =
     seleccion === "local"
       ? { origen: "LOCAL" as const }
@@ -713,10 +791,24 @@ export async function obtenerReportes(
   });
   return {
     negocio,
-    movimientos,
+    movimientos: [
+      ...movimientos,
+      ...(await senasRegistradas(
+        contexto,
+        rango.desde,
+        rango.hasta,
+        localSeleccionado,
+        seleccion === "local" || seleccion === "eliminado"
+          ? null
+          : seleccion === "sin-asignar"
+            ? "no-asignado"
+            : seleccion || undefined,
+      )),
+    ],
     sedes,
     profesionales,
     localSeleccionado,
+    saldoPendiente: await saldoPendienteEquipo(contexto, localSeleccionado),
     atribucion: seleccion,
     periodo,
   };
@@ -727,7 +819,12 @@ export const obtenerSitioPublico = cache(async function obtenerSitioPublico(
 ) {
   return prisma.negocio.findFirst({
     where: {
-      OR: [{ slug }, { subdominio: slug }, { subdominiosAnteriores: { some: { nombre: slug } } }, { sedes: { some: { subdominio: slug, activa: true } } }],
+      OR: [
+        { slug },
+        { subdominio: slug },
+        { subdominiosAnteriores: { some: { nombre: slug } } },
+        { sedes: { some: { subdominio: slug, activa: true } } },
+      ],
     },
     select: {
       id: true,
@@ -740,7 +837,12 @@ export const obtenerSitioPublico = cache(async function obtenerSitioPublico(
       publicado: true,
       sitioRetiradoEn: true,
       suscripcion: {
-        select: { estado: true, pruebaFinalizaEn: true, graciaHasta: true, proximoCobro: true },
+        select: {
+          estado: true,
+          pruebaFinalizaEn: true,
+          graciaHasta: true,
+          proximoCobro: true,
+        },
       },
       configuracionSitio: { select: { publicada: true } },
       sedes: {

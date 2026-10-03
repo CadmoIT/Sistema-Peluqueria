@@ -85,7 +85,9 @@ export function crearServicioGoogle(
   async function guardarConexionGoogle(
     estado: EstadoGoogle,
     tokens: { access_token: string; refresh_token?: string; scope?: string },
+    validarAcceso?: () => Promise<void>,
   ) {
+    await validarAcceso?.();
     const existente = await prisma.conexionGoogleCalendar.findFirst({
       where: {
         negocioId: estado.negocioId,
@@ -144,6 +146,9 @@ export function crearServicioGoogle(
       ultimoError: null,
       syncToken: null,
     };
+    // El consentimiento incluye peticiones externas: volver a comprobar el acceso
+    // antes de persistir evita guardar tokens tras una revocación o cambio de local.
+    await validarAcceso?.();
     const conexion = existente
       ? await prisma.conexionGoogleCalendar.update({
           where: { id: existente.id },
@@ -302,7 +307,9 @@ export function crearServicioGoogle(
         ...(conexionId ? { id: conexionId } : {}),
         estado: { in: ["ACTIVA", "ERROR"] },
         OR: [
-          ...(reserva.profesionalId ? [{ profesionalId: reserva.profesionalId }] : []),
+          ...(reserva.profesionalId
+            ? [{ profesionalId: reserva.profesionalId }]
+            : []),
           { profesionalId: null, sedeId: reserva.sedeId },
           { profesionalId: null, sedeId: null },
         ],

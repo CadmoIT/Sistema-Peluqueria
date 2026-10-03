@@ -4,6 +4,7 @@ import { useCierreExterior } from "@/componentes/interaccion/cierre-exterior";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { SiGooglecalendar } from "react-icons/si";
+import { useRolEquipo } from "../contexto-equipo";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 type Conexion = {
@@ -72,7 +73,8 @@ function DialogoGoogle({
   const dialogo = useRef<HTMLDialogElement>(null);
   useCierreExterior(dialogo, cerrar);
   const router = useRouter();
-  const [alcance, setAlcance] = useState("negocio");
+  const personal = useRolEquipo() === "PROFESIONAL";
+  const [alcance, setAlcance] = useState(personal ? "profesional" : "negocio");
   const [local, setLocal] = useState(locales[0]?.id ?? "");
   const [profesional, setProfesional] = useState(profesionales[0]?.id ?? "");
   const [pendiente, iniciar] = useTransition();
@@ -193,10 +195,12 @@ function DialogoGoogle({
       <label>
         ¿Qué turnos querés sincronizar?
         <select value={alcance} onChange={(e) => setAlcance(e.target.value)}>
-          <option value="negocio">Todo el negocio</option>
+          {!personal && <option value="negocio">Todo el negocio</option>}
           {locales.length > 1 && <option value="local">Un local</option>}
-          {profesionales.length > 1 && (
-            <option value="profesional">Un profesional</option>
+          {(personal || profesionales.length > 1) && (
+            <option value="profesional">
+              {personal ? "Mi agenda" : "Un profesional"}
+            </option>
           )}
         </select>
       </label>

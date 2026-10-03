@@ -7,6 +7,7 @@ import {
   googleCalendarConfigurado,
 } from "@/lib/google-calendar";
 import { prisma } from "@/lib/prisma";
+import { resolverContextoEquipo } from "@/servicios/contexto-equipo.service";
 import { fechaValida } from "@/componentes/panel/agenda/agenda-modelo";
 
 export async function GET(solicitud: Request) {
@@ -26,16 +27,29 @@ export async function GET(solicitud: Request) {
     return NextResponse.redirect(
       new URL("/acceder?modo=ingreso", solicitud.url),
     );
-  const profesionalId = url.searchParams.get("profesionalId");
+  const solicitadoProfesional = url.searchParams.get("profesionalId");
+  let profesionalId = solicitadoProfesional;
   const sedeId = url.searchParams.get("sedeId");
-  const membresia = await prisma.membresia.findFirst({
-    where: { usuarioId: sesion.user.id, activo: true },
-    include: { negocio: { include: { suscripcion: true } } },
-  });
+  const contexto = await resolverContextoEquipo(sesion.user);
+  const membresia = contexto?.membresia;
   if (!membresia)
     return NextResponse.redirect(new URL("/primeros-pasos", solicitud.url));
+  if (contexto!.identidad.rol === "PROFESIONAL") {
+    if (
+      (solicitadoProfesional &&
+        solicitadoProfesional !== contexto!.identidad.profesionalId) ||
+      (sedeId && !contexto!.identidad.sedeIds.includes(sedeId))
+    )
+      return NextResponse.json(
+        { mensaje: "Calendario no disponible." },
+        { status: 403 },
+      );
+    profesionalId = contexto!.identidad.profesionalId;
+  }
   if (!tieneAccesoOperativo(membresia.negocio.suscripcion))
-    return NextResponse.redirect(new URL("/panel/planes?acceso=solo-lectura", solicitud.url));
+    return NextResponse.redirect(
+      new URL("/panel/planes?acceso=solo-lectura", solicitud.url),
+    );
   if (
     profesionalId &&
     !(await prisma.profesional.findFirst({

@@ -1,9 +1,14 @@
 /** Comparte el encabezado y el regreso entre las pantallas de configuración. */
 import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
-import { EnlacePanel, VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
+import {
+  EnlacePanel,
+  VistaPanelLista,
+} from "@/componentes/panel/navegacion-carga-panel";
+import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { exigirPermisoEquipo } from "@/servicios/contexto-equipo.service";
 
-export function MarcoConfiguracion({
+export async function MarcoConfiguracion({
   ruta,
   titulo,
   descripcion,
@@ -14,6 +19,8 @@ export function MarcoConfiguracion({
   descripcion?: string;
   children: ReactNode;
 }) {
+  if (ruta !== "/panel/configuracion/seguridad")
+    exigirPermisoEquipo(await requerirContextoPanel(), "administrar");
   return (
     <div className="panel-contenido configuracion-pantalla">
       <VistaPanelLista ruta={ruta} />

@@ -20,7 +20,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "db:demo": "pnpm --filter @turnos/web demo:crear",
-    "db:demo:manly": "pnpm --filter @turnos/web demo:crear:manly"
+    "db:demo:manly": "pnpm --filter @turnos/web demo:crear:manly",
+    "db:demo:carla": "pnpm --filter @turnos/web demo:crear:carla"
   },
   "devDependencies": {
     "prettier": "^3.9.6",

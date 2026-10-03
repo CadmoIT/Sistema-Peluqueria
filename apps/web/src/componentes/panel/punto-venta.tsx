@@ -6,6 +6,7 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { registrarVenta } from "@/app/panel/caja/acciones";
 import { DialogoPanel } from "./dialogo-panel";
 import { FormularioAccion } from "./formulario-accion";
+import { useRolEquipo } from "./contexto-equipo";
 type Articulo = {
   id: string;
   tipo: "producto" | "servicio";
@@ -30,6 +31,7 @@ export function PuntoVenta({
   sedes: Opcion[];
   profesionales: Opcion[];
 }) {
+  const empleado = useRolEquipo() === "PROFESIONAL";
   const [cantidades, poner] = useState<Record<string, number>>({}),
     [buscar, buscarPor] = useState(""),
     [sedeId, seleccionar] = useState(sedes[0]?.id || ""),
@@ -221,7 +223,16 @@ export function PuntoVenta({
                   name="idempotencia"
                   value={idempotencia.current}
                 />
-                {profesionales.length ? (
+                {empleado ? (
+                  <>
+                    <input
+                      type="hidden"
+                      name="atribucion"
+                      value={profesionales[0]?.id ?? ""}
+                    />
+                    <p>Venta atribuida a tu cuenta.</p>
+                  </>
+                ) : profesionales.length ? (
                   <label>
                     Atribuir toda la compra a
                     <select name="atribucion" required defaultValue="">

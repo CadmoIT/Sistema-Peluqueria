@@ -1,7 +1,9 @@
 /** Desconecta sólo un calendario propio sin borrar eventos de la cuenta de Google. */
+import { tieneAccesoOperativo } from "@turnos/config";
 import { NextResponse } from "next/server";
 import { autenticacion } from "@/lib/autenticacion";
 import { prisma } from "@/lib/prisma";
+import { resolverContextoEquipo } from "@/servicios/contexto-equipo.service";
 export async function POST(solicitud: Request) {
   if (solicitud.headers.get("origin") !== new URL(solicitud.url).origin)
     return NextResponse.json(
@@ -16,9 +18,13 @@ export async function POST(solicitud: Request) {
       { ok: false, mensaje: "Iniciá sesión para continuar." },
       { status: 401 },
     );
-  const membresia = await prisma.membresia.findFirst({
-    where: { usuarioId: sesion.user.id, activo: true },
-  });
+  const contexto = await resolverContextoEquipo(sesion.user);
+  const membresia = contexto?.membresia;
+  if (contexto && !tieneAccesoOperativo(contexto.negocio.suscripcion))
+    return NextResponse.json(
+      { mensaje: "El negocio está en solo lectura." },
+      { status: 403 },
+    );
   const cuerpo = await solicitud.json().catch(() => ({}));
   if (!membresia || typeof cuerpo.conexionId !== "string")
     return NextResponse.json(
@@ -26,7 +32,13 @@ export async function POST(solicitud: Request) {
       { status: 400 },
     );
   const conexion = await prisma.conexionGoogleCalendar.findFirst({
-    where: { id: cuerpo.conexionId, negocioId: membresia.negocioId },
+    where: {
+      id: cuerpo.conexionId,
+      negocioId: membresia.negocioId,
+      ...(contexto!.identidad.rol === "PROFESIONAL"
+        ? { profesionalId: contexto!.identidad.profesionalId }
+        : {}),
+    },
   });
   if (!conexion)
     return NextResponse.json(

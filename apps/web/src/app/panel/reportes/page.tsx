@@ -6,6 +6,7 @@ import { FiltrosReportes } from "@/componentes/panel/filtros-reportes";
 import { MetricasOperativas } from "@/componentes/panel/metricas-operativas";
 import { GraficoMovimientos } from "@/componentes/panel/grafico-movimientos";
 import "./reportes.css";
+import { requerirContextoPanel } from "@/servicios/panel-datos.service";
 export const metadata = { title: "Reportes" };
 export default async function PaginaReportes({
   searchParams,
@@ -18,6 +19,8 @@ export default async function PaginaReportes({
 }) {
   const p = await searchParams,
     datos = await obtenerReportes(p.periodo, p.local, p.profesional);
+  const empleado =
+    (await requerirContextoPanel()).membresia.rol === "PROFESIONAL";
   const ingresos = datos.movimientos
     .filter((m) => m.tipo === "INGRESO")
     .reduce((s, m) => s + Number(m.monto), 0);
@@ -28,8 +31,9 @@ export default async function PaginaReportes({
     <div className="panel-contenido reportes-contenido">
       <VistaPanelLista ruta="/panel/reportes" />
       <header className="cabecera-seccion reportes-cabecera">
-        <h1>Reportes</h1>
+        <h1>{empleado ? "Mis reportes" : "Reportes"}</h1>
         <FiltrosReportes
+          personal={empleado}
           periodo={datos.periodo}
           local={datos.localSeleccionado ?? ""}
           atribucion={datos.atribucion}
@@ -40,11 +44,18 @@ export default async function PaginaReportes({
           }))}
         />
       </header>
+      {empleado && (
+        <p>
+          Mis ingresos son cobros atribuidos, no sueldo ni comisión. Las compras
+          del negocio no se descuentan de tus ingresos.
+        </p>
+      )}
       <MetricasOperativas
         datos={[
           { etiqueta: "Ingresos", valor: ingresos },
           { etiqueta: "Egresos", valor: egresos },
           { etiqueta: "Saldo", valor: ingresos - egresos },
+          { etiqueta: "Pendiente de cobro", valor: datos.saldoPendiente },
         ]}
       />
       <section className="reportes-grafico">

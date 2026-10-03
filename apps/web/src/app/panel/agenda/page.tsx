@@ -7,6 +7,8 @@ import { googleCalendarConfigurado } from "@/lib/google-calendar";
 import { obtenerAgenda } from "@/servicios/panel-datos.service";
 import { ConexionGoogleAgenda } from "@/componentes/panel/agenda/conexion-google-agenda";
 import "./agenda.css";
+import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { HorariosEquipo } from "@/componentes/panel/agenda/horarios-equipo";
 
 export const metadata = { title: "Agenda" };
 
@@ -17,6 +19,7 @@ export default async function PaginaAgenda({
 }) {
   const parametros = await searchParams;
   const datos = await obtenerAgenda(parametros.fecha);
+  const c = await requerirContextoPanel();
   const googleDisponible = googleCalendarConfigurado();
   const eventos = [
     ...datos.reservas.map((reserva) => {
@@ -82,6 +85,14 @@ export default async function PaginaAgenda({
   return (
     <div className="panel-contenido panel-contenido--ancho panel-contenido--agenda">
       <VistaPanelLista ruta="/panel/agenda" />
+      {c.identidad.rol === "PROFESIONAL" && c.identidad.profesionalId && (
+        <HorariosEquipo
+          profesionalId={c.identidad.profesionalId}
+          sedes={datos.sedes}
+          horarios={datos.profesionales[0]?.horarios ?? []}
+          bloqueos={datos.bloqueosInternos}
+        />
+      )}
       <header className="cabecera-seccion">
         <div>
           <h1>Agenda</h1>

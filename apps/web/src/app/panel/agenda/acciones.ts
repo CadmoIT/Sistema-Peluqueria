@@ -12,6 +12,12 @@ import { prisma } from "@/lib/prisma";
 import { fechaLocalAUtc } from "@/servicios/disponibilidad.service";
 import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
 import { fechaValida } from "@/componentes/panel/agenda/agenda-modelo";
+import {
+  exigirProfesionalEquipo,
+  exigirSedeEquipo,
+} from "@/servicios/contexto-equipo.service";
+import { registrarActividadEquipo } from "@/servicios/actividad-equipo.service";
+import { clienteParaTurnoEquipo } from "@/servicios/clientes-equipo.service";
 
 export type ResultadoNuevoTurno = { ok: boolean; mensaje: string };
 export async function crearReservaPanel(
@@ -51,9 +57,12 @@ export async function crearReservaPanel(
   );
 }
 async function guardarReservaPanel(datos: FormData) {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel("agenda");
+  const { negocio } = contexto;
   const profesionalId = leerTexto(datos, "profesionalId");
   const sedeId = leerTexto(datos, "sedeId");
+  exigirProfesionalEquipo(contexto, profesionalId);
+  exigirSedeEquipo(contexto, sedeId);
   const servicioId = leerTexto(datos, "servicioId");
   const fechaHoraLocal = leerTexto(datos, "inicio");
   const observacion = textoOpcional(
@@ -72,6 +81,12 @@ async function guardarReservaPanel(datos: FormData) {
         id: servicioId,
         negocioId: negocio.id,
         activo: true,
+        ...(contexto.identidad.rol === "PROFESIONAL"
+          ? {
+              profesionales: { some: { profesionalId } },
+              OR: [{ sedes: { none: {} } }, { sedes: { some: { sedeId } } }],
+            }
+          : {}),
       },
     }),
     prisma.profesional.findFirst({
@@ -79,6 +94,7 @@ async function guardarReservaPanel(datos: FormData) {
         id: profesionalId,
         negocioId: negocio.id,
         activo: true,
+        sedes: { some: { sedeId } },
       },
     }),
     prisma.sede.findFirst({
@@ -111,6 +127,18 @@ async function guardarReservaPanel(datos: FormData) {
 
   const reserva = await prisma.$transaction(
     async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "Profesional" WHERE "id"=${profesionalId} AND "negocioId"=${negocio.id} FOR UPDATE`;
+      await validarHorarioLaboral(
+        {
+          negocioId: negocio.id,
+          sedeId,
+          profesionalId,
+          inicio,
+          fin,
+          zonaHoraria: negocio.zonaHoraria,
+        },
+        tx,
+      );
       const superpuesta = await tx.reserva.findFirst({
         where: {
           negocioId: negocio.id,
@@ -137,25 +165,33 @@ async function guardarReservaPanel(datos: FormData) {
         },
       });
 
-      if (superpuesta || bloqueoGoogle) {
+      const bloqueoInterno = await tx.bloqueoAgenda.findFirst({
+        where: {
+          negocioId: negocio.id,
+          profesionalId,
+          inicio: { lt: fin },
+          fin: { gt: inicio },
+        },
+      });
+      if (superpuesta || bloqueoGoogle || bloqueoInterno) {
         throw new Error("Ese horario ya está ocupado.");
       }
 
-      const clienteId = leerTexto(datos, "clienteId");
-      const cliente = clienteId
-        ? await tx.cliente.findFirst({
-            where: { id: clienteId, negocioId: negocio.id },
-          })
-        : await tx.cliente.create({
-            data: {
-              negocioId: negocio.id,
-              nombre: textoOpcional(leerTexto(datos, "clienteNombre")),
-            },
-          });
+      const cliente = await clienteParaTurnoEquipo(
+        tx,
+        contexto,
+        profesionalId,
+        {
+          id: leerTexto(datos, "clienteId"),
+          nombre: leerTexto(datos, "clienteNombre"),
+          email: leerTexto(datos, "clienteEmail"),
+          telefono: leerTexto(datos, "clienteTelefono"),
+        },
+      );
 
       if (!cliente) throw new Error("El cliente elegido no es válido.");
 
-      return tx.reserva.create({
+      const nueva = await tx.reserva.create({
         data: {
           negocioId: negocio.id,
           profesionalId,
@@ -178,6 +214,14 @@ async function guardarReservaPanel(datos: FormData) {
           },
         },
       });
+      await registrarActividadEquipo(tx, contexto, {
+        accion: "CREAR_TURNO",
+        recurso: "reserva",
+        recursoId: nueva.id,
+        sedeId,
+        profesionalId,
+      });
+      return nueva;
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
   );
@@ -193,7 +237,8 @@ export async function moverReserva(
   inicioIso: string,
   finIso: string,
 ) {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel("agenda");
+  const { negocio } = contexto;
   const inicio = new Date(inicioIso);
   const fin = new Date(finIso);
   const reserva = await prisma.reserva.findFirst({
@@ -213,6 +258,8 @@ export async function moverReserva(
     throw new Error(
       "Este turno conserva una ficha eliminada y no puede reprogramarse.",
     );
+  exigirProfesionalEquipo(contexto, reserva.profesionalId);
+  exigirSedeEquipo(contexto, reserva.sedeId);
   await validarHorarioLaboral({
     negocioId: negocio.id,
     sedeId: reserva.sedeId,
@@ -244,6 +291,36 @@ export async function moverReserva(
 
   await prisma.$transaction(
     async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "Profesional" WHERE "id"=${reserva.profesionalId} AND "negocioId"=${negocio.id} FOR UPDATE`;
+      await validarHorarioLaboral(
+        {
+          negocioId: negocio.id,
+          sedeId: reserva.sedeId,
+          profesionalId: reserva.profesionalId!,
+          inicio,
+          fin,
+          zonaHoraria: negocio.zonaHoraria,
+        },
+        tx,
+      );
+      if (
+        await tx.eventoCalendarioExterno.findFirst({
+          where: {
+            cancelado: false,
+            conexion: {
+              negocioId: negocio.id,
+              OR: [
+                { profesionalId: reserva.profesionalId },
+                { profesionalId: null, sedeId: reserva.sedeId },
+                { profesionalId: null, sedeId: null },
+              ],
+            },
+            inicio: { lt: fin },
+            fin: { gt: inicio },
+          },
+        })
+      )
+        throw new Error("El nuevo horario está ocupado en Google Calendar.");
       const conflicto = await tx.reserva.findFirst({
         where: {
           negocioId: negocio.id,
@@ -257,6 +334,13 @@ export async function moverReserva(
       if (conflicto)
         throw new Error("El nuevo horario se superpone con otro turno.");
       await tx.reserva.update({ where: { id }, data: { inicio, fin } });
+      await registrarActividadEquipo(tx, contexto, {
+        accion: "REPROGRAMAR_TURNO",
+        recurso: "reserva",
+        recursoId: id,
+        sedeId: reserva.sedeId,
+        profesionalId: reserva.profesionalId,
+      });
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
   );
@@ -276,13 +360,16 @@ const transicionesPermitidas = {
 } as const;
 
 export async function cambiarEstadoReserva(id: string, nuevoEstado: string) {
-  const { negocio } = await requerirContextoPanel();
+  const contexto = await requerirContextoPanel("agenda");
+  const { negocio } = contexto;
   const reserva = await prisma.reserva.findFirst({
     where: { id, negocioId: negocio.id },
-    select: { estado: true },
+    select: { estado: true, profesionalId: true, sedeId: true },
   });
 
   if (!reserva) throw new Error("El turno no existe.");
+  exigirProfesionalEquipo(contexto, reserva.profesionalId);
+  exigirSedeEquipo(contexto, reserva.sedeId);
 
   const permitidos = transicionesPermitidas[
     reserva.estado
@@ -291,12 +378,22 @@ export async function cambiarEstadoReserva(id: string, nuevoEstado: string) {
     throw new Error("Ese cambio de estado no está permitido.");
   }
 
-  await prisma.reserva.update({
-    where: { id },
-    data: {
-      estado: nuevoEstado as
-        "CONFIRMADA" | "COMPLETADA" | "AUSENTE" | "CANCELADA",
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.reserva.update({
+      where: { id, estado: reserva.estado },
+      data: {
+        estado: nuevoEstado as
+          "CONFIRMADA" | "COMPLETADA" | "AUSENTE" | "CANCELADA",
+      },
+    });
+    await registrarActividadEquipo(tx, contexto, {
+      accion: "ESTADO_TURNO",
+      recurso: "reserva",
+      recursoId: id,
+      sedeId: reserva.sedeId,
+      profesionalId: reserva.profesionalId,
+      detalle: { estado: nuevoEstado },
+    });
   });
   after(() => sincronizarReservaEnGoogle(id));
 
@@ -304,21 +401,35 @@ export async function cambiarEstadoReserva(id: string, nuevoEstado: string) {
   revalidatePath("/panel/agenda");
 }
 
-async function validarHorarioLaboral({
-  negocioId,
-  sedeId,
-  profesionalId,
-  inicio,
-  fin,
-  zonaHoraria,
-}: {
-  negocioId: string;
-  sedeId: string;
-  profesionalId: string;
-  inicio: Date;
-  fin: Date;
-  zonaHoraria: string;
-}) {
+async function validarHorarioLaboral(
+  {
+    negocioId,
+    sedeId,
+    profesionalId,
+    inicio,
+    fin,
+    zonaHoraria,
+  }: {
+    negocioId: string;
+    sedeId: string;
+    profesionalId: string;
+    inicio: Date;
+    fin: Date;
+    zonaHoraria: string;
+  },
+  db: Prisma.TransactionClient = prisma,
+) {
+  if (
+    !(await db.profesionalSede.findFirst({
+      where: {
+        profesionalId,
+        sedeId,
+        profesional: { negocioId, activo: true },
+        sede: { negocioId, activa: true },
+      },
+    }))
+  )
+    throw new Error("El profesional no está disponible en ese local.");
   const inicioLocal = partesLocales(inicio, zonaHoraria);
   const finLocal = partesLocales(fin, zonaHoraria);
   if (inicioLocal.fecha !== finLocal.fecha) {
@@ -326,13 +437,13 @@ async function validarHorarioLaboral({
   }
 
   const [horariosLocal, horariosProfesional, bloqueo] = await Promise.all([
-    prisma.horarioSede.findMany({
+    db.horarioSede.findMany({
       where: { negocioId, sedeId, diaSemana: inicioLocal.dia, activo: true },
     }),
-    prisma.horarioProfesional.findMany({
+    db.horarioProfesional.findMany({
       where: { negocioId, sedeId, profesionalId },
     }),
-    prisma.bloqueoAgenda.findFirst({
+    db.bloqueoAgenda.findFirst({
       where: {
         negocioId,
         profesionalId,
@@ -354,7 +465,6 @@ async function validarHorarioLaboral({
     throw new Error("El local está cerrado en ese horario.");
   }
   if (
-    horariosProfesional.length &&
     !horariosProfesional.some(
       (h) => h.diaSemana === inicioLocal.dia && contiene(h),
     )

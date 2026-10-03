@@ -5,9 +5,13 @@ import { TablaInventario } from "@/componentes/panel/tabla-inventario";
 import { FormularioProducto } from "@/componentes/panel/formulario-producto";
 import { resolverColumnas } from "@/lib/columnas-inventario";
 import { obtenerInventario } from "@/servicios/panel-datos.service";
+import { requerirContextoPanel } from "@/servicios/panel-datos.service";
+import { InventarioEmpleado } from "@/componentes/panel/pantallas-equipo";
 export const metadata = { title: "Inventario" };
 export default async function PaginaInventario() {
   const { negocio, productos, sedes, libres } = await obtenerInventario();
+  if ((await requerirContextoPanel()).membresia.rol === "PROFESIONAL")
+    return <InventarioEmpleado productos={productos} sedes={sedes} />;
   const locales = sedes.map(({ id, nombre }) => ({ id, nombre }));
   const columnas = resolverColumnas(
     negocio.configuracion,

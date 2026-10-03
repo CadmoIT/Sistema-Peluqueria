@@ -188,6 +188,33 @@ test("conectar y reconectar reutiliza el calendario sin tocar primary", async ()
     false,
   );
 });
+test("una revocación durante el consentimiento no persiste tokens ni sincroniza", async () => {
+  const s = escenario();
+  let validaciones = 0;
+  await assert.rejects(
+    () =>
+      s.servicio.guardarConexionGoogle(
+        {
+          usuarioId: "u",
+          negocioId: "negocio",
+          sedeId: null,
+          profesionalId: "persona",
+          expira: Date.now() + 60_000,
+        },
+        { access_token: "simulado" },
+        async () => {
+          if (++validaciones > 1) throw new Error("Acceso revocado.");
+        },
+      ),
+    /Acceso revocado/,
+  );
+  assert.equal(validaciones, 2);
+  assert.equal(s.conexion(), null);
+  assert.equal(
+    s.consultas.some((c) => c.url.includes("/events")),
+    false,
+  );
+});
 test("la exportación inicial, repetición y cambios mantienen un evento sin datos de contacto", async () => {
   const s = escenario();
   await s.servicio.guardarConexionGoogle(

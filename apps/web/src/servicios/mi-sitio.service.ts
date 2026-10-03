@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
 
 export async function persistirBorradorSitio(datos: FormData) {
-  const { negocio } = await requerirContextoPanel();
-  if (negocio.sitioRetiradoEn) throw new Error("Primero recuperá tu sitio desde Mi sitio.");
+  const { negocio } = await requerirContextoPanel("dueno");
+  if (negocio.sitioRetiradoEn)
+    throw new Error("Primero recuperá tu sitio desde Mi sitio.");
   const sedeId = leerTexto(datos, "localId");
   const sede = await prisma.sede.findFirst({
     where: { id: sedeId, negocioId: negocio.id, activa: true },
@@ -132,8 +133,9 @@ function validarEnlaceGoogleMaps(valor: string) {
 
 /** Publica el último borrador guardado y devuelve los datos necesarios para invalidar las vistas. */
 export async function publicarBorradorSitio() {
-  const { negocio } = await requerirContextoPanel();
-  if (negocio.sitioRetiradoEn) throw new Error("Primero recuperá tu sitio desde Mi sitio.");
+  const { negocio } = await requerirContextoPanel("dueno");
+  if (negocio.sitioRetiradoEn)
+    throw new Error("Primero recuperá tu sitio desde Mi sitio.");
   const configuracion = await prisma.configuracionSitio.findUnique({
     where: { negocioId: negocio.id },
     select: { borrador: true },
@@ -163,9 +165,10 @@ export async function publicarBorradorSitio() {
 
   return {
     negocio,
-    subdominios: [negocio.subdominio ?? negocio.slug, ...sedes.flatMap((sede) =>
-      sede.subdominio ? [sede.subdominio] : [],
-    )],
+    subdominios: [
+      negocio.subdominio ?? negocio.slug,
+      ...sedes.flatMap((sede) => (sede.subdominio ? [sede.subdominio] : [])),
+    ],
   };
 }
 

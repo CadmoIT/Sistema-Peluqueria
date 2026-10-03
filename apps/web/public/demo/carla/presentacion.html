@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Carla Cicero · Presentación del consultorio</title>
+    <style>
+      :root {
+        --uva: #702458;
+        --uva-claro: #f5eaf1;
+        --tinta: #302735;
+        --gris: #827784;
+        --borde: #eee7ed;
+        --fondo: #faf8fa;
+        --verde: #237a65;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        background: var(--fondo);
+        color: var(--tinta);
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+      }
+      aside {
+        position: fixed;
+        width: 245px;
+        inset: 0 auto 0 0;
+        background: #fff;
+        border-right: 1px solid var(--borde);
+        padding: 28px 19px;
+        display: flex;
+        flex-direction: column;
+        z-index: 5;
+      }
+      .marca {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 0 7px 23px;
+        border-bottom: 1px solid var(--borde);
+      }
+      .marca img {
+        width: 58px;
+        height: 58px;
+        object-fit: contain;
+        background: #fff;
+      }
+      .marca strong {
+        font-size: 15px;
+      }
+      .marca small {
+        display: block;
+        font-size: 11px;
+        color: var(--gris);
+        margin-top: 5px;
+      }
+      .etiqueta {
+        font-size: 10px;
+        letter-spacing: 1.4px;
+        color: var(--gris);
+        margin: 28px 12px 10px;
+      }
+      nav {
+        display: grid;
+        gap: 4px;
+      }
+      nav button {
+        text-align: left;
+        border: 0;
+        background: transparent;
+        color: #766b79;
+        border-radius: 10px;
+        padding: 12px 15px;
+        font-size: 13px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      nav button span {
+        width: 20px;
+        font-size: 17px;
+        text-align: center;
+      }
+      nav button.activo {
+        background: var(--uva-claro);
+        color: var(--uva);
+        font-weight: 650;
+      }
+      .pie-sidebar {
+        margin-top: auto;
+        border-top: 1px solid var(--borde);
+        padding: 20px 10px 0;
+        font-size: 11px;
+        color: var(--gris);
+        line-height: 1.7;
+      }
+      main {
+        margin-left: 245px;
+      }
+      .barra {
+        height: 80px;
+        background: #fff;
+        border-bottom: 1px solid var(--borde);
+        padding: 0 42px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .breadcrumb {
+        font-size: 12px;
+        color: var(--gris);
+      }
+      .cuenta {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .avatar {
+        border-radius: 50%;
+        width: 39px;
+        height: 39px;
+        display: grid;
+        place-items: center;
+        color: var(--uva);
+        background: var(--uva-claro);
+        font-weight: 600;
+        font-size: 12px;
+      }
+      .cuenta select {
+        border: 0;
+        background: none;
+        max-width: 230px;
+        font-size: 12px;
+        color: var(--tinta);
+      }
+      .cuenta small {
+        display: block;
+        font-size: 10px;
+        color: var(--gris);
+        padding-left: 3px;
+        margin-top: 3px;
+      }
+      .contenido {
+        max-width: 1400px;
+        margin: auto;
+        padding: 35px 42px;
+      }
+      .intro {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 27px;
+      }
+      h1 {
+        font-size: 30px;
+        letter-spacing: -1px;
+        margin: 0 0 9px;
+        font-weight: 650;
+      }
+      h2 {
+        font-size: 17px;
+        margin: 0 0 18px;
+        font-weight: 600;
+      }
+      p {
+        line-height: 1.6;
+      }
+      .intro p,
+      .muted {
+        color: var(--gris);
+        font-size: 12px;
+        margin: 0;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 16px;
+        background: #ecf7f2;
+        color: var(--verde);
+        font-size: 10px;
+        font-weight: 600;
+      }
+      .pill.pendiente {
+        background: #fff4e4;
+        color: #9e6b1d;
+      }
+      .pill.uva {
+        color: var(--uva);
+        background: var(--uva-claro);
+      }
+      .boton {
+        background: var(--uva);
+        color: white;
+        border: 0;
+        border-radius: 9px;
+        padding: 11px 16px;
+        font-size: 12px;
+      }
+      .boton.secundario {
+        background: white;
+        border: 1px solid var(--borde);
+        color: var(--tinta);
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        background: white;
+        border-radius: 18px;
+        border: 1px solid var(--borde);
+        overflow: hidden;
+        margin-bottom: 26px;
+        min-height: 218px;
+      }
+      .hero-copy {
+        padding: 32px 35px;
+      }
+      .hero-copy small {
+        font-size: 10px;
+        letter-spacing: 1.8px;
+        color: var(--uva);
+      }
+      .hero-copy h2 {
+        font-family: Georgia, serif;
+        font-weight: 400;
+        font-size: 32px;
+        line-height: 1.15;
+        margin: 14px 0 12px;
+      }
+      .hero-copy p {
+        max-width: 390px;
+        margin: 0;
+        font-size: 12px;
+        color: var(--gris);
+      }
+      .hero img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #edf1f5;
+        min-height: 218px;
+      }
+      .metricas {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 26px;
+      }
+      .card {
+        background: white;
+        border: 1px solid var(--borde);
+        border-radius: 13px;
+        padding: 23px;
+      }
+      .metrica small {
+        font-size: 11px;
+        color: var(--gris);
+      }
+      .metrica strong {
+        font-size: 29px;
+        letter-spacing: -0.8px;
+        display: block;
+        margin: 12px 0;
+      }
+      .metrica em {
+        font-style: normal;
+        font-size: 10px;
+        color: var(--verde);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1.8fr 1fr;
+        gap: 22px;
+      }
+      .tabla-wrap {
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12px;
+      }
+      th {
+        text-align: left;
+        font-size: 10px;
+        letter-spacing: 0.6px;
+        color: var(--gris);
+        font-weight: 500;
+        padding: 13px 12px;
+        border-bottom: 1px solid var(--borde);
+      }
+      td {
+        padding: 16px 12px;
+        border-bottom: 1px solid #f4eff3;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      td strong {
+        font-weight: 600;
+      }
+      td small {
+        display: block;
+        font-size: 10px;
+        color: var(--gris);
+        margin-top: 5px;
+      }
+      .seccion-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+      .seccion-head h2 {
+        margin: 0;
+      }
+      .mini-usuario {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin: 20px 0;
+      }
+      .mini-usuario p {
+        margin: 0;
+        font-size: 12px;
+      }
+      .mini-usuario small {
+        font-size: 10px;
+        color: var(--gris);
+      }
+      .linea {
+        height: 1px;
+        background: var(--borde);
+        margin: 22px 0;
+      }
+      .estado {
+        font-size: 10px;
+        color: var(--verde);
+      }
+      .nota {
+        padding: 15px 17px;
+        border-radius: 10px;
+        background: #faf7fa;
+        font-size: 11px;
+        color: var(--gris);
+        line-height: 1.7;
+      }
+      .equipo {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 22px;
+      }
+      .profesional {
+        padding: 28px;
+        border: 1px solid var(--borde);
+        border-radius: 15px;
+        background: #fff;
+      }
+      .profesional.vinculada {
+        border-color: #d6e9de;
+        background: linear-gradient(125deg, #f5fcf8, #fff);
+      }
+      .profesional .avatar {
+        width: 58px;
+        height: 58px;
+        font-size: 17px;
+      }
+      .profesional h2 {
+        margin: 17px 0 7px;
+      }
+      .profesional p {
+        font-size: 12px;
+        color: var(--gris);
+      }
+      .profesional .pill {
+        margin: 17px 0;
+      }
+      .filtros {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 22px;
+        flex-wrap: wrap;
+      }
+      .filtros button {
+        border: 1px solid var(--borde);
+        padding: 9px 15px;
+        border-radius: 8px;
+        background: #fff;
+        color: var(--gris);
+        font-size: 11px;
+      }
+      .filtros .seleccionado {
+        background: var(--uva);
+        color: #fff;
+        border-color: var(--uva);
+      }
+      .catalogo {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 17px;
+      }
+      .servicio {
+        padding: 22px;
+        background: #fff;
+        border: 1px solid var(--borde);
+        border-radius: 12px;
+      }
+      .servicio h2 {
+        font-size: 14px;
+        margin: 12px 0;
+      }
+      .servicio p {
+        font-size: 11px;
+        color: var(--gris);
+        min-height: 42px;
+      }
+      .servicio footer {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        padding-top: 15px;
+        border-top: 1px solid var(--borde);
+      }
+      .grafico {
+        height: 180px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+        padding: 12px 0;
+        margin-top: 20px;
+      }
+      .barra-graf {
+        flex: 1;
+        min-width: 18px;
+        border-radius: 6px 6px 0 0;
+        background: linear-gradient(#9d5b87, #702458);
+        position: relative;
+      }
+      .barra-graf small {
+        position: absolute;
+        bottom: -22px;
+        width: 100%;
+        text-align: center;
+        font-size: 9px;
+        color: var(--gris);
+      }
+      .distribucion {
+        display: grid;
+        gap: 18px;
+      }
+      .distribucion > div {
+        font-size: 11px;
+      }
+      .track {
+        height: 7px;
+        border-radius: 8px;
+        background: var(--uva-claro);
+        margin-top: 9px;
+      }
+      .track span {
+        display: block;
+        height: 100%;
+        background: var(--uva);
+        border-radius: 8px;
+      }
+      .avisos {
+        margin-top: 24px;
+        font-size: 10px;
+        color: var(--gris);
+        text-align: center;
+      }
+      .sitio-logo {
+        width: 240px;
+        max-width: 100%;
+        background: white;
+        display: block;
+        margin: 0 auto 20px;
+      }
+      .publico {
+        overflow: hidden;
+        padding: 0;
+      }
+      .publico img.portada {
+        width: 100%;
+        max-height: 280px;
+        object-fit: cover;
+      }
+      .publico-texto {
+        padding: 30px;
+      }
+      .publico-texto h2 {
+        font-family: Georgia, serif;
+        font-size: 28px;
+      }
+      .operacion {
+        display: flex;
+        gap: 14px;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--borde);
+      }
+      .operacion p {
+        margin: 0;
+        font-size: 12px;
+      }
+      .operacion small {
+        color: var(--gris);
+        font-size: 10px;
+      }
+      dialog {
+        border: 1px solid var(--borde);
+        border-radius: 14px;
+        padding: 28px;
+        max-width: 420px;
+        color: var(--tinta);
+      }
+      dialog::backdrop {
+        background: #30273566;
+      }
+      dialog p {
+        font-size: 13px;
+        color: var(--gris);
+      }
+      .movil {
+        display: none;
+      }
+      .saldo {
+        font-size: 10px;
+        color: #a86e33;
+      }
+      select.filtro {
+        border: 1px solid var(--borde);
+        border-radius: 9px;
+        background: white;
+        padding: 10px 14px;
+        color: var(--gris);
+        font-size: 11px;
+      }
+      @media (max-width: 1100px) {
+        aside {
+          width: 205px;
+        }
+        main {
+          margin-left: 205px;
+        }
+        .contenido {
+          padding: 28px;
+        }
+        .barra {
+          padding: 0 28px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .hero-copy h2 {
+          font-size: 27px;
+        }
+        .metricas {
+          gap: 10px;
+        }
+        .card {
+          padding: 18px;
+        }
+        .metrica strong {
+          font-size: 25px;
+        }
+      }
+      @media (max-width: 750px) {
+        aside {
+          position: static;
+          width: auto;
+          padding: 17px;
+        }
+        .marca {
+          padding-bottom: 10px;
+        }
+        aside .etiqueta,
+        .pie-sidebar {
+          display: none;
+        }
+        nav {
+          display: flex;
+          overflow: auto;
+          margin-top: 12px;
+          gap: 7px;
+        }
+        nav button {
+          white-space: nowrap;
+          padding: 10px;
+          font-size: 11px;
+        }
+        nav button span {
+          display: none;
+        }
+        main {
+          margin: 0;
+        }
+        .barra {
+          height: 65px;
+          padding: 0 20px;
+        }
+        .breadcrumb {
+          font-size: 10px;
+        }
+        .contenido {
+          padding: 23px 17px;
+        }
+        .intro {
+          align-items: start;
+        }
+        h1 {
+          font-size: 26px;
+        }
+        .hero {
+          grid-template-columns: 1fr;
+        }
+        .hero img {
+          height: 165px;
+          min-height: 165px;
+        }
+        .hero-copy {
+          padding: 24px;
+        }
+        .metricas {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .catalogo,
+        .equipo {
+          grid-template-columns: 1fr;
+        }
+        .cuenta select {
+          max-width: 165px;
+        }
+        .grid {
+          gap: 17px;
+        }
+        td,
+        th {
+          padding: 12px 8px;
+        }
+        .pill {
+          white-space: nowrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside>
+      <div class="marca">
+        <img
+          src="logo-clinica.png"
+          alt="Terapia celular y Medicina regenerativa"
+        />
+        <div>
+          <strong>Carla Cicero</strong><small>CONSULTORIO MÉDICO</small>
+        </div>
+      </div>
+      <div class="etiqueta">TU CONSULTORIO</div>
+      <nav id="nav"></nav>
+      <div class="pie-sidebar">
+        Neuquén 1939<br />Presentación de demostración<br /><span
+          style="color: var(--uva)"
+          >Datos ficticios · Sin pagos reales</span
+        >
+      </div>
+    </aside>
+    <main>
+      <header class="barra">
+        <div class="breadcrumb">
+          Mi consultorio <span style="margin: 0 10px; color: #d1c6cf">/</span>
+          <span id="ruta">Resumen</span>
+        </div>
+        <div class="cuenta">
+          <div class="avatar" id="iniciales">CC</div>
+          <div>
+            <select id="rol" aria-label="Cuenta de demostración">
+              <option value="duena">Carla Cicero · Dueña</option>
+              <option value="empleada">Lucía Méndez · Empleada</option></select
+            ><small id="subrol">Consultorio Neuquén · Plan Pro demo</small>
+          </div>
+        </div>
+      </header>
+      <div class="contenido" id="contenido"></div>
+    </main>
+    <dialog id="dialogo">
+      <h2>Presentación de demostración</h2>
+      <p id="dialogo-texto"></p>
+      <button
+        class="boton"
+        onclick="document.getElementById('dialogo').close()"
+      >
+        Entendido
+      </button>
+    </dialog>
+    <script>
+      const $ = (id) => document.getElementById(id),
+        money = (n) =>
+          new Intl.NumberFormat("es-AR", {
+            style: "currency",
+            currency: "ARS",
+            maximumFractionDigits: 0,
+          }).format(n);
+      let rol = "duena",
+        vista = "Resumen",
+        filtro = "Todos";
+      const secciones = [
+        ["Resumen", "◈"],
+        ["Agenda", "▦"],
+        ["Pacientes", "♧"],
+        ["Servicios", "✧"],
+        ["Equipo", "♧"],
+        ["Inventario", "▧"],
+        ["Compras", "⊞"],
+        ["Caja", "▤"],
+        ["Reportes", "▥"],
+        ["Actividad", "◷"],
+        ["Mi sitio", "↗"],
+      ];
+      const servicios = [
+        [
+          "Consulta de orientación y revisión de derivación",
+          "Consultas",
+          28000,
+          30,
+        ],
+        ["Evaluación previa a elaboración autóloga", "Consultas", 35000, 45],
+        [
+          "Elaboración de suero autólogo oftalmológico",
+          "Oftalmología",
+          95000,
+          60,
+        ],
+        ["Elaboración de PRP oftalmológico", "Oftalmología", 125000, 60],
+        ["Retiro programado de preparados", "Oftalmología", 12000, 30],
+        [
+          "Preparación de PRP para derivación traumatológica",
+          "Traumatología",
+          110000,
+          60,
+        ],
+        [
+          "Coordinación de gel plaquetario para heridas",
+          "Atención de heridas",
+          105000,
+          60,
+        ],
+        ["Control y coordinación de continuidad", "Seguimiento", 24000, 30],
+      ];
+      const pacientes = [
+        "Ana Gómez",
+        "Carlos Pérez",
+        "María López",
+        "Diego Romero",
+        "Laura Fernández",
+        "Roberto Torres",
+        "Elena Sosa",
+        "Martín Díaz",
+        "Patricia Acosta",
+        "Gabriel Molina",
+        "Silvia Benítez",
+        "Andrés Vega",
+      ];
+      const turnos = [
+        ["09:00", "Ana Gómez", 2, "Lucía", "Confirmado"],
+        ["09:15", "Carlos Pérez", 0, "Valeria", "Confirmado"],
+        ["10:15", "María López", 3, "Lucía", "Confirmado"],
+        ["10:30", "Diego Romero", 1, "Valeria", "Confirmado"],
+        ["11:30", "Laura Fernández", 4, "Lucía", "Confirmado"],
+        ["11:45", "Roberto Torres", 7, "Valeria", "Confirmado"],
+        ["14:00", "Elena Sosa", 5, "Lucía", "Confirmado"],
+        ["14:15", "Martín Díaz", 0, "Valeria", "Confirmado"],
+        ["15:15", "Patricia Acosta", 6, "Lucía", "Seña pendiente"],
+        ["15:30", "Gabriel Molina", 7, "Valeria", "Confirmado"],
+      ];
+      const stock = [
+        ["Tubos de extracción estériles", "CC-TUB-01", 278, 40, 1900],
+        ["Frascos monodosis estériles", "CC-MON-02", 249, 35, 850],
+        ["Guantes de nitrilo · caja", "CC-GUA-03", 26, 5, 9800],
+        ["Gasas estériles · sobre", "CC-GAS-04", 188, 25, 650],
+        ["Kit descartable de preparación", "CC-KIT-05", 63, 12, 12500],
+        ["Bolsas para transporte de muestras", "CC-BOL-06", 118, 20, 1200],
+        ["Etiquetas de trazabilidad · rollo", "CC-ETI-07", 18, 3, 4500],
+        ["Contenedor térmico de entrega", "CC-TER-08", 28, 6, 7500],
+        ["Antiséptico · frasco", "CC-ANT-09", 4, 6, 5200],
+        ["Descartador de cortopunzantes", "CC-DES-10", 8, 3, 8400],
+      ];
+      const cobros = Array.from({ length: 22 }, (_, i) => ({
+        paciente: pacientes[i % pacientes.length],
+        servicio: servicios[i % 8][0],
+        profesional: i % 2 ? "Valeria" : "Lucía",
+        monto: servicios[i % 8][2] * (i % 7 === 0 ? 0.5 : 0.8),
+        medio: i % 2 ? "Efectivo" : "Transferencia",
+      }));
+      const datosCobros = () =>
+        cobros.filter((c) => rol === "duena" || c.profesional === "Lucía");
+      const propios = () =>
+        turnos.filter(
+          (t) =>
+            (rol === "duena" || t[3] === "Lucía") &&
+            (filtro === "Todos" || t[3] === filtro),
+        );
+      const badge = (s, tipo = "") =>
+        '<span class="pill ' + tipo + '">' + s + "</span>";
+      function aviso(m) {
+        $("dialogo-texto").textContent = m;
+        $("dialogo").showModal();
+      }
+      function tabla(headers, rows) {
+        return (
+          '<div class="tabla-wrap"><table><thead><tr>' +
+          headers.map((h) => "<th>" + h + "</th>").join("") +
+          "</tr></thead><tbody>" +
+          rows
+            .map(
+              (r) =>
+                "<tr>" + r.map((c) => "<td>" + c + "</td>").join("") + "</tr>",
+            )
+            .join("") +
+          "</tbody></table></div>"
+        );
+      }
+      function agenda(limit = 99) {
+        return tabla(
+          [
+            "HORA",
+            "PACIENTE / PRESTACIÓN",
+            ...(rol === "duena" ? ["INTEGRANTE"] : []),
+            "ESTADO",
+          ],
+          propios()
+            .slice(0, limit)
+            .map((t) => [
+              "<strong>" + t[0] + "</strong>",
+              "<strong>" +
+                t[1] +
+                "</strong><small>" +
+                servicios[t[2]][0] +
+                "</small>",
+              ...(rol === "duena" ? [t[3]] : []),
+              badge(t[4], t[4] === "Seña pendiente" ? "pendiente" : ""),
+            ]),
+        );
+      }
+      function intro(t, d, accion = "") {
+        return (
+          '<div class="intro"><div><h1>' +
+          t +
+          "</h1><p>" +
+          d +
+          "</p></div>" +
+          accion +
+          "</div>"
+        );
+      }
+      function metricas() {
+        const ingreso = datosCobros().reduce((s, c) => s + c.monto, 0);
+        return (
+          '<div class="metricas">' +
+          [
+            [
+              "Turnos de la jornada",
+              propios().length,
+              "Agendas sin superposición",
+            ],
+            [
+              rol === "duena" ? "Cobros del período" : "Mis cobros atribuidos",
+              money(ingreso),
+              "Ejemplo del período actual",
+            ],
+            [
+              "Pacientes activos",
+              rol === "duena" ? 64 : 38,
+              "Contactos ficticios",
+            ],
+            [
+              "Saldo por cobrar",
+              money(rol === "duena" ? 176000 : 86000),
+              "Separado de los cobros recibidos",
+            ],
+          ]
+            .map(
+              ([t, n, nota]) =>
+                '<article class="card metrica"><small>' +
+                t +
+                "</small><strong>" +
+                n +
+                "</strong><em>" +
+                nota +
+                "</em></article>",
+            )
+            .join("") +
+          "</div>"
+        );
+      }
+      function dibujar() {
+        if (rol === "empleada" && vista === "Equipo") vista = "Resumen";
+        $("ruta").textContent = vista;
+        $("iniciales").textContent = rol === "duena" ? "CC" : "LM";
+        $("subrol").textContent =
+          rol === "duena"
+            ? "Consultorio Neuquén · Plan Pro demo"
+            : "Mi agenda y mis operaciones · Cuenta vinculada";
+        $("nav").innerHTML = secciones
+          .filter(([s]) => rol === "duena" || s !== "Equipo")
+          .map(
+            ([s, i]) =>
+              '<button data-vista="' +
+              s +
+              '" class="' +
+              (vista === s ? "activo" : "") +
+              '"><span>' +
+              i +
+              "</span>" +
+              s +
+              "</button>",
+          )
+          .join("");
+        $("nav")
+          .querySelectorAll("button")
+          .forEach(
+            (b) =>
+              (b.onclick = () => {
+                vista = b.dataset.vista;
+                filtro = "Todos";
+                dibujar();
+              }),
+          );
+        let html = "";
+        const fecha = new Intl.DateTimeFormat("es-AR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          timeZone: "America/Argentina/Buenos_Aires",
+        }).format(new Date());
+        if (vista === "Resumen")
+          html =
+            intro(
+              rol === "duena" ? "Hola, Carla" : "Hola, Lucía",
+              "Tu " +
+                (rol === "duena" ? "consultorio" : "actividad") +
+                " de un vistazo · " +
+                fecha,
+              badge("● Consultorio activo"),
+            ) +
+            '<section class="hero"><div class="hero-copy"><small>ATENCIÓN CONECTADA, CUIDADO PERSONAL</small><h2>Cada etapa, acompañada.<br>Cada turno, organizado.</h2><p>Terapia celular y Medicina regenerativa.<br>Consultorio Neuquén · Neuquén 1939</p></div><img src="hero-referencia.jpeg" alt="Referencia visual aportada por el cliente"></section>' +
+            metricas() +
+            '<div class="grid"><section class="card"><div class="seccion-head"><h2>' +
+            (rol === "duena" ? "Agenda de muestra" : "Mi agenda de muestra") +
+            '</h2><button class="boton secundario" data-ir="Agenda">Ver agenda →</button></div>' +
+            agenda(5) +
+            '</section><section class="card"><h2>' +
+            (rol === "duena" ? "Tu equipo" : "Mi cuenta") +
+            '</h2><div class="mini-usuario"><div class="avatar">LM</div><div><p>Lucía Méndez</p><small>Coordinación de hemoterapia</small><div style="margin-top:8px">' +
+            badge("Cuenta vinculada") +
+            "</div></div></div>" +
+            (rol === "duena"
+              ? '<div class="linea"></div><div class="mini-usuario"><div class="avatar">VS</div><div><p>Valeria Suárez</p><small>Atención y seguimiento</small><div style="margin-top:8px">' +
+                badge("Invitación pendiente", "pendiente") +
+                "</div></div></div>"
+              : '<div class="linea"></div><p class="muted">Solo ves tus pacientes, turnos y cobros. Inventario y compras se comparten con el consultorio.</p>') +
+            '<div class="linea"></div><div class="nota">Stock a revisar: antiséptico por debajo del mínimo. Las compras y consumos quedan registrados para todo el equipo.</div></section></div>';
+        if (vista === "Agenda")
+          html =
+            intro(
+              rol === "duena" ? "Agenda del consultorio" : "Mi agenda",
+              "Cada integrante tiene su propia agenda y disponibilidad.",
+              '<button class="boton" data-demo="Los turnos se gestionan desde la cuenta real cuando la base local está disponible. Esta presentación no guarda reservas.">+ Nuevo turno</button>',
+            ) +
+            (rol === "duena"
+              ? '<div class="filtros">' +
+                ["Todos", "Lucía", "Valeria"]
+                  .map(
+                    (s) =>
+                      '<button data-filtro="' +
+                      s +
+                      '" class="' +
+                      (filtro === s ? "seleccionado" : "") +
+                      '">' +
+                      (s === "Todos" ? "Todo el equipo" : s) +
+                      "</button>",
+                  )
+                  .join("") +
+                "</div>"
+              : "") +
+            '<section class="card"><div class="seccion-head"><h2>Jornada de muestra · 09:00 a 18:00</h2>' +
+            badge("Consultorio Neuquén", "uva") +
+            "</div>" +
+            agenda() +
+            '</section><p class="avisos">Esta grilla ilustra un día completo. La cuenta cargada contiene historial y turnos futuros relativos a la fecha de creación.</p>';
+        if (vista === "Equipo")
+          html =
+            intro(
+              "Equipo",
+              "Dos agendas independientes. Una cuenta incorporada y una invitación pendiente.",
+            ) +
+            '<div class="equipo"><article class="profesional vinculada"><div class="avatar">LM</div><h2>Lucía Méndez</h2><p>Coordinación de hemoterapia</p>' +
+            badge("✓ Cuenta vinculada") +
+            '<p>lucia.carla.demo@example.com<br>Email verificado · Invitación aceptada</p><div class="linea"></div><p>Agenda propia · Pacientes vinculados · Cobros atribuidos<br>Stock y compras compartidos</p><button class="boton secundario" data-demo="En el sistema real, quitar acceso revoca la cuenta sin borrar turnos ni desactivar a la profesional.">Quitar acceso</button></article><article class="profesional"><div class="avatar">VS</div><h2>Valeria Suárez</h2><p>Coordinación de atención y seguimiento</p>' +
+            badge("Invitación pendiente", "pendiente") +
+            '<p>valeria.carla.demo@example.com<br>Su ficha y agenda existen; todavía no tiene acceso.</p><div class="linea"></div><p>La insignia de cuenta vinculada aparecerá únicamente después de verificar el email y aceptar.</p><button class="boton secundario" data-demo="La invitación de esta demo es simulada. No se envían correos desde la presentación.">Reenviar invitación</button></article></div>';
+        if (vista === "Pacientes")
+          html =
+            intro(
+              rol === "duena" ? "Pacientes del consultorio" : "Mis pacientes",
+              "Contactos de ejemplo. Sin diagnósticos ni información clínica real.",
+            ) +
+            '<section class="card">' +
+            tabla(
+              ["PACIENTE", "CONTACTO", "ÚLTIMA PRESTACIÓN", "SEGUIMIENTO"],
+              pacientes
+                .filter((_, i) => rol === "duena" || i % 2 === 0)
+                .map((p, i) => [
+                  "<strong>" + p + "</strong>",
+                  `paciente${i + 1}.carla@example.com`,
+                  servicios[(i + 2) % 8][0],
+                  badge("Coordinado"),
+                ]),
+            ) +
+            '</section><p class="avisos">' +
+            (rol === "duena"
+              ? "La dueña accede al conjunto del consultorio."
+              : "Las notas propias y el historial ajeno están separados en la cuenta real.") +
+            "</p>";
+        if (vista === "Servicios")
+          html =
+            intro(
+              "Servicios",
+              "Catálogo orientado a preparados autólogos y coordinación del circuito de atención.",
+            ) +
+            '<div class="catalogo">' +
+            servicios
+              .map(
+                (s) =>
+                  '<article class="servicio">' +
+                  badge(s[1], "uva") +
+                  "<h2>" +
+                  s[0] +
+                  "</h2><p>Prestación de ejemplo, bajo evaluación e indicación del especialista. Requisitos y modalidad se coordinan previamente.</p><footer><strong>" +
+                  money(s[2]) +
+                  "</strong><span>" +
+                  s[3] +
+                  " min</span></footer></article>",
+              )
+              .join("") +
+            '</div><p class="avisos">Valores ilustrativos, no tarifas de Carla. No se garantizan resultados médicos ni se anuncian terapias con células madre.</p>';
+        if (vista === "Inventario")
+          html =
+            intro(
+              "Inventario",
+              "Stock único del consultorio · Consumos y reposiciones compartidos.",
+              '<button class="boton" data-demo="Un consumo registrado por Lucía actualiza el mismo stock que ve Carla. Esta vista ilustrativa no modifica existencias.">Registrar consumo</button>',
+            ) +
+            '<section class="card">' +
+            tabla(
+              ["INSUMO", "SKU / LOTE", "STOCK", "MÍNIMO", "ESTADO"],
+              stock.map((s, i) => [
+                "<strong>" + s[0] + "</strong>",
+                s[1] + "<small>DEMO-CC-" + (i + 1) + "</small>",
+                s[2] + " unidades",
+                s[3],
+                badge(
+                  s[2] < s[3] ? "Reponer" : "Disponible",
+                  s[2] < s[3] ? "pendiente" : "",
+                ),
+              ]),
+            ) +
+            "</section>";
+        if (vista === "Compras")
+          html =
+            intro(
+              "Compras",
+              "Reposición de insumos. Los egresos son del consultorio, no se descuentan de ingresos personales.",
+              '<button class="boton" data-demo="La cuenta real registra compra, stock, egreso y actividad juntos, sin duplicarlos al reintentar.">Registrar compra</button>',
+            ) +
+            '<section class="card">' +
+            tabla(
+              ["PROVEEDOR", "DETALLE", "REGISTRÓ", "TOTAL"],
+              Array.from({ length: 8 }, (_, i) => [
+                "Proveedor " + (i % 2 ? "B" : "A") + " · Demo",
+                stock[i % 7][0] +
+                  "<small>Compra recibida · Cantidades de ejemplo</small>",
+                i % 2 ? "Lucía Méndez" : "Carla Cicero",
+                money(48000 + i * 7500),
+              ]),
+            ) +
+            "</section>";
+        if (vista === "Caja")
+          html =
+            intro(
+              rol === "duena" ? "Caja del consultorio" : "Mis cobros",
+              "Cobros atribuidos, no sueldo ni comisión. Completar un turno no lo cobra.",
+            ) +
+            metricas() +
+            '<section class="card">' +
+            tabla(
+              [
+                "PACIENTE / CONCEPTO",
+                ...(rol === "duena" ? ["ATRIBUCIÓN"] : []),
+                "MEDIO",
+                "COBRO",
+              ],
+              datosCobros().map((c) => [
+                "<strong>" +
+                  c.paciente +
+                  "</strong><small>" +
+                  c.servicio +
+                  "</small>",
+                ...(rol === "duena" ? [c.profesional] : []),
+                c.medio,
+                money(c.monto),
+              ]),
+            ) +
+            '</section><p class="avisos">Señas, cobros parciales y saldos se mantienen separados. Ningún pago se procesa desde esta presentación.</p>';
+        if (vista === "Reportes")
+          html =
+            intro(
+              rol === "duena" ? "Reportes del consultorio" : "Mis reportes",
+              "Actividad e ingresos atribuidos del período de muestra.",
+            ) +
+            metricas() +
+            '<div class="grid"><section class="card"><h2>Cobros por semana</h2><p class="muted">Últimas ocho semanas · Importes ilustrativos</p><div class="grafico">' +
+            [43, 57, 48, 72, 66, 85, 76, 96]
+              .map(
+                (n, i) =>
+                  '<div class="barra-graf" style="height:' +
+                  n +
+                  '%"><small>S' +
+                  (i + 1) +
+                  "</small></div>",
+              )
+              .join("") +
+            '</div></section><section class="card"><h2>Prestaciones por categoría</h2><div class="distribucion">' +
+            [
+              ["Oftalmología", 52],
+              ["Consultas", 25],
+              ["Traumatología", 13],
+              ["Seguimiento", 7],
+              ["Atención de heridas", 3],
+            ]
+              .map(
+                ([s, n]) =>
+                  "<div>" +
+                  s +
+                  ' <span style="float:right">' +
+                  n +
+                  '%</span><div class="track"><span style="width:' +
+                  n +
+                  '%"></span></div></div>',
+              )
+              .join("") +
+            "</div></section></div>";
+        if (vista === "Actividad")
+          html =
+            intro(
+              "Actividad",
+              "Registro compartido del consultorio. Autoría, atribución y detalles según el acceso.",
+            ) +
+            '<section class="card">' +
+            [
+              [
+                "LM",
+                "Lucía Méndez",
+                "Registró consumo de tubos estériles",
+                "Stock compartido · 2 unidades",
+              ],
+              [
+                "CC",
+                "Carla Cicero",
+                "Registró una compra de descartables",
+                "Compra recibida · Stock actualizado",
+              ],
+              [
+                "VS",
+                "Valeria Suárez",
+                "Cobro atribuido a su agenda",
+                rol === "duena"
+                  ? "Registró Carla · " + money(28000)
+                  : "Detalles de la operación ajena no disponibles",
+              ],
+              [
+                "LM",
+                "Lucía Méndez",
+                "Registró un cobro parcial",
+                "Transferencia · " + money(19000),
+              ],
+              [
+                "CC",
+                "Carla Cicero",
+                "Invitación pendiente para Valeria",
+                "Estado de acceso de ejemplo",
+              ],
+            ]
+              .filter(
+                (r) =>
+                  rol === "duena" || r[0] !== "CC" || r[2].includes("compra"),
+              )
+              .map(
+                (r) =>
+                  '<div class="operacion"><div class="avatar">' +
+                  r[0] +
+                  "</div><div><p><strong>" +
+                  r[1] +
+                  "</strong> · " +
+                  r[2] +
+                  "</p><small>" +
+                  r[3] +
+                  "</small></div></div>",
+              )
+              .join("") +
+            "</section>";
+        if (vista === "Mi sitio")
+          html =
+            intro(
+              "Mi sitio",
+              rol === "duena"
+                ? "La página del consultorio, con tu identidad y catálogo."
+                : "El mismo sitio del consultorio, con Lucía preseleccionada. Solo la dueña lo edita.",
+            ) +
+            '<div class="grid"><section class="card publico"><img class="portada" src="hero-referencia.jpeg" alt="Imagen de referencia aportada"><div class="publico-texto"><img class="sitio-logo" src="logo-clinica.png" alt="Terapia celular y Medicina regenerativa"><h2>Dra. Carla Cicero</h2><p class="muted">Atención coordinada, preparados autólogos y acompañamiento en cada etapa.</p><p style="font-size:12px">Neuquén 1939 · Consultorio Neuquén</p><button class="boton" data-demo="El sitio y las reservas reales estarán disponibles cuando se cargue la demo en PostgreSQL local.">Reservar un turno</button></div></section><section class="card"><h2>Una experiencia compartida</h2><p class="muted">Oftalmología · Traumatología · Atención de heridas</p><div class="linea"></div><p style="font-size:12px">Un único sitio para el consultorio. Cada integrante puede compartir su enlace personal sin crear otra página.</p>' +
+            badge(
+              rol === "duena"
+                ? "Edición exclusiva de la dueña"
+                : "Lucía preseleccionada",
+              "uva",
+            ) +
+            '<div class="linea"></div><p class="muted">La imagen de OMINT fue aportada como referencia visual. Esta demo no acredita afiliación ni cobertura.</p></section></div>';
+        $("contenido").innerHTML =
+          html +
+          '<footer class="avisos">Presentación demo · Pacientes, integrantes, precios y operaciones ficticios · Sin envío de correos ni cobros externos</footer>';
+        $("contenido")
+          .querySelectorAll("[data-ir]")
+          .forEach(
+            (b) =>
+              (b.onclick = () => {
+                vista = b.dataset.ir;
+                dibujar();
+              }),
+          );
+        $("contenido")
+          .querySelectorAll("[data-filtro]")
+          .forEach(
+            (b) =>
+              (b.onclick = () => {
+                filtro = b.dataset.filtro;
+                dibujar();
+              }),
+          );
+        $("contenido")
+          .querySelectorAll("[data-demo]")
+          .forEach((b) => (b.onclick = () => aviso(b.dataset.demo)));
+      }
+      $("rol").onchange = (e) => {
+        rol = e.target.value;
+        filtro = "Todos";
+        dibujar();
+      };
+      dibujar();
+    </script>
+  </body>
+</html>

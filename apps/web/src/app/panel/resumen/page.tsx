@@ -41,8 +41,9 @@ export default async function PaginaPanel({
   const proximoTurno = datos.proximo
     ? formatoProximoTurno(datos.proximo.inicio, datos.negocio.zonaHoraria)
     : null;
-  const sedeSitio =
-    datos.sedes.find((sede) => sede.id === datos.localSeleccionado);
+  const sedeSitio = datos.sedes.find(
+    (sede) => sede.id === datos.localSeleccionado,
+  );
 
   return (
     <div className="panel-contenido resumen-pagina">
@@ -112,11 +113,18 @@ export default async function PaginaPanel({
           href="/panel/clientes"
         />
         <Metrica
-          etiqueta="Ingresos de hoy"
+          etiqueta={
+            datos.esEmpleado ? "Mis ingresos de hoy" : "Ingresos de hoy"
+          }
           valor={pesos(datos.ingresosHoy)}
           href="/panel/reportes"
         />
       </section>
+      <p className="equipo-operacion">
+        Pendiente de cobro: {pesos(datos.saldoPendiente)}
+        {datos.esEmpleado &&
+          " · Son cobros atribuidos a vos, no sueldo ni comisión."}
+      </p>
       <div className="panel-grilla">
         <section className="agenda-modulo">
           <div className="modulo__titulo">
@@ -168,7 +176,7 @@ export default async function PaginaPanel({
           </div>
           <Link
             className="prueba-panel"
-            href="/panel/planes"
+            href={datos.esDueno ? "/panel/planes" : "/panel/mi-cuenta"}
             aria-label="Ver plan y facturación"
           >
             <strong>
@@ -184,7 +192,9 @@ export default async function PaginaPanel({
                 : `${diasPrueba} días de prueba restantes`}
             </span>
             {datos.negocio.suscripcion?.estado !== "ACTIVA" && (
-              <span className="prueba-panel__accion">Ver planes</span>
+              <span className="prueba-panel__accion">
+                {datos.esDueno ? "Ver planes" : "Mi cuenta"}
+              </span>
             )}
           </Link>
           <Acceso
@@ -192,11 +202,13 @@ export default async function PaginaPanel({
             texto={`${datos.servicios} servicios`}
             href="/panel/servicios"
           />
-          <Acceso
-            icono={<UsersRound />}
-            texto={`${datos.profesionales} profesionales`}
-            href="/panel/equipo"
-          />
+          {!datos.esEmpleado && (
+            <Acceso
+              icono={<UsersRound />}
+              texto={`${datos.profesionales} profesionales`}
+              href="/panel/equipo"
+            />
+          )}
           <Acceso
             icono={<BarChart3 />}
             texto="Reportes"

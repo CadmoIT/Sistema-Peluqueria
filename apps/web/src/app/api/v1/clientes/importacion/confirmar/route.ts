@@ -25,10 +25,21 @@ export async function POST(solicitud: Request) {
     );
   }
   const contexto = await obtenerContextoApi();
+  if (contexto?.membresia.rol === "PROFESIONAL")
+    return NextResponse.json(
+      { mensaje: "Esta operación es administrativa." },
+      { status: 403 },
+    );
   if (!contexto)
     return NextResponse.json({ mensaje: "Sesión no válida." }, { status: 401 });
   if (!tieneAccesoOperativo(contexto.negocio.suscripcion))
-    return NextResponse.json({ mensaje: "Tu panel está en modo de solo lectura. Activá un plan para importar clientes." }, { status: 403 });
+    return NextResponse.json(
+      {
+        mensaje:
+          "Tu panel está en modo de solo lectura. Activá un plan para importar clientes.",
+      },
+      { status: 403 },
+    );
   try {
     const entrada = leerSolicitudImportacion(await solicitud.json());
     const resultado = await prisma.$transaction(

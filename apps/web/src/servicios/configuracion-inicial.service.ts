@@ -19,20 +19,8 @@ export type DatosConfiguracionInicial = {
 export async function buscarNegocioDelUsuario(usuarioId: string) {
   return prisma.membresia.findFirst({
     where: { usuarioId, activo: true },
-    select: {
-      negocio: {
-        select: {
-          id: true,
-          nombre: true,
-          slug: true,
-          publicado: true,
-          configuracion: true,
-          suscripcion: {
-            select: { estado: true, pruebaFinalizaEn: true },
-          },
-        },
-      },
-    },
+    // Sólo comprueba existencia; nunca elige ni devuelve un negocio arbitrario.
+    select: { id: true },
   });
 }
 
@@ -41,7 +29,10 @@ export async function crearConfiguracionInicial(
   datos: DatosConfiguracionInicial,
 ) {
   const membresiaExistente = await buscarNegocioDelUsuario(usuarioId);
-  if (membresiaExistente) return membresiaExistente.negocio;
+  if (membresiaExistente)
+    throw new Error(
+      "Tu cuenta ya pertenece a un negocio. Elegilo desde el selector.",
+    );
 
   const ahora = new Date();
   const finPrueba = new Date(ahora);
