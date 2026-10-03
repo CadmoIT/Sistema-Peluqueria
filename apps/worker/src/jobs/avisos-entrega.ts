@@ -45,7 +45,7 @@ export async function entregarAvisos() {
           cliente: true,
           sede: { select: { subdominio: true } },
           negocio: {
-            include: { suscripcion: true, configuracionAvisos: true },
+            include: { suscripcion: true, configuracionAvisos: true, sedes: { where: { activa: true }, select: { id: true } } },
           },
           servicios: { include: { servicio: true }, orderBy: { orden: "asc" } },
         },
@@ -160,7 +160,7 @@ export async function entregarAvisos() {
         minute: "2-digit",
         hourCycle: "h23",
       }).format(reserva.inicio),
-      enlace: enlacePublico(negocio.subdominio ?? negocio.slug, reserva.sedeId),
+      enlace: enlacePublico(negocio.subdominio ?? negocio.slug, (negocio.sedes?.length ?? 1) > 1 ? reserva.sedeId : undefined),
     };
 
     try {

@@ -72,6 +72,7 @@ test("franja fina, servidor de solo lectura, exportación y recuperación explí
     }
     await page.getByText("Nuevo cliente", { exact: true }).first().click();
     const formulario = page.locator(".cabecera-seccion .formulario-cliente");
+    await expect(page.getByTestId("carga-aplicacion")).toHaveCount(0);
     await formulario.getByLabel("Nombre", { exact: true }).fill("No debe guardarse");
     await formulario.getByRole("button", { name: "Guardar cliente" }).click();
     await expect(page).toHaveURL(/panel\/planes\?acceso=solo-lectura/);

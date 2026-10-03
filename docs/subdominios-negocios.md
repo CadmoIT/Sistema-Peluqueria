@@ -36,3 +36,5 @@ Cambiar el nombre del negocio actualiza la clave usada para detectar homónimos,
 - Pruebas de navegador en base local aislada, cuentas desechables y sin credenciales de Mercado Pago: selector, sede única, filtrado de servicios por sede, enlaces antiguos, edición excepcional y rechazo de sucursales inexistentes/inactivas.
 
 Las pruebas locales no reemplazan la comprobación de la versión desplegada y su certificado wildcard.
+
+Resultados: 6 pruebas unitarias de dominios/rutas, 1 prueba de PostgreSQL y 3 pruebas de navegador aprobadas. Compilación web y worker, tipos y lint aprobados. Suite del worker: 45 aprobadas y 2 integraciones omitidas por defecto; no contar esas omisiones como pruebas ejecutadas. Se revisaron las capturas del selector en escritorio y móvil.
