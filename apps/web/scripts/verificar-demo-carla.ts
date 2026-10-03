@@ -51,6 +51,8 @@ async function verificar() {
               `Panel ${email} ${ruta}: respuesta inesperada ${response?.status()}`,
             );
           console.log(`${email}: ${ruta} OK`);
+          if (ruta === "resumen" && email.startsWith("carla."))
+            await page.screenshot({ path: "test-results/carla-produccion-resumen.png", fullPage: true });
           if (
             ruta === "equipo" &&
             (!texto.includes("Cuenta vinculada") ||
@@ -86,6 +88,7 @@ async function verificar() {
       if (fallidas.length)
         throw new Error(`Imágenes sin cargar: ${JSON.stringify(fallidas)}`);
       console.log("Sitio público e imágenes OK");
+      await page.screenshot({ path: "test-results/carla-produccion-sitio.png", fullPage: true });
     } finally {
       await context.close();
     }
