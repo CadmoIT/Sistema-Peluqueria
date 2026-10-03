@@ -19,6 +19,9 @@ export function FormularioAcceso() {
     parametros.get("callbackURL"),
     registro ? "/primeros-pasos" : "/panel",
   );
+  const verificacionGooglePendiente =
+    parametros.get("verificacion") === "pendiente" ||
+    parametros.get("error") === "email_not_verified";
   const [verContrasena, setVerContrasena] = useState(false);
   const [verRepeticion, setVerRepeticion] = useState(false);
   const [cargando, setCargando] = useState(false);
@@ -120,6 +123,7 @@ export function FormularioAcceso() {
       const resultado = await clienteAutenticacion.signIn.social({
         provider: "google",
         callbackURL,
+        errorCallbackURL: `/acceder?verificacion=pendiente&callbackURL=${encodeURIComponent(callbackURL)}`,
       });
       if (resultado.error) {
         cancelarIngreso();
@@ -134,6 +138,11 @@ export function FormularioAcceso() {
   }
 
   async function reenviarVerificacion() {
+    if (!emailVerificacion.trim()) {
+      setMensaje("Ingresá el email de Google para enviarte otro enlace.");
+      return;
+    }
+
     setCargando(true);
     const resultado = await clienteAutenticacion.sendVerificationEmail({
       email: emailVerificacion,
@@ -179,7 +188,7 @@ export function FormularioAcceso() {
 
       <section className="acceso__formulario" aria-labelledby="titulo-acceso">
         <div className="formulario-caja">
-          {emailVerificacion ? (
+          {emailVerificacion || verificacionGooglePendiente ? (
             <div className="acceso-verificacion">
               <div className="acceso-verificacion__icono" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none">
@@ -190,10 +199,30 @@ export function FormularioAcceso() {
               </div>
               <h1 id="titulo-acceso">Confirmá tu email para continuar</h1>
               <p>
-                Abrí el enlace que enviamos a <strong>{emailVerificacion}</strong>
-                para confirmar que la cuenta es tuya. Después vas a volver
-                automáticamente para seguir con el alta de tu negocio.
+                {verificacionGooglePendiente ? (
+                  "Google inició sesión, pero antes de usar Turnos Rápidos necesitamos que confirmes tu email desde el enlace que te enviamos."
+                ) : (
+                  <>
+                    Abrí el enlace que enviamos a <strong>{emailVerificacion}</strong>
+                    para confirmar que la cuenta es tuya.
+                  </>
+                )} Después vas a volver automáticamente para seguir con el alta de
+                tu negocio.
               </p>
+              {verificacionGooglePendiente && !emailVerificacion && (
+                <label className="campo-flotante">
+                  <span>Email de tu cuenta de Google</span>
+                  <input
+                    required
+                    name="emailVerificacion"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="vos@tunegocio.com"
+                    value={emailVerificacion}
+                    onChange={(evento) => setEmailVerificacion(evento.target.value)}
+                  />
+                </label>
+              )}
               {mensaje && (
                 <p className="mensaje-acceso" role="status">
                   {mensaje}
@@ -216,6 +245,11 @@ export function FormularioAcceso() {
                 onClick={() => {
                   setEmailVerificacion("");
                   setMensaje("");
+                  if (verificacionGooglePendiente) {
+                    router.replace(
+                      `/acceder?modo=ingreso&callbackURL=${encodeURIComponent(callbackURL)}`,
+                    );
+                  }
                 }}
               >
                 Volver e ingresar con otro email
