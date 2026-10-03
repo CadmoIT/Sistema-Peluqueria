@@ -8,6 +8,7 @@
 .publico-sitio main {
   display: flex;
   flex-direction: column;
+  padding-top: clamp(8px, 2vw, 40px);
 }
 .publico-hero {
   order: -1;
