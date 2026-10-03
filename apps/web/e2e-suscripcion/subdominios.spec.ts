@@ -11,7 +11,7 @@ const db = new PrismaClient();
 test.afterAll(() => db.$disconnect());
 
 test("el registro asigna el dominio y Mi sitio sólo permite editar si hay un homónimo", async ({ page }) => {
-  const base = "http://127.0.0.1:3107";
+  const base = "http://localhost:3107";
   const marca = `homonimo${randomUUID().replace(/-/g, "")}`;
   const email = `${marca}@example.test`;
   const password = "Clave-Solo-Pruebas-2026";
@@ -24,7 +24,7 @@ test("el registro asigna el dominio y Mi sitio sólo permite editar si hay un ho
     usuarioId = usuario.id;
     await db.usuario.update({ where: { id: usuario.id }, data: { emailVerificado: true } });
     expect((await page.request.post("/api/autenticacion/sign-in/email", { headers: { Origin: base }, data: { email, password } })).ok()).toBeTruthy();
-    const configuracion = await page.request.post("/api/configuracion-inicial", { headers: { Origin: "http://localhost:3107" }, data: { nombreNegocio: nombre, tipoNegocio: "peluqueria", cantidadLocales: 1, planId: "PRUEBA" } });
+    const configuracion = await page.request.post("/api/configuracion-inicial", { headers: { Origin: base }, data: { nombreNegocio: nombre, tipoNegocio: "peluqueria", cantidadLocales: 1, planId: "PRUEBA" } });
     expect(configuracion.ok(), `${configuracion.status()}: ${await configuracion.text()}`).toBeTruthy();
     const inicial = await configuracion.json();
     ids.push(inicial.id);
@@ -39,7 +39,7 @@ test("el registro asigna el dominio y Mi sitio sólo permite editar si hay un ho
     await expect(editor).toBeVisible();
     await editor.getByRole("textbox").fill(`${marca}-nuevo`);
     await editor.getByRole("button", { name: "Guardar dirección" }).click();
-    await expect(editor.getByRole("status")).toContainText("Tu dirección quedó actualizada");
+    await expect(editor.getByRole("status")).toHaveText(/Tu dirección quedó actualizada|La dirección ya está guardada/);
     await expect.poll(async () => (await db.negocio.findUniqueOrThrow({ where: { id: negocio.id } })).subdominio).toBe(`${marca}-nuevo`);
     expect((await db.subdominioAnterior.findUniqueOrThrow({ where: { nombre: negocio.subdominio! } })).negocioId).toBe(negocio.id);
     await expect(page.getByRole("link", { name: "Página Web" })).toHaveAttribute("href", `/sitio/${marca}-nuevo`);

@@ -11,7 +11,7 @@ const db = new PrismaClient();
 test.afterAll(() => db.$disconnect());
 
 test("franja fina, servidor de solo lectura, exportación y recuperación explícita", async ({ page }, info) => {
-  const base = "http://127.0.0.1:3107";
+  const base = "http://localhost:3107";
   const marca = `vigencia-e2e-${randomUUID()}`;
   const email = `${marca}@example.test`;
   const password = "Clave-Solo-Pruebas-2026";
