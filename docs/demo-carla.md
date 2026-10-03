@@ -1,5 +1,11 @@
 # Demo de Carla Cicero
 
+## Cuenta en producción
+
+El usuario autorizó expresamente cargar esta demo en `turnosrapidos.com.ar`, dentro del panel y sitio existentes. El alta utiliza el mismo script, limitado al destino Railway comprobado (`yamanote.proxy.rlwy.net:50874/railway`), con `CARLA_DEMO_PRODUCTION_CONFIRM=crear-cuenta-demo-carla` y una contraseña demo aleatoria de al menos 16 caracteres en `CARLA_DEMO_PASSWORD`. Nunca imprime la conexión de base ni cambia negocios existentes. Requiere que la migración de cuentas de equipo ya esté aplicada; no ejecuta migraciones productivas.
+
+Las imágenes se sirven desde el dominio principal. No se usa la presentación HTML para iniciar sesión o mostrar el negocio real. La contraseña local de la tabla siguiente no es la contraseña productiva. Las cuentas usan email verificado y aceptación simulados exclusivamente como datos de demostración. Los avisos automáticos quedan apagados y no se crean correos ni cobros externos.
+
 ## Presentación inmediata
 
 Abrir `apps/web/public/demo/carla/presentacion.html` en el navegador. Funciona sin servidor ni base de datos. Incluye Resumen, Agenda con filtro por integrante, Pacientes, Servicios, Equipo, Inventario, Compras, Caja, Reportes, Actividad y Mi sitio. El selector superior cambia entre Carla (dueña) y Lucía (empleada). Valeria tiene ficha y agenda, pero su invitación sigue pendiente y no puede ingresar.

@@ -1,4 +1,4 @@
-/** Crea una demo local de Carla Cicero sin correos, pagos externos ni sobrescribir otras cuentas. */
+/** Crea la demo de Carla sin correos, pagos externos ni sobrescribir otras cuentas. Producción requiere confirmación y destino explícitos. */
 import { existsSync } from "node:fs";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { PrismaClient, Prisma, type Producto } from "@prisma/client";
@@ -8,7 +8,7 @@ const SLUG = "carla-cicero-demo";
 const EMAIL = "carla.demo@example.com";
 const EMAIL_EMPLEADA = "lucia.carla.demo@example.com";
 const EMAIL_PENDIENTE = "valeria.carla.demo@example.com";
-const CLAVE = "CarlaDemo2026!";
+const CLAVE = process.env.CARLA_DEMO_PASSWORD || "CarlaDemo2026!";
 const DIA = 86_400_000;
 const ZONA = "America/Argentina/Buenos_Aires";
 const LOGO = "/demo/carla/logo-clinica.png";
@@ -16,13 +16,22 @@ const HERO = "/demo/carla/hero-referencia.jpeg";
 
 if (!process.env.DATABASE_URL && existsSync(".env.local"))
   process.loadEnvFile(".env.local");
-if (process.env.NODE_ENV === "production" || !process.env.DATABASE_URL)
-  throw new Error("Esta demo necesita una base local, nunca producción.");
+if (!process.env.DATABASE_URL)
+  throw new Error("Falta DATABASE_URL. No se modificó ningún dato.");
 const conexion = new URL(process.env.DATABASE_URL);
+const produccionConfirmada =
+  process.env.CARLA_DEMO_PRODUCTION_CONFIRM === "crear-cuenta-demo-carla" &&
+  conexion.hostname === "yamanote.proxy.rlwy.net" &&
+  conexion.port === "50874" &&
+  conexion.pathname === "/railway" &&
+  !!process.env.CARLA_DEMO_PASSWORD &&
+  process.env.CARLA_DEMO_PASSWORD.length >= 16;
 if (
-  !["localhost", "127.0.0.1", "::1", "[::1]"].includes(conexion.hostname) ||
-  conexion.port !== "5433" ||
-  conexion.pathname !== "/turnos_rapidos"
+  !produccionConfirmada &&
+  (process.env.NODE_ENV === "production" ||
+    !["localhost", "127.0.0.1", "::1", "[::1]"].includes(conexion.hostname) ||
+    conexion.port !== "5433" ||
+    conexion.pathname !== "/turnos_rapidos")
 )
   throw new Error(
     "La demo sólo usa turnos_rapidos en PostgreSQL local, puerto 5433. No se modificó ningún dato.",
@@ -962,7 +971,7 @@ async function crear() {
       });
       return negocio.id;
     },
-    { timeout: 180_000, maxWait: 15_000 },
+    { timeout: produccionConfirmada ? 900_000 : 180_000, maxWait: 15_000 },
   );
   await informar(negocioId);
 }
@@ -980,7 +989,7 @@ async function informar(negocioId: string) {
         duena: EMAIL,
         empleadaVinculada: EMAIL_EMPLEADA,
         invitacionPendiente: EMAIL_PENDIENTE,
-        claveLocal: CLAVE,
+        claveDemo: CLAVE,
         sitio: `/sitio/${SLUG}`,
         panel: "/panel/resumen",
         datos: { turnos, clientes, productos, compras },
