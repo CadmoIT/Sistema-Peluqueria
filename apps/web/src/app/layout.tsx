@@ -1,5 +1,6 @@
 /** Define metadatos, fuentes y estilos globales para todas las superficies web. */
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Doppio_One, Fira_Sans, PT_Serif } from "next/font/google";
 import "./globals.css";
 import { CierreDesplegables } from "@/componentes/interaccion/cierre-exterior";
@@ -37,16 +38,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const rutaResuelta = (await headers()).get("x-turnos-ruta") ?? "";
+  const sitioPublico = rutaResuelta.startsWith("/sitio/");
   return (
     <html lang="es-AR">
       <body
         className={`${doppioOne.variable} ${ptSerif.variable} ${firaSans.variable}`}
       >
         <CierreDesplegables />
-        <ProveedorCarga>{children}</ProveedorCarga>
+        <ProveedorCarga sitioPublico={sitioPublico}>{children}</ProveedorCarga>
       </body>
     </html>
   );

@@ -23,6 +23,23 @@
 }
 .equipo-estado form {
   margin: 0;
+  padding: 0;
+  gap: 0;
+}
+.equipo-estado .equipo-invitacion-cancelar > .formulario-apilado {
+  display: none;
+}
+.lista-equipo .formulario-flotante .profesional-disponible {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lista-equipo .profesional-disponible input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  padding: 0;
+  margin: 0;
 }
 .lista-equipo article.inactivo {
   opacity: 1;

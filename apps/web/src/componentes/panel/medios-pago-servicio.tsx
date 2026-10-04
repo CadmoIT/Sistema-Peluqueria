@@ -54,7 +54,7 @@ export function MediosPagoServicio({
           <div className="medio-pago-servicio" key={medio}>
             <strong>{nombre}</strong>
             <label>
-              Ajuste
+              <span>Ajuste</span>
               <input
                 aria-label={`Ajuste ${nombre}`}
                 type="text"

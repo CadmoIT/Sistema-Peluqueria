@@ -108,6 +108,9 @@
 .metricas-operativas--dos {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+.metricas-operativas--una {
+  grid-template-columns: minmax(0, 1fr);
+}
 .tabla-abierta {
   width: 100%;
   overflow-x: auto;

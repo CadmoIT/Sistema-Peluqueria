@@ -3,7 +3,7 @@
 "use client";
 
 import { useRef, useState, type PointerEvent } from "react";
-import { MapPin, MessageCircle, Palette } from "lucide-react";
+import { MapPin, Palette } from "lucide-react";
 import { CampoImagen } from "@/componentes/panel/campo-imagen";
 import { VistaPreviaSitio } from "@/componentes/panel/vista-previa-sitio";
 
@@ -606,17 +606,6 @@ function VistaPrevia({
             )}
           </div>
         </section>
-      )}
-      {datos.whatsapp.replace(/\D/g, "").length >= 8 && (
-        <a
-          className="mini-whatsapp"
-          href={`https://wa.me/${datos.whatsapp.replace(/\D/g, "")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Contactar por WhatsApp"
-        >
-          <MessageCircle aria-hidden="true" />
-        </a>
       )}
     </div>
   );

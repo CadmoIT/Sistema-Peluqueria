@@ -228,7 +228,7 @@ export default async function PaginaEquipo({
                       <FormularioAccion
                         accion={cancelarInvitacion}
                         texto="Cancelar invitación"
-                        className="formulario-apilado"
+                        className="formulario-apilado equipo-invitacion-cancelar"
                       >
                         <input type="hidden" name="id" value={profesional.id} />
                       </FormularioAccion>
@@ -333,7 +333,7 @@ function FormularioProfesional({
       <h2>{profesional ? "Editar profesional" : "Nuevo profesional"}</h2>
       {profesional && <input type="hidden" name="id" value={profesional.id} />}
       {profesional && (
-        <label>
+        <label className="profesional-disponible">
           <input
             name="activo"
             type="checkbox"

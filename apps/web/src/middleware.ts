@@ -31,7 +31,11 @@ export function middleware(solicitud: NextRequest) {
     ) {
       const destino = solicitud.nextUrl.clone();
       destino.pathname = `/sitio/${slug}${solicitud.nextUrl.pathname === "/" ? "" : solicitud.nextUrl.pathname}`;
-      return NextResponse.rewrite(destino);
+      const encabezados = new Headers(solicitud.headers);
+      encabezados.set("x-turnos-ruta", destino.pathname);
+      return NextResponse.rewrite(destino, {
+        request: { headers: encabezados },
+      });
     }
   }
   const encabezados = new Headers(solicitud.headers);

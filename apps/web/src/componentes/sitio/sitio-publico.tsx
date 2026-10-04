@@ -429,7 +429,7 @@ export function SitioPublico({
           </section>
         )}
       </main>
-      {mostrarContacto && whatsappValido && (
+      {!modoVistaPrevia && mostrarContacto && whatsappValido && (
         <a
           className="publico-whatsapp-flotante"
           href={`https://wa.me/${numeroWhatsapp}`}
@@ -466,18 +466,6 @@ export function SitioPublico({
               Total <b>{pesos(totalSeleccionado)}</b>
             </strong>
           </div>
-          <button
-            type="button"
-            className="seleccion-agregar"
-            onClick={() => {
-              setMostrarReserva(false);
-              document
-                .getElementById("catalogo-servicios")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-          >
-            Agregar servicios
-          </button>
           {!mostrarReserva ? (
             <button
               type="button"

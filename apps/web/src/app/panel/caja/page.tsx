@@ -23,9 +23,6 @@ export default async function PaginaCaja({
   const ingresos = datos.movimientos
     .filter((m) => m.tipo === "INGRESO")
     .reduce((s, m) => s + Number(m.monto), 0);
-  const egresos = datos.movimientos
-    .filter((m) => m.tipo === "EGRESO")
-    .reduce((s, m) => s + Number(m.monto), 0);
   return (
     <div className="panel-contenido">
       <VistaPanelLista ruta="/panel/caja" />
@@ -119,11 +116,8 @@ export default async function PaginaCaja({
         </div>
       </header>
       <MetricasOperativas
-        className="metricas-operativas metricas-operativas--dos"
-        datos={[
-          { etiqueta: "Ingresos de hoy", valor: ingresos },
-          { etiqueta: "Saldo del día", valor: ingresos - egresos },
-        ]}
+        className="metricas-operativas metricas-operativas--una"
+        datos={[{ etiqueta: "Ingresos de hoy", valor: ingresos }]}
       />
       <PuntoVenta
         descuentoEfectivo={descuentoNegocio(

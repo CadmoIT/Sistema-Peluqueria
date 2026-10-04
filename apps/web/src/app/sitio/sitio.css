@@ -1536,14 +1536,6 @@ button.publico-identidad__profesional:focus-visible {
 .seleccion-quitar:hover {
   background: #0001;
 }
-.seleccion-agregar {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  padding: 8px;
-  text-decoration: underline;
-  cursor: pointer;
-}
 @media (max-width: 580px) {
   .publico-whatsapp-flotante {
     left: 14px;

@@ -55,14 +55,20 @@ function guardarIngreso(pendiente: boolean) {
   }
 }
 
-export function ProveedorCarga({ children }: { children: ReactNode }) {
+export function ProveedorCarga({
+  children,
+  sitioPublico = false,
+}: {
+  children: ReactNode;
+  sitioPublico?: boolean;
+}) {
   const ruta = usePathname();
   const anterior = useRef(ruta);
   const rutaActual = useRef(ruta);
   rutaActual.current = ruta;
   const vistaLista = useRef<string | null>(null);
   const [carga, cambiarCarga] = useState<Carga | null>(() =>
-    esRutaPublica(ruta)
+    !sitioPublico && esRutaPublica(ruta)
       ? crearCarga("landing")
       : ruta.startsWith("/panel")
         ? crearCarga("panel")
@@ -89,7 +95,7 @@ export function ProveedorCarga({ children }: { children: ReactNode }) {
   }, [carga]);
   useEffect(() => {
     cambiarMontado(true);
-    if (ruta === "/") {
+    if (!sitioPublico && ruta === "/") {
       try {
         if (sessionStorage.getItem(claveLandingVista)) cambiarCarga(null);
         else sessionStorage.setItem(claveLandingVista, "1");
@@ -97,7 +103,7 @@ export function ProveedorCarga({ children }: { children: ReactNode }) {
         /* Si el almacenamiento está bloqueado, se conserva la primera carga. */
       }
     }
-  }, [ruta]);
+  }, [ruta, sitioPublico]);
   const iniciarIngreso = useCallback(() => {
     guardarIngreso(true);
     vistaLista.current = null;
@@ -133,7 +139,7 @@ export function ProveedorCarga({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (ruta !== anterior.current && !carga) {
-      if (esRutaPublica(ruta) && mostrarLandingUnaVez())
+      if (!sitioPublico && esRutaPublica(ruta) && mostrarLandingUnaVez())
         cambiarCarga(crearCarga("landing"));
       else if (
         ruta.startsWith("/panel") &&
@@ -153,7 +159,7 @@ export function ProveedorCarga({ children }: { children: ReactNode }) {
       cancelarIngreso();
     if (carga?.tipo === "landing" && ruta !== "/") cancelarIngreso();
     anterior.current = ruta;
-  }, [ruta, carga, cancelarIngreso]);
+  }, [ruta, carga, cancelarIngreso, sitioPublico]);
 
   useEffect(() => {
     try {
