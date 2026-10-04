@@ -64,41 +64,20 @@ export async function saldoPendienteEquipo(
   sedeId?: string,
   db: PrismaClient = prisma,
 ) {
-  const reservas = await db.reserva.findMany({
-    where: {
-      negocioId: c.negocio.id,
-      estado: { in: ["CONFIRMADA", "COMPLETADA", "AUSENTE"] },
-      AND: [
-        sedeId ? { sedeId } : {},
-        c.identidad.rol === "PROFESIONAL"
-          ? {
-              profesionalId: c.identidad.profesionalId,
-              sedeId: { in: c.identidad.sedeIds },
-            }
-          : {},
-      ],
-    },
-    select: {
-      total: true,
-      pagos: { where: { estado: "APROBADO" }, select: { monto: true } },
-      cobros: { where: { anuladoEn: null }, select: { monto: true } },
-    },
-  });
-  return reservas
-    .reduce(
-      (s, r) =>
-        s.plus(
-          Prisma.Decimal.max(
-            0,
-            r.total.minus(
-              [...r.pagos, ...r.cobros].reduce(
-                (n, p) => n.plus(p.monto),
-                new Prisma.Decimal(0),
-              ),
-            ),
-          ),
-        ),
-      new Prisma.Decimal(0),
-    )
-    .toNumber();
+  const empleado = c.identidad.rol === "PROFESIONAL";
+  if (empleado && (!c.identidad.profesionalId || !c.identidad.sedeIds.length))
+    return 0;
+  const resultado = await db.$queryRaw<
+    Array<{ saldo: Prisma.Decimal }>
+  >(Prisma.sql`
+    SELECT COALESCE(SUM(GREATEST(0,
+      COALESCE((SELECT "totalAcordado" FROM "CobroReserva" WHERE "reservaId"=r."id" AND "anuladoEn" IS NULL ORDER BY "creadoEn" ASC LIMIT 1),r."total")
+      - COALESCE((SELECT SUM("monto") FROM "Pago" WHERE "reservaId"=r."id" AND "estado"='APROBADO'),0)
+      - COALESCE((SELECT SUM("monto") FROM "CobroReserva" WHERE "reservaId"=r."id" AND "anuladoEn" IS NULL),0)
+    )),0) AS saldo FROM "Reserva" r WHERE r."negocioId"=${c.negocio.id}
+    AND r."estado" IN ('CONFIRMADA','COMPLETADA','AUSENTE')
+    ${sedeId ? Prisma.sql`AND r."sedeId"=${sedeId}` : Prisma.empty}
+    ${empleado ? Prisma.sql`AND r."profesionalId"=${c.identidad.profesionalId} AND r."sedeId" IN (${Prisma.join(c.identidad.sedeIds)})` : Prisma.empty}
+  `);
+  return Number(resultado[0]?.saldo ?? 0);
 }

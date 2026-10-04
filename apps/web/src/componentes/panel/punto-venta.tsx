@@ -4,6 +4,9 @@ import { useRef, useState } from "react";
 import { Minus, Plus, Search, Trash2 } from "lucide-react";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { registrarVenta } from "@/app/panel/caja/acciones";
+import { deshacerVenta } from "@/app/panel/caja/acciones";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { DialogoPanel } from "./dialogo-panel";
 import { FormularioAccion } from "./formulario-accion";
 import { useRolEquipo } from "./contexto-equipo";
@@ -26,12 +29,16 @@ export function PuntoVenta({
   articulos,
   sedes,
   profesionales,
+  descuentoEfectivo = 0,
 }: {
   articulos: Articulo[];
   sedes: Opcion[];
   profesionales: Opcion[];
+  descuentoEfectivo?: number;
 }) {
   const empleado = useRolEquipo() === "PROFESIONAL";
+  const router = useRouter();
+  const [medio, setMedio] = useState("TARJETA_EXTERNA");
   const [cantidades, poner] = useState<Record<string, number>>({}),
     [buscar, buscarPor] = useState(""),
     [sedeId, seleccionar] = useState(sedes[0]?.id || ""),
@@ -51,9 +58,31 @@ export function PuntoVenta({
     cantidad: cantidades[clave(a)]!,
   }));
   const total = seleccionados.reduce(
+    (s, a) =>
+      s +
+      (Math.round(
+        a.precio *
+          (medio === "EFECTIVO" && a.tipo === "servicio"
+            ? 1 - descuentoEfectivo / 100
+            : 1) *
+          100,
+      ) /
+        100) *
+        cantidades[clave(a)]!,
+    0,
+  );
+  const base = seleccionados.reduce(
     (s, a) => s + a.precio * cantidades[clave(a)]!,
     0,
   );
+  const precioUnitario = (a: Articulo) =>
+    Math.round(
+      a.precio *
+        (medio === "EFECTIVO" && a.tipo === "servicio"
+          ? 1 - descuentoEfectivo / 100
+          : 1) *
+        100,
+    ) / 100;
   const normalizar = (s: string) =>
     s
       .normalize("NFD")
@@ -165,7 +194,9 @@ export function PuntoVenta({
                   <div className="carrito-articulo" key={clave(a)}>
                     <div>
                       <strong>{a.nombre}</strong>
-                      <span>{pesos(a.precio * cantidades[clave(a)]!)}</span>
+                      <span>
+                        {pesos(precioUnitario(a) * cantidades[clave(a)]!)}
+                      </span>
                     </div>
                     {controles(a)}
                     <button
@@ -184,16 +215,63 @@ export function PuntoVenta({
                 <span>Total</span>
                 <strong>{pesos(total)}</strong>
               </div>
+              {medio === "EFECTIVO" && base > total && (
+                <p className="carrito-descuento">
+                  Precio base {pesos(base)} · Descuento en servicios −
+                  {pesos(base - total)}
+                </p>
+              )}
               <FormularioAccion
                 accion={registrarVenta}
                 className="formulario-dialogo"
-                texto="Confirmar compra"
+                texto="Registrar venta"
                 alGuardar={() => {
+                  const claveVenta = idempotencia.current;
+                  toast.success("Venta registrada", {
+                    duration: 15000,
+                    action: {
+                      label: "Deshacer",
+                      onClick: () => {
+                        void deshacerVenta(claveVenta)
+                          .then((r) => {
+                            if (r.ok) {
+                              toast.success(r.mensaje);
+                              router.refresh();
+                            } else toast.error(r.mensaje);
+                          })
+                          .catch(() =>
+                            toast.error(
+                              "No pudimos deshacer la venta. Revisá Actividad antes de reintentar.",
+                            ),
+                          );
+                      },
+                    },
+                  });
                   poner({});
                   abrir(false);
                   idempotencia.current = "";
                 }}
               >
+                <label>
+                  Medio de pago
+                  <select
+                    name="medio"
+                    value={medio}
+                    onChange={(e) => setMedio(e.target.value)}
+                  >
+                    <option value="EFECTIVO">
+                      Efectivo
+                      {descuentoEfectivo
+                        ? ` · −${descuentoEfectivo}% en servicios`
+                        : ""}
+                    </option>
+                    <option value="TARJETA_EXTERNA">Tarjeta</option>
+                    <option value="MERCADO_PAGO">Mercado Pago</option>
+                  </select>
+                </label>
+                <small>
+                  El registro no cobra ni devuelve dinero fuera del sistema.
+                </small>
                 <input
                   type="hidden"
                   name="items"

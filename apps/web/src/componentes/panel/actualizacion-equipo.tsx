@@ -18,6 +18,7 @@ export function ActualizacionEquipo({
   useEffect(() => {
     let cerrado = false,
       pendiente = false;
+    const controlador = new AbortController();
     const formulariosEditados = new Set<HTMLFormElement>();
     function editar(e: Event) {
       const form = (e.target as HTMLElement)?.closest("form");
@@ -33,7 +34,11 @@ export function ActualizacionEquipo({
       if (cerrado || pendiente || document.hidden) return;
       pendiente = true;
       try {
-        const r = await fetch("/api/panel/cambios", { cache: "no-store" });
+        const r = await fetch("/api/panel/cambios", {
+          cache: "no-store",
+          signal: controlador.signal,
+        });
+        if (cerrado) return;
         if (r.status === 401 || r.status === 403) {
           window.location.assign("/seleccionar-negocio");
           return;
@@ -43,6 +48,7 @@ export function ActualizacionEquipo({
           negocioId: string;
           version: string;
         };
+        if (cerrado || document.hidden) return;
         if (datos.negocioId !== negocioId) {
           window.location.reload();
           return;
@@ -74,6 +80,7 @@ export function ActualizacionEquipo({
     void consultar();
     return () => {
       cerrado = true;
+      controlador.abort();
       clearInterval(intervalo);
       document.removeEventListener("input", editar);
       document.removeEventListener("equipo-formulario-guardado", guardado);

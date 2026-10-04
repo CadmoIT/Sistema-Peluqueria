@@ -169,6 +169,22 @@ export async function aceptarInvitacionEquipo(
     throw new Error("Verificá tu email antes de aceptar.");
   return db.$transaction(async (tx) => {
     const hash = hashInvitacion(token);
+    await tx.$queryRaw`SELECT "id" FROM "Usuario" WHERE "id"=${usuario.id} FOR UPDATE`;
+    const invitacionDestino = await tx.invitacionEquipo.findUnique({
+      where: { tokenHash: hash },
+      select: { negocioId: true },
+    });
+    if (
+      await tx.membresia.findFirst({
+        where: {
+          usuarioId: usuario.id,
+          negocioId: { not: invitacionDestino?.negocioId ?? "" },
+        },
+      })
+    )
+      throw new Error(
+        "Tu cuenta ya pertenece a otro negocio. Usá una cuenta diferente para esta invitación.",
+      );
     const destino = await tx.invitacionEquipo.findUnique({
       where: { tokenHash: hash },
       select: { profesionalId: true },

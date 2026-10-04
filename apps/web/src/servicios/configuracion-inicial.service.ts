@@ -18,7 +18,7 @@ export type DatosConfiguracionInicial = {
 
 export async function buscarNegocioDelUsuario(usuarioId: string) {
   return prisma.membresia.findFirst({
-    where: { usuarioId, activo: true },
+    where: { usuarioId },
     // Sólo comprueba existencia; nunca elige ni devuelve un negocio arbitrario.
     select: { id: true },
   });
@@ -42,6 +42,9 @@ export async function crearConfiguracionInicial(
     try {
       return await prisma.$transaction(
         async (tx) => {
+          await tx.$queryRaw`SELECT "id" FROM "Usuario" WHERE "id"=${usuarioId} FOR UPDATE`;
+          if (await tx.membresia.findFirst({ where: { usuarioId } }))
+            throw new Error("Tu cuenta ya pertenece a un negocio.");
           const slug = await buscarSlugDisponible(tx, datos.nombreNegocio);
           const subdominio = await asignarSubdominio(tx, datos.nombreNegocio);
           return tx.negocio.create({

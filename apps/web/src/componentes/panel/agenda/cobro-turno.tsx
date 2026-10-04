@@ -8,8 +8,13 @@ export function CobroTurno({ reservaId }: { reservaId: string }) {
     total: string;
     abonado: string;
     pendiente: string;
+    precioBase: string;
+    medioFijado: string | null;
+    descuentoEfectivo: number;
   } | null>(null);
   const [idempotencia, setId] = useState("");
+  const [medio, setMedio] = useState("TARJETA_EXTERNA");
+  const [error, setError] = useState(false);
   useEffect(() => {
     let cerrado = false;
     setId(crypto.randomUUID());
@@ -18,21 +23,46 @@ export function CobroTurno({ reservaId }: { reservaId: string }) {
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (!cerrado) setSaldo(d);
+        if (!cerrado) {
+          setSaldo(d);
+          if (d?.medioFijado) setMedio(d.medioFijado);
+          if (!d) setError(true);
+        }
+      })
+      .catch(() => {
+        if (!cerrado) setError(true);
       });
     return () => {
       cerrado = true;
     };
   }, [reservaId]);
-  if (!saldo) return <p>Consultando saldo del turno…</p>;
+  if (!saldo)
+    return (
+      <p>
+        {error
+          ? "No pudimos consultar el saldo. Cerrá y volvé a abrir el turno."
+          : "Consultando saldo del turno…"}
+      </p>
+    );
+  const total = saldo.medioFijado
+    ? Number(saldo.total)
+    : Math.round(
+        Number(saldo.precioBase) *
+          (medio === "EFECTIVO" ? 1 - saldo.descuentoEfectivo / 100 : 1) *
+          100,
+      ) / 100;
+  const pendiente = Math.max(
+    0,
+    Math.round((total - Number(saldo.abonado)) * 100) / 100,
+  );
   return (
     <section>
       <h3>Cobros del turno</h3>
       <p>
-        Total: ${saldo.total} · Abonado: ${saldo.abonado} · Pendiente: $
-        {saldo.pendiente}
+        Precio base: ${saldo.precioBase} · Total: ${total} · Abonado: $
+        {saldo.abonado} · Pendiente: ${pendiente}
       </p>
-      {Number(saldo.pendiente) > 0 && (
+      {pendiente > 0 && (
         <FormularioAccion
           accion={registrarCobro}
           texto="Registrar cobro"
@@ -56,16 +86,41 @@ export function CobroTurno({ reservaId }: { reservaId: string }) {
               type="number"
               min="0.01"
               step="0.01"
-              max={saldo.pendiente}
+              max={pendiente}
             />
           </label>
           <label>
             Medio
-            <select name="medio">
-              <option value="EFECTIVO">Efectivo</option>
-              <option value="TRANSFERENCIA">Transferencia recibida</option>
-              <option value="TARJETA_EXTERNA">
-                Tarjeta cobrada fuera del sistema
+            <select
+              name="medio"
+              value={medio}
+              onChange={(e) => setMedio(e.target.value)}
+            >
+              <option
+                value="EFECTIVO"
+                disabled={
+                  !!saldo.medioFijado && saldo.medioFijado !== "EFECTIVO"
+                }
+              >
+                Efectivo · −{saldo.descuentoEfectivo}%
+              </option>
+              <option
+                value="TRANSFERENCIA"
+                disabled={saldo.medioFijado === "EFECTIVO"}
+              >
+                Transferencia recibida
+              </option>
+              <option
+                value="TARJETA_EXTERNA"
+                disabled={saldo.medioFijado === "EFECTIVO"}
+              >
+                Tarjeta
+              </option>
+              <option
+                value="MERCADO_PAGO"
+                disabled={saldo.medioFijado === "EFECTIVO"}
+              >
+                Mercado Pago
               </option>
             </select>
           </label>

@@ -22,7 +22,8 @@ test("muestra el dorso únicamente al superar la posición vertical", () => {
   assert.equal(calcularHojaCurvada(0.3).reverso, false);
   assert.equal(calcularHojaCurvada(0.65).reverso, true);
   assert.ok(calcularHojaCurvada(1).transform.includes("rotateX(190deg)"));
-  assert.equal(duracionGiroHoja, 500);
+  // La línea de tiempo usa una hoja por segundo; el cierre del panel tiene un límite independiente.
+  assert.equal(duracionGiroHoja, 1000);
 });
 
 test("limita el progreso a los extremos de la trayectoria", () => {

@@ -156,17 +156,6 @@ function ContenidoEstructuraPanel({
         anchoSidebar={anchoSidebar}
       />
       <main className="panel-main">
-        <div className="panel-contexto-activo">
-          <Link href="/seleccionar-negocio">
-            {nombreNegocio} ·{" "}
-            {rol === "PROFESIONAL"
-              ? "Empleado"
-              : rol === "DUENO"
-                ? "Dueño"
-                : "Administrador"}{" "}
-            ▾
-          </Link>
-        </div>
         <div className="panel-cuenta-flotante">
           <CuentaPanel
             nombreNegocio={nombreNegocio}

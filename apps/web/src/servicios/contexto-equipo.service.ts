@@ -1,6 +1,5 @@
 /** Resuelve el negocio activo y vuelve a validar la membresía en cada petición. */
 import "server-only";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 export {
   exigirPermisoEquipo,
@@ -15,7 +14,6 @@ export async function resolverContextoEquipo(usuario: {
   name: string;
   emailVerified: boolean;
 }) {
-  const seleccionado = (await cookies()).get(COOKIE_NEGOCIO)?.value;
   const membresias = await prisma.membresia.findMany({
     where: { usuarioId: usuario.id, activo: true },
     include: {
@@ -29,11 +27,7 @@ export async function resolverContextoEquipo(usuario: {
       m.rol !== "PROFESIONAL" ||
       Boolean(usuario.emailVerified && m.aceptadaEn && m.profesional?.activo),
   );
-  const membresia = seleccionado
-    ? disponibles.find((m) => m.negocioId === seleccionado)
-    : disponibles.length === 1
-      ? disponibles[0]
-      : null;
+  const membresia = disponibles.length === 1 ? disponibles[0] : null;
   if (!membresia) return null;
   return {
     usuario,

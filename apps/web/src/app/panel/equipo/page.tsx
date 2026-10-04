@@ -114,21 +114,21 @@ export default async function PaginaEquipo({
                     iniciales(profesional.nombre, profesional.apellido)
                   )}
                 </div>
-                <div>
+                <div className="equipo-datos">
                   <h2>
                     {profesional.nombre} {profesional.apellido}
                   </h2>
                   <p>
                     {profesional.especialidad || "Especialidad sin completar"}
                   </p>
+                  <small>
+                    {acceso?.membresia?.usuario.email || invitacion?.email}
+                  </small>
                 </div>
                 <div>
                   <span className={vinculada ? "equipo-insignia" : ""}>
                     {etiqueta}
                   </span>
-                  {vinculada && (
-                    <small> · {acceso?.membresia?.usuario.email}</small>
-                  )}
                   {vinculada && !profesional.activo && (
                     <p>
                       Acceso suspendido mientras el profesional esté inactivo.
@@ -136,16 +136,23 @@ export default async function PaginaEquipo({
                   )}
                   {puedeInvitar &&
                     (vinculada ? (
-                      <FormularioAccion
-                        accion={quitarAcceso}
-                        texto="Quitar acceso"
-                        className="formulario-apilado"
-                      >
-                        <input type="hidden" name="id" value={profesional.id} />
-                        <small>
-                          No se borran datos ni se desactiva al profesional.
-                        </small>
-                      </FormularioAccion>
+                      <details>
+                        <summary>Administrar acceso</summary>
+                        <FormularioAccion
+                          accion={quitarAcceso}
+                          texto="Quitar acceso"
+                          className="formulario-apilado"
+                        >
+                          <input
+                            type="hidden"
+                            name="id"
+                            value={profesional.id}
+                          />
+                          <small>
+                            No se borran datos ni se desactiva al profesional.
+                          </small>
+                        </FormularioAccion>
+                      </details>
                     ) : (
                       <details>
                         <summary>Invitar / reenviar</summary>

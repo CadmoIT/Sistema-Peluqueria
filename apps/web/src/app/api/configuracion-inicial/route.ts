@@ -43,7 +43,7 @@ export async function POST(solicitud: Request) {
     const contexto = await resolverContextoEquipo(sesion.user);
     if (!contexto)
       return NextResponse.json(
-        { mensaje: "Elegí un negocio disponible desde Mi cuenta." },
+        { mensaje: "Tu cuenta ya pertenece a un negocio. Contactá al dueño para revisar tu acceso." },
         { status: 409 },
       );
     return NextResponse.json({

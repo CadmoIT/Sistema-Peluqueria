@@ -36,9 +36,8 @@ export const enlacesPanel = [
   { texto: "Compras", href: "/panel/compras", icono: ShoppingCart },
   { texto: "Caja", href: "/panel/caja", icono: WalletCards },
   { texto: "Reportes", href: "/panel/reportes", icono: BarChart3 },
-  { texto: "Mi sitio", href: "/panel/mi-sitio", icono: Store },
   { texto: "Actividad", href: "/panel/actividad", icono: CalendarDays },
-  { texto: "Mi cuenta", href: "/panel/mi-cuenta", icono: ContactRound },
+  { texto: "Mi sitio", href: "/panel/mi-sitio", icono: Store },
 ] as const;
 
 export function obtenerEnlacesPanel(perfil: PerfilNegocio, rol = "DUENO") {

@@ -1,5 +1,10 @@
 /** Registra ventas atribuidas, stock y caja de manera atómica e idempotente. */
 import { createHash } from "node:crypto";
+import {
+  descuentoNegocio,
+  medioValido,
+  precioMedio,
+} from "@/lib/precios-medios";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { exigirPermisoEquipo, exigirSedeEquipo } from "@/lib/permisos-equipo";
 import type { ContextoEquipo } from "./contexto-equipo.service";
@@ -69,6 +74,7 @@ export async function vender(
     atribucion: string;
     idempotencia: string;
     items: unknown;
+    medio?: string;
   },
   contexto?: ContextoEquipo,
 ) {
@@ -79,6 +85,7 @@ export async function vender(
       entrada = { ...entrada, atribucion: contexto.identidad.profesionalId! };
   }
   const items = validarItems(entrada.items);
+  const medio = medioValido(entrada.medio || "TARJETA_EXTERNA");
   if (!/^[a-zA-Z0-9-]{16,128}$/.test(entrada.idempotencia))
     throw new Error("Volvé a abrir el carrito para confirmar la compra.");
   const solicitudHash = createHash("sha256")
@@ -87,6 +94,7 @@ export async function vender(
         sedeId: entrada.sedeId,
         atribucion: entrada.atribucion,
         items,
+        medio,
       }),
     )
     .digest("hex");
@@ -147,6 +155,13 @@ export async function vender(
           },
         }),
       ]);
+      const configuracionActual = await tx.negocio.findUniqueOrThrow({
+        where: { id: negocioId },
+        select: { configuracion: true },
+      });
+      const descuentoAplicable = descuentoNegocio(
+        configuracionActual.configuracion,
+      );
       const lineas = items.map((item) => {
         const recurso =
           item.tipo === "producto"
@@ -158,7 +173,11 @@ export async function vender(
           productoId: item.tipo === "producto" ? item.id : null,
           concepto: recurso.nombre,
           cantidad: item.cantidad,
-          precio: recurso.precio,
+          precio:
+            item.tipo === "servicio"
+              ? precioMedio(recurso.precio, medio, descuentoAplicable)
+              : recurso.precio,
+          precioBase: recurso.precio,
         };
       });
       const total = lineas.reduce(
@@ -184,11 +203,24 @@ export async function vender(
           negocioId,
           sedeId: sede.id,
           total,
+          medio,
+          descuentoEfectivo: medio === "EFECTIVO" ? descuentoAplicable : 0,
+          precioBase: lineas.reduce(
+            (s, i) => s.plus(i.precioBase.mul(i.cantidad)),
+            new Prisma.Decimal(0),
+          ),
           ...atribucion,
           actorUsuarioId: contexto?.usuario.id,
           idempotencia: entrada.idempotencia,
           solicitudHash,
-          items: { create: lineas },
+          items: {
+            create: lineas.map((i) => ({
+              productoId: i.productoId,
+              concepto: i.concepto,
+              cantidad: i.cantidad,
+              precio: i.precio,
+            })),
+          },
         },
       });
       for (const item of lineas)
@@ -236,7 +268,10 @@ export async function vender(
           profesionalId: venta.profesionalId,
           detalle: { total: total.toString() },
         });
-      return venta;
+      return tx.venta.update({
+        where: { id: venta.id },
+        data: { deshacerHasta: new Date(Date.now() + 15000) },
+      });
     },
     { maxWait: 10_000, timeout: 20_000 },
   );

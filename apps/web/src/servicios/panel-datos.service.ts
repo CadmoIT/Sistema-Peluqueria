@@ -833,6 +833,7 @@ export const obtenerSitioPublico = cache(async function obtenerSitioPublico(
       nombre: true,
       descripcion: true,
       telefono: true,
+      configuracion: true,
       politicaContacto: true,
       publicado: true,
       sitioRetiradoEn: true,

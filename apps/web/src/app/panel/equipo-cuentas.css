@@ -43,3 +43,116 @@
     padding: 8px 16px;
   }
 }
+/* Cards compactas y bitácora diaria, sin alterar la paleta del panel. */
+.lista-equipo > article {
+  display: grid;
+  grid-template-columns: 48px minmax(140px, 1fr) minmax(130px, auto) auto;
+  gap: 12px;
+  padding: 16px;
+  align-items: center;
+  min-height: 0;
+}
+.lista-equipo .avatar-profesional {
+  width: 44px;
+  height: 44px;
+}
+.lista-equipo .equipo-datos h2 {
+  font-size: 16px;
+  margin: 0 0 4px;
+}
+.lista-equipo .equipo-datos p {
+  margin: 0 0 4px;
+}
+.lista-equipo .equipo-datos small {
+  display: block;
+  color: var(--texto-secundario, #527080);
+  overflow-wrap: anywhere;
+}
+.lista-equipo .acciones-equipo {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.lista-equipo .acciones-equipo .boton {
+  padding: 8px;
+  font-size: 12px;
+}
+.actividad-dia {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.actividad-dia form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.actividad-dia input {
+  padding: 10px;
+  border: 1px solid #d7e7ec;
+  border-radius: 10px;
+}
+.actividad-filtros,
+.precios-config {
+  padding: 14px 18px;
+  border: 1px solid #d7e7ec;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+.actividad-lista {
+  border-left: 2px solid #d7e7ec;
+  padding-left: 18px;
+  margin: 24px 0;
+}
+.actividad-item {
+  position: relative;
+  padding: 14px 18px;
+  margin: 0 0 12px;
+  background: #fff;
+  border: 1px solid #e5eef1;
+  border-radius: 12px;
+}
+.actividad-item::before {
+  content: "";
+  position: absolute;
+  left: -25px;
+  top: 22px;
+  width: 10px;
+  height: 10px;
+  background: #177188;
+  border-radius: 50%;
+}
+.actividad-item p {
+  margin: 6px 0;
+  color: #527080;
+  font-size: 13px;
+}
+.actividad-item strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.carrito-descuento {
+  font-size: 13px;
+  color: #177188;
+}
+@media (max-width: 700px) {
+  .lista-equipo > article {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+  .lista-equipo .acciones-equipo {
+    grid-column: 2;
+  }
+  .lista-equipo > article > div:nth-child(3) {
+    grid-column: 2;
+  }
+  .actividad-dia form {
+    max-width: 100%;
+  }
+  .actividad-dia input {
+    min-width: 0;
+  }
+}

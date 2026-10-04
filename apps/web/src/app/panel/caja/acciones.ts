@@ -1,6 +1,7 @@
 /** Valida el negocio y confirma caja y ventas sin duplicar stock o ingresos. */
 "use server";
 import { importeEquipo } from "@/servicios/operaciones-equipo.service";
+import { anularOperacionEquipo } from "@/servicios/operaciones-equipo.service";
 import { transaccionEquipo } from "@/servicios/transaccion-equipo";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -153,8 +154,25 @@ export async function registrarVenta(datos: FormData) {
         atribucion: leerTexto(datos, "atribucion"),
         idempotencia: leerTexto(datos, "idempotencia"),
         items,
+        medio: leerTexto(datos, "medio") || "TARJETA_EXTERNA",
       },
       c,
     );
   }, "Compra confirmada. Inventario y reportes actualizados.");
+}
+export async function deshacerVenta(idempotencia: string) {
+  return ejecutar(async (negocioId, c) => {
+    const venta = await prisma.venta.findUnique({
+      where: { negocioId_idempotencia: { negocioId, idempotencia } },
+    });
+    if (!venta) throw new Error("No se encontró la venta.");
+    await anularOperacionEquipo(
+      prisma,
+      c,
+      "venta",
+      venta.id,
+      "Deshacer venta rápida",
+      true,
+    );
+  }, "Venta deshecha. Stock y caja restaurados.");
 }

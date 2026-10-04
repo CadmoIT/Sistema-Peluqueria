@@ -72,6 +72,21 @@ export function ProveedorCarga({ children }: { children: ReactNode }) {
   const [saliendo, cambiarSalida] = useState(false);
   const [montado, cambiarMontado] = useState(false);
   const [fuentesListas, prepararFuentes] = useState(false);
+  const [demorada, setDemorada] = useState(false);
+  useEffect(() => {
+    setDemorada(false);
+    if (!carga) return;
+    const timer = window.setTimeout(() => setDemorada(true), 15000);
+    return () => clearTimeout(timer);
+  }, [carga]);
+  useEffect(() => {
+    if (carga?.tipo !== "panel" || !carga.listo) return;
+    const timer = window.setTimeout(() => {
+      cambiarCarga(null);
+      cambiarSalida(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [carga]);
   useEffect(() => {
     cambiarMontado(true);
     if (ruta === "/") {
@@ -170,11 +185,15 @@ export function ProveedorCarga({ children }: { children: ReactNode }) {
     prepararFuentes(false);
     if (inicio === undefined) return;
     let vigente = true;
+    const limite = window.setTimeout(() => {
+      if (vigente) prepararFuentes(true);
+    }, 1500);
     void document.fonts.ready.then(() => {
       if (vigente) prepararFuentes(true);
     });
     return () => {
       vigente = false;
+      clearTimeout(limite);
     };
   }, [inicio]);
   useEffect(() => {
@@ -250,12 +269,25 @@ export function ProveedorCarga({ children }: { children: ReactNode }) {
       {carga?.tipo === "landing" && (
         <PantallaCarga tipo="landing" saliendo={saliendo} />
       )}
-      {carga?.tipo === "panel" && (
+      {carga?.tipo === "panel" && !demorada && (
         <CalendarioEntradaPanel
           key={carga.inicio}
           listo={carga.listo && fuentesListas && esperas === 0}
           onFinalizar={finalizarEntrada}
         />
+      )}
+      {carga?.tipo === "panel" && demorada && (
+        <div role="status" className="carga-pantalla">
+          <p>Está tardando más de lo esperado.</p>
+          <button className="boton" onClick={() => window.location.reload()}>
+            Reintentar
+          </button>
+          {carga.listo && (
+            <button className="boton" onClick={finalizarEntrada}>
+              Continuar al panel
+            </button>
+          )}
+        </div>
       )}
       <noscript>
         {/* React entrega los segmentos resueltos ocultos hasta ejecutar su script de inserción. */}

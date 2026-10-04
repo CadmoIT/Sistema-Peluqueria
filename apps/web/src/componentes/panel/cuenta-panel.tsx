@@ -118,7 +118,6 @@ export function CuentaPanel({
           </span>
         </div>
         <div className="panel-cuenta__opciones">
-          <Link href="/panel/mi-cuenta">Mi cuenta y negocios</Link>
           {opcionesCuenta
             .filter(
               (o) =>

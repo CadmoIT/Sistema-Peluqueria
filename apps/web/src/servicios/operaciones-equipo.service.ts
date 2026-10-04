@@ -1,5 +1,11 @@
 /** Operaciones compartidas atómicas con saldo, stock, autoría e idempotencia. */
 import { createHash, randomUUID } from "node:crypto";
+import { validarDeshacerVenta } from "@/lib/deshacer-venta";
+import {
+  descuentoNegocio,
+  medioValido,
+  acuerdoCobro,
+} from "@/lib/precios-medios";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import {
   exigirPermisoEquipo,
@@ -265,8 +271,7 @@ export async function cobrarTurnoEquipo(
 ) {
   exigirPermisoEquipo(c, "venta");
   const monto = importeEquipo(e.monto);
-  if (!["EFECTIVO", "TRANSFERENCIA", "TARJETA_EXTERNA"].includes(e.medio))
-    throw new Error("Elegí un medio de pago válido.");
+  medioValido(e.medio);
   const hash = huella(e);
   return transaccionEquipo(db, async (tx) => {
     await bloquear(tx, c.negocio.id, e.idempotencia);
@@ -298,11 +303,31 @@ export async function cobrarTurnoEquipo(
       throw new Error("El turno no está disponible para cobrar.");
     exigirSedeEquipo(c, r.sedeId);
     exigirProfesionalEquipo(c, r.profesionalId);
+    const primerCobro = [...r.cobros].sort(
+      (a, b) => a.creadoEn.getTime() - b.creadoEn.getTime(),
+    )[0];
+    if (
+      primerCobro &&
+      (primerCobro.medio === "EFECTIVO") !== (e.medio === "EFECTIVO")
+    )
+      throw new Error(
+        "Este turno ya tiene cobros con otro precio. El dueño debe corregirlos antes de cambiar el medio.",
+      );
+    const configuracion = await tx.negocio.findUniqueOrThrow({
+      where: { id: c.negocio.id },
+      select: { configuracion: true },
+    });
+    const { base, total, descuento } = acuerdoCobro(
+      r.total,
+      e.medio,
+      descuentoNegocio(configuracion.configuracion),
+      primerCobro,
+    );
     const abonado = [...r.pagos, ...r.cobros].reduce(
       (s, p) => s.plus(p.monto),
       new Prisma.Decimal(0),
     );
-    if (monto.gt(r.total.minus(abonado)))
+    if (monto.gt(total.minus(abonado)))
       throw new Error("El importe supera el saldo pendiente del turno.");
     const id = randomUUID();
     const movimiento = await tx.movimientoCaja.create({
@@ -328,6 +353,9 @@ export async function cobrarTurnoEquipo(
         actorUsuarioId: c.usuario.id,
         monto,
         medio: e.medio,
+        precioBase: base,
+        totalAcordado: total,
+        descuentoEfectivo: descuento,
         idempotencia: e.idempotencia,
         solicitudHash: hash,
         movimientoId: movimiento.id,
@@ -350,8 +378,11 @@ export async function anularOperacionEquipo(
   tipo: string,
   id: string,
   motivo: string,
+  deshacer = false,
 ) {
-  exigirPermisoEquipo(c, "dueno");
+  exigirPermisoEquipo(c, deshacer ? "venta" : "dueno");
+  if (deshacer && tipo !== "venta")
+    throw new Error("Sólo se puede deshacer una venta rápida.");
   if (
     !motivo.trim() ||
     motivo.length > 200 ||
@@ -363,6 +394,14 @@ export async function anularOperacionEquipo(
   return transaccionEquipo(db, async (tx) => {
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`anular:${c.negocio.id}:${id}`},0))::text`;
     const marca = `anular:${tipo}:${id}`;
+    if (deshacer) {
+      const venta = await tx.venta.findFirst({
+        where: { id, negocioId: c.negocio.id, actorUsuarioId: c.usuario.id },
+      });
+      if (!validarDeshacerVenta(venta, c.usuario.id)) return;
+      if (!venta) throw new Error("No se encontró la venta.");
+      exigirSedeEquipo(c, venta.sedeId);
+    }
     if (
       await tx.auditoria.findFirst({
         where: { negocioId: c.negocio.id, recursoId: marca },

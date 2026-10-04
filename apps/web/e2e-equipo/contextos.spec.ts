@@ -101,16 +101,18 @@ test("agenda y cobro parcial son propios, contemplan la seña y completar no vue
   }
 });
 
-test("una cuenta cambia de rol y negocio, sin arrastrar permisos ni perder el otro acceso", async ({
+test("una cuenta pertenece a un negocio y una cookie no cambia su rol ni su acceso", async ({
   page,
 }) => {
   const f = await crearEquipoPrueba(db),
     e = f.empleados[0]!;
   try {
     await f.vincular(0);
-    await db.membresia.create({
-      data: { usuarioId: e.usuario.id, negocioId: f.otro.id, rol: "DUENO" },
-    });
+    await expect(
+      db.membresia.create({
+        data: { usuarioId: e.usuario.id, negocioId: f.otro.id, rol: "DUENO" },
+      }),
+    ).rejects.toMatchObject({ code: "P2002" });
     await db.cuentaOAuth.create({
       data: {
         usuarioId: e.usuario.id,
@@ -125,7 +127,7 @@ test("una cuenta cambia de rol y negocio, sin arrastrar permisos ni perder el ot
     });
     expect(login.ok()).toBeTruthy();
     await page.goto("/panel/resumen");
-    await expect(page).toHaveURL(/seleccionar-negocio/);
+    await expect(page).toHaveURL(/panel\/resumen/);
     const altaSinContexto = await page.request.post(
       "/api/configuracion-inicial",
       {
@@ -133,27 +135,10 @@ test("una cuenta cambia de rol y negocio, sin arrastrar permisos ni perder el ot
         data: {},
       },
     );
-    expect(altaSinContexto.status()).toBe(409);
-    expect(Object.keys(await altaSinContexto.json())).toEqual(["mensaje"]);
-    const elegir = async (nombre: string) => {
-      await page.goto("/seleccionar-negocio");
-      await page
-        .locator("form")
-        .filter({
-          has: page.getByRole("heading", { name: nombre, exact: true }),
-        })
-        .getByRole("button", { name: "Entrar al negocio" })
-        .click();
-      await expect(page).toHaveURL(/panel\/resumen/);
-    };
-    await elegir(f.otro.nombre);
-    await expect(
-      page.getByRole("link", { name: "Equipo", exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Otro negocio · Dueño ▾" }),
-    ).toBeVisible();
-    await elegir(f.negocio.nombre);
+    expect((await altaSinContexto.json()).id).toBe(f.negocio.id);
+    await page.goto("/seleccionar-negocio");
+    await expect(page).toHaveURL(/panel\/resumen/);
+    await expect(page.locator('a[href="/panel/mi-cuenta"]')).toHaveCount(0);
     await expect(page.locator('a[href="/panel/equipo"]')).toHaveCount(0);
     const altaExistente = await page.request.post(
       "/api/configuracion-inicial",
@@ -165,11 +150,6 @@ test("una cuenta cambia de rol y negocio, sin arrastrar permisos ni perder el ot
     const negocioDevuelto = await altaExistente.json();
     expect(negocioDevuelto.id).toBe(f.negocio.id);
     expect(negocioDevuelto).not.toHaveProperty("configuracion");
-    const cookies = await page.context().cookies();
-    expect(
-      cookies.find((c) => c.name === "turnos-negocio-activo")?.httpOnly,
-    ).toBe(true);
-    expect(cookies.every((c) => c.domain === "localhost")).toBe(true);
     await page.context().addCookies([
       {
         name: "turnos-negocio-activo",
@@ -179,8 +159,9 @@ test("una cuenta cambia de rol y negocio, sin arrastrar permisos ni perder el ot
         sameSite: "Lax",
       },
     ]);
-    expect((await page.request.get("/api/panel/cambios")).status()).toBe(403);
-    await elegir(f.negocio.nombre);
+    expect((await page.request.get("/api/panel/cambios")).status()).toBe(200);
+    await page.goto("/panel/mi-cuenta");
+    await expect(page).toHaveURL(/panel\/resumen/);
     await db.membresia.updateMany({
       where: { usuarioId: e.usuario.id, negocioId: f.negocio.id },
       data: { activo: false },
@@ -190,8 +171,7 @@ test("una cuenta cambia de rol y negocio, sin arrastrar permisos ni perder el ot
     await expect(
       page.getByRole("heading", { name: f.negocio.nombre, exact: true }),
     ).toHaveCount(0);
-    await elegir(f.otro.nombre);
-    expect((await page.request.get("/api/panel/cambios")).status()).toBe(200);
+    expect((await page.request.get("/api/panel/cambios")).status()).toBe(403);
   } finally {
     await f.limpiar();
   }
