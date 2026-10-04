@@ -155,7 +155,10 @@ async function verificar() {
     await page.goto(`${origin}/panel/mi-sitio`, { waitUntil: "networkidle" });
     assert.equal(await page.locator(".mini-whatsapp").count(), 0);
     // Navegación real desde el panel al sitio, sin recargar manualmente.
-    const enlace = page.locator(`a[href="${publico}"]`).first();
+    const enlace = page
+      .locator(`a[href^="${new URL(publico).origin}"]`)
+      .first();
+    assert.ok(await enlace.count(), "Mi sitio debe ofrecer el enlace público");
     if (await enlace.count()) {
       if ((await enlace.getAttribute("target")) === "_blank") {
         const nueva = context.waitForEvent("page");
@@ -170,13 +173,48 @@ async function verificar() {
         }
       } else {
         await enlace.click();
-        await page.waitForURL(publico);
+        await page.waitForURL((url) => url.origin === new URL(publico).origin);
         assert.equal(
           await page.locator(".carga-contenido").getAttribute("aria-busy"),
           "false",
         );
       }
     }
+    await page.setViewportSize({ width: 390, height: 640 });
+    await page.goto(`${origin}/panel/servicios`, { waitUntil: "networkidle" });
+    await page.locator("summary").filter({ hasText: "Nuevo servicio" }).click();
+    const flotante = page.locator("details[open] .formulario-flotante").first();
+    await flotante.evaluate((e) => {
+      e.scrollTop = e.scrollHeight;
+    });
+    const cajaFlotante = await flotante.boundingBox();
+    assert.ok(cajaFlotante);
+    const antes = await page.evaluate(() => window.scrollY);
+    const puedeBajar = await page.evaluate(
+      () =>
+        document.documentElement.scrollHeight >
+        window.scrollY + window.innerHeight + 10,
+    );
+    if (puedeBajar) {
+      await page.mouse.move(
+        cajaFlotante.x + cajaFlotante.width / 2,
+        Math.min(590, cajaFlotante.y + cajaFlotante.height - 20),
+      );
+      await page.mouse.wheel(0, 450);
+      await page.waitForFunction(
+        (posicion) => window.scrollY > posicion,
+        antes,
+      );
+    }
+    await page.screenshot({ path: "test-results/servicios-movil-scroll.png" });
+    const desborde = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    );
+    assert.equal(
+      desborde,
+      false,
+      "El formulario móvil no desborda horizontalmente",
+    );
     await context.close();
     console.log(
       "Equipo, checkbox, medios, scroll, Caja y Mi sitio OK; sin guardar cambios.",
