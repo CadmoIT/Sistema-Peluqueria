@@ -21,7 +21,7 @@ async function verificar() {
     const errores: string[] = [];
     page.on("pageerror", (e) => errores.push(e.message));
     await page.goto(`${origin}/panel/servicios`, { waitUntil: "networkidle" });
-    await page.getByText("Nuevo servicio", { exact: true }).click();
+    await page.locator("summary").filter({ hasText: "Nuevo servicio" }).click();
     await page.locator('input[name="precio"]').first().fill("10000");
     await page
       .getByRole("textbox", { name: "Ajuste Mercado Pago", exact: true })
