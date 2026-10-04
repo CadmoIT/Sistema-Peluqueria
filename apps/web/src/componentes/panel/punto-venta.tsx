@@ -10,11 +10,13 @@ import { useRouter } from "next/navigation";
 import { DialogoPanel } from "./dialogo-panel";
 import { FormularioAccion } from "./formulario-accion";
 import { useRolEquipo } from "./contexto-equipo";
+import { precioServicio, type MediosPagoServicio } from "@/lib/precios-medios";
 type Articulo = {
   id: string;
   tipo: "producto" | "servicio";
   nombre: string;
   precio: number;
+  mediosPago?: MediosPagoServicio;
   stockPorSede?: Record<string, number>;
   sedesIds?: string[];
 };
@@ -60,14 +62,11 @@ export function PuntoVenta({
   const total = seleccionados.reduce(
     (s, a) =>
       s +
-      (Math.round(
-        a.precio *
-          (medio === "EFECTIVO" && a.tipo === "servicio"
-            ? 1 - descuentoEfectivo / 100
-            : 1) *
-          100,
-      ) /
-        100) *
+      Number(
+        a.tipo === "servicio"
+          ? precioServicio(a.precio, medio, a.mediosPago, descuentoEfectivo)
+          : a.precio,
+      ) *
         cantidades[clave(a)]!,
     0,
   );
@@ -76,13 +75,11 @@ export function PuntoVenta({
     0,
   );
   const precioUnitario = (a: Articulo) =>
-    Math.round(
-      a.precio *
-        (medio === "EFECTIVO" && a.tipo === "servicio"
-          ? 1 - descuentoEfectivo / 100
-          : 1) *
-        100,
-    ) / 100;
+    Number(
+      a.tipo === "servicio"
+        ? precioServicio(a.precio, medio, a.mediosPago, descuentoEfectivo)
+        : a.precio,
+    );
   const normalizar = (s: string) =>
     s
       .normalize("NFD")
@@ -215,10 +212,11 @@ export function PuntoVenta({
                 <span>Total</span>
                 <strong>{pesos(total)}</strong>
               </div>
-              {medio === "EFECTIVO" && base > total && (
+              {base !== total && (
                 <p className="carrito-descuento">
-                  Precio base {pesos(base)} · Descuento en servicios −
-                  {pesos(base - total)}
+                  Precio base {pesos(base)} ·{" "}
+                  {base > total ? "Descuento" : "Recargo"} en servicios{" "}
+                  {pesos(Math.abs(base - total))}
                 </p>
               )}
               <FormularioAccion
@@ -259,19 +257,11 @@ export function PuntoVenta({
                     value={medio}
                     onChange={(e) => setMedio(e.target.value)}
                   >
-                    <option value="EFECTIVO">
-                      Efectivo
-                      {descuentoEfectivo
-                        ? ` · −${descuentoEfectivo}% en servicios`
-                        : ""}
-                    </option>
+                    <option value="EFECTIVO">Efectivo</option>
                     <option value="TARJETA_EXTERNA">Tarjeta</option>
                     <option value="MERCADO_PAGO">Mercado Pago</option>
                   </select>
                 </label>
-                <small>
-                  El registro no cobra ni devuelve dinero fuera del sistema.
-                </small>
                 <input
                   type="hidden"
                   name="items"

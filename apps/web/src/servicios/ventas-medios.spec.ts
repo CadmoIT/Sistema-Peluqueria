@@ -5,7 +5,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { vender } from "./ventas-operaciones.service";
 import { anularOperacionEquipo } from "./operaciones-equipo.service";
 import type { ContextoEquipo } from "./contexto-equipo.service";
-function fixture() {
+function fixture(mediosPago?: unknown) {
   let stock = 3;
   const ventas: Record<string, unknown>[] = [];
   const caja: Record<string, unknown>[] = [];
@@ -28,7 +28,12 @@ function fixture() {
     },
     servicio: {
       findMany: async () => [
-        { id: "svc", nombre: "Consulta", precio: new Prisma.Decimal(1000) },
+        {
+          id: "svc",
+          nombre: "Consulta",
+          precio: new Prisma.Decimal(1000),
+          mediosPago,
+        },
       ],
     },
     existencia: {
@@ -97,6 +102,26 @@ function fixture() {
   } as unknown as ContextoEquipo;
   return { db, c, ventas, caja, audit, stock: () => stock };
 }
+test("venta con recargo por servicio no cambia precio de productos ni duplica caja", async () => {
+  const f = fixture({
+    MERCADO_PAGO: { tipo: "RECARGO", unidad: "PORCENTAJE", valor: 10 },
+  });
+  const entrada = {
+    sedeId: "s",
+    atribucion: "p",
+    idempotencia: "12345678-1234-1234-1234-123456789012",
+    medio: "MERCADO_PAGO",
+    items: [
+      { id: "svc", tipo: "servicio", cantidad: 2 },
+      { id: "prod", tipo: "producto", cantidad: 1 },
+    ],
+  };
+  const v = await vender(f.db, "n", entrada, f.c);
+  assert.equal(Number(v.total), 2300);
+  assert.equal(Number(v.precioBase), 2100);
+  assert.equal(Number((await vender(f.db, "n", entrada, f.c)).total), 2300);
+  assert.equal(f.caja.length, 1);
+});
 test("venta descuenta sólo servicios, guarda el medio y deshacer restaura una sola vez", async () => {
   const f = fixture();
   const entrada = {

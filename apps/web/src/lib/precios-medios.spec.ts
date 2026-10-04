@@ -2,7 +2,72 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Prisma } from "@prisma/client";
-import { precioMedio, descuentoNegocio, acuerdoCobro } from "./precios-medios";
+import {
+  precioMedio,
+  descuentoNegocio,
+  acuerdoCobro,
+  precioServicio,
+  validarMediosServicio,
+  precioReservaMedio,
+} from "./precios-medios";
+
+test("cada medio conserva su descuento o recargo independiente en porcentaje o pesos", () => {
+  const reglas = validarMediosServicio({
+    EFECTIVO: { tipo: "DESCUENTO", unidad: "PORCENTAJE", valor: 10 },
+    TARJETA_EXTERNA: { tipo: "DESCUENTO", unidad: "PESOS", valor: 500 },
+    MERCADO_PAGO: { tipo: "RECARGO", unidad: "PORCENTAJE", valor: 10 },
+  });
+  assert.equal(precioServicio(10000, "EFECTIVO", reglas).toString(), "9000");
+  assert.equal(
+    precioServicio(10000, "TARJETA_EXTERNA", reglas).toString(),
+    "9500",
+  );
+  assert.equal(
+    precioServicio(10000, "MERCADO_PAGO", reglas).toString(),
+    "11000",
+  );
+  assert.equal(
+    precioServicio("123.45", "MERCADO_PAGO", reglas).toString(),
+    "135.8",
+  );
+  assert.equal(precioServicio(10000, "EFECTIVO", {}, 10).toString(), "10000");
+  assert.equal(precioServicio(10000, "EFECTIVO", null, 10).toString(), "9000");
+  assert.throws(() =>
+    precioServicio(100, "EFECTIVO", {
+      EFECTIVO: { tipo: "DESCUENTO", unidad: "PESOS", valor: 101 },
+    }),
+  );
+  assert.throws(() =>
+    validarMediosServicio({
+      EFECTIVO: { tipo: "DESCUENTO", unidad: "PORCENTAJE", valor: 101 },
+    }),
+  );
+});
+test("turnos conservan precios reservados y suman ajustes por línea", () => {
+  const reglas = {
+    MERCADO_PAGO: { tipo: "RECARGO", unidad: "PESOS", valor: 50 },
+  };
+  const lineas = [1000, 2000].map((p) => ({
+    precio: new Prisma.Decimal(p),
+    servicio: { mediosPago: reglas },
+  }));
+  assert.equal(
+    precioReservaMedio(
+      new Prisma.Decimal(3000),
+      lineas,
+      "MERCADO_PAGO",
+    ).toString(),
+    "3100",
+  );
+  assert.throws(() =>
+    acuerdoCobro(new Prisma.Decimal(3000), "MERCADO_PAGO", 0, {
+      medio: "TARJETA_EXTERNA",
+      precioBase: null,
+      totalAcordado: null,
+      descuentoEfectivo: null,
+    }),
+  );
+});
 test("efectivo descuenta 10%, tarjeta y Mercado Pago conservan base", () => {
   assert.equal(precioMedio(10000, "EFECTIVO", 10).toNumber(), 9000);
   for (const m of ["TARJETA_EXTERNA", "MERCADO_PAGO", "TRANSFERENCIA"])

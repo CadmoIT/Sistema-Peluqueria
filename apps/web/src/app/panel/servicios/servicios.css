@@ -1,4 +1,32 @@
 /** Mantiene servicios compactos, sin iconos decorativos y con la tipografía común del panel. */
+.medios-pago-servicio {
+  display: grid;
+  gap: 16px;
+}
+.medio-pago-servicio {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e6ecee;
+}
+.medio-pago-servicio:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.medio-pago-servicio header {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.medio-pago-servicio output {
+  color: var(--color-primario, #126783);
+  font-weight: 600;
+}
+.medios-pago-servicio label {
+  display: grid;
+  gap: 5px;
+}
 .servicio-datos {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

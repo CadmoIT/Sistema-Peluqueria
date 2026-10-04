@@ -47,7 +47,12 @@ export default async function Actividad({
     }),
     lecturasEquipo(c).profesional.findMany({
       where: { negocioId: c.negocio.id },
-      select: { id: true, nombre: true, apellido: true },
+      select: {
+        id: true,
+        nombre: true,
+        apellido: true,
+        membresia: { select: { usuarioId: true } },
+      },
     }),
   ]);
   const hoy = new Intl.DateTimeFormat("en-CA", {
@@ -74,8 +79,7 @@ export default async function Actividad({
     p.antes && !Number.isNaN(Date.parse(p.antes)) ? new Date(p.antes) : null;
   function enlaceDia(valor: string) {
     const q = new URLSearchParams({ dia: valor });
-    for (const k of ["local", "integrante", "tipo"] as const)
-      if (p[k]) q.set(k, p[k]!);
+    for (const k of ["integrante"] as const) if (p[k]) q.set(k, p[k]!);
     return `/panel/actividad?${q}`;
   }
   const where = {
@@ -105,19 +109,21 @@ export default async function Actividad({
             },
           ]
         : []),
-      ...(p.local ? [{ sedeId: p.local }] : []),
       ...(p.integrante
         ? [
             {
               OR: [
-                { usuarioId: p.integrante },
+                {
+                  usuarioId:
+                    profesionales.find((i) => i.id === p.integrante)?.membresia
+                      ?.usuarioId ?? p.integrante,
+                },
                 { profesionalId: p.integrante },
               ],
             },
           ]
         : []),
     ],
-    ...(p.tipo ? { recurso: p.tipo } : {}),
   };
   const visibles = await prisma.auditoria.findMany({
     where: {
@@ -163,22 +169,44 @@ export default async function Actividad({
     <div className="panel-contenido">
       <VistaPanelLista ruta="/panel/actividad" />
       <h1>Actividad</h1>
-      <p>
-        Quién hizo cada operación. Las ventas y notas privadas de otros
-        integrantes no se muestran.
-      </p>
       <nav className="actividad-dia" aria-label="Día de actividad">
         <Link href={enlaceDia(sumarDias(dia, -1))} aria-label="Día anterior">
           ←
         </Link>
         <form method="get">
-          <input
-            type="date"
-            name="dia"
-            defaultValue={dia}
-            aria-label="Fecha de actividad"
-            required
-          />
+          <label>
+            Fecha
+            <input
+              type="date"
+              name="dia"
+              defaultValue={dia}
+              aria-label="Fecha de actividad"
+              required
+            />
+          </label>
+          <label>
+            Persona
+            <select name="integrante" defaultValue={p.integrante ?? ""}>
+              <option value="">Todos</option>
+              {profesionales.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.nombre} {i.apellido}
+                </option>
+              ))}
+              {integrantes
+                .filter(
+                  (i) =>
+                    !profesionales.some(
+                      (p) => p.membresia?.usuarioId === i.usuarioId,
+                    ),
+                )
+                .map((i) => (
+                  <option key={i.usuarioId} value={i.usuarioId}>
+                    {i.usuario.nombre}
+                  </option>
+                ))}
+            </select>
+          </label>
           <button className="boton">Ver día</button>
         </form>
         <Link href={enlaceDia(sumarDias(dia, 1))} aria-label="Día siguiente">
@@ -186,59 +214,6 @@ export default async function Actividad({
         </Link>
         <Link href={enlaceDia(hoy)}>Hoy</Link>
       </nav>
-      <details className="actividad-filtros">
-        <summary>Filtrar por local, integrante o tipo</summary>
-        <form method="get" className="formulario-apilado">
-          <input type="hidden" name="dia" value={dia} />
-          <label>
-            Día
-            <input type="date" name="diaVisual" defaultValue={dia} disabled />
-          </label>
-          <label>
-            Local
-            <select name="local" defaultValue={p.local ?? ""}>
-              <option value="">Todos mis locales</option>
-              {sedes.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Integrante
-            <select name="integrante" defaultValue={p.integrante ?? ""}>
-              <option value="">Todos</option>
-              <optgroup label="Realizado por">
-                {integrantes.map((i) => (
-                  <option key={i.usuarioId} value={i.usuarioId}>
-                    {i.usuario.nombre}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Para el profesional">
-                {profesionales.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.nombre} {i.apellido}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-          </label>
-          <label>
-            Tipo
-            <select name="tipo" defaultValue={p.tipo ?? ""}>
-              <option value="">Todos</option>
-              {["venta", "compra", "cobro", "stock", "reserva", "cliente"].map(
-                (t) => (
-                  <option key={t}>{t}</option>
-                ),
-              )}
-            </select>
-          </label>
-          <button>Filtrar</button>
-        </form>
-      </details>
       <div className="actividad-lista">
         {filas.slice(0, 50).map((f) => (
           <article key={f.id} className="equipo-operacion actividad-item">
@@ -247,7 +222,7 @@ export default async function Actividad({
               {nombres[f.accion] || "Actualizó un registro"}
             </strong>
             <p>
-              {f.actorNombre || "Autor desconocido"} ·{" "}
+              Registrado por: {f.actorNombre || "Autor desconocido"} ·{" "}
               {f.creadaEn.toLocaleString("es-AR", {
                 timeZone: c.negocio.zonaHoraria,
                 hour: "2-digit",
@@ -256,7 +231,7 @@ export default async function Actividad({
             </p>
             {"profesionalId" in f && typeof f.profesionalId === "string" && (
               <p>
-                Para:{" "}
+                Corresponde a:{" "}
                 {profesionales.find((p) => p.id === f.profesionalId)?.nombre ??
                   "Integrante del equipo"}{" "}
                 {profesionales.find((p) => p.id === f.profesionalId)

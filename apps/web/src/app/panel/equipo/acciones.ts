@@ -20,6 +20,77 @@ import { invitacionesEquipoHabilitadas } from "@/servicios/invitaciones-equipo.s
 import type { ContextoEquipo } from "@/servicios/contexto-equipo.service";
 import { registrarActividadEquipo } from "@/servicios/actividad-equipo.service";
 
+export async function habilitarAgendaDueno(datos: FormData) {
+  const c = await requerirContextoPanel();
+  exigirPermisoEquipo(c, "dueno");
+  const elegido = leerTexto(datos, "profesionalId");
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT "id" FROM "Membresia" WHERE "id"=${c.membresia.id} FOR UPDATE`;
+    if (
+      await tx.profesional.findUnique({
+        where: { membresiaId: c.membresia.id },
+      })
+    )
+      return;
+    let profesional;
+    if (elegido) {
+      await tx.$queryRaw`SELECT "id" FROM "Profesional" WHERE "id"=${elegido} AND "negocioId"=${c.negocio.id} FOR UPDATE`;
+      profesional = await tx.profesional.findFirst({
+        where: {
+          id: elegido,
+          negocioId: c.negocio.id,
+          activo: true,
+          membresiaId: null,
+        },
+      });
+      if (!profesional)
+        throw new Error("La ficha ya no está disponible para vincular.");
+      if (
+        await tx.invitacionEquipo.findFirst({
+          where: { profesionalId: elegido, estado: "PENDIENTE" },
+        })
+      )
+        throw new Error(
+          "Cancelá la invitación de esta ficha antes de vincularla.",
+        );
+      const vinculo = await tx.profesional.updateMany({
+        where: { id: elegido, membresiaId: null },
+        data: { membresiaId: c.membresia.id },
+      });
+      if (vinculo.count !== 1) throw new Error("La ficha ya fue vinculada.");
+    } else {
+      profesional = await tx.profesional.create({
+        data: {
+          negocioId: c.negocio.id,
+          nombre: c.usuario.name,
+          membresiaId: c.membresia.id,
+          activo: false,
+        },
+      });
+    }
+    await registrarActividadEquipo(tx, c, {
+      accion: "VINCULAR_AGENDA_DUENO",
+      recurso: "profesional",
+      recursoId: profesional.id,
+      profesionalId: profesional.id,
+    });
+  });
+  for (const ruta of [
+    "/panel/equipo",
+    "/panel/agenda",
+    "/panel/servicios",
+    "/panel/resumen",
+    "/panel/reportes",
+    "/panel/caja",
+  ])
+    revalidatePath(ruta);
+  return {
+    ok: true,
+    mensaje:
+      "Tu agenda está habilitada. Editá tu ficha para asignar servicios, locales y horarios.",
+  };
+}
+
 export async function crearProfesional(datos: FormData) {
   const contexto = await requerirContextoPanel();
   const { negocio } = contexto;

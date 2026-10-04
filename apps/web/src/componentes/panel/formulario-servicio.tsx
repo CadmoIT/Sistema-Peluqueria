@@ -1,6 +1,8 @@
 /** Muestra sólo los campos esenciales del servicio y confirma cada envío sin dobles acciones. */
 "use client";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { MediosPagoServicio } from "./medios-pago-servicio";
+import type { MediosPagoServicio as ConfigMedios } from "@/lib/precios-medios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -16,6 +18,7 @@ export type ServicioEditable = {
   nombre: string;
   categoria: string;
   precio: number;
+  mediosPago?: ConfigMedios;
   duracionMinutos: number;
   profesionalIds: string[];
   sedeIds: string[];
@@ -54,6 +57,7 @@ export function FormularioServicio({
 }) {
   const formulario = useRef<HTMLFormElement>(null);
   const perfil = usePerfilNegocio();
+  const [precio, cambiarPrecio] = useState(servicio?.precio ?? 0);
   const [resultado, enviar] = useActionState(guardarServicio, {
     ok: true,
     mensaje: "",
@@ -67,9 +71,7 @@ export function FormularioServicio({
         alGuardar ? "formulario-dialogo" : "formulario-flotante"
       } formulario-servicio`}
     >
-      {!alGuardar && (
-        <h2>{servicio ? "Editar servicio" : "Nuevo servicio"}</h2>
-      )}
+      {!alGuardar && <h2>{servicio ? "Editar servicio" : "Nuevo servicio"}</h2>}
       <CamposApilados>
         {servicio && <input type="hidden" name="id" value={servicio.id} />}
         <label>
@@ -101,7 +103,8 @@ export function FormularioServicio({
               min="0"
               step="1"
               required
-              defaultValue={servicio?.precio}
+              value={precio}
+              onChange={(e) => cambiarPrecio(Number(e.target.value))}
             />
           </label>
           <label>
@@ -117,6 +120,7 @@ export function FormularioServicio({
             />
           </label>
         </div>
+        <MediosPagoServicio precio={precio} inicial={servicio?.mediosPago} />
         {profesionales.length === 1 ? (
           <input
             type="hidden"

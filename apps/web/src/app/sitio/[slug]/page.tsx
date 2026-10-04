@@ -1,6 +1,5 @@
 /** Resuelve el negocio solicitado y presenta su versión publicada o su suspensión. */
 import { notFound } from "next/navigation";
-import { descuentoNegocio } from "@/lib/precios-medios";
 import { PLANES, tieneAccesoOperativo } from "@turnos/config";
 import {
   SitioPublico,
@@ -202,9 +201,6 @@ export default async function PaginaSitio({
       >
         Los precios publicados son de referencia. Elegís cómo pagar al llegar al
         local.
-        {descuentoNegocio(negocio.configuracion) > 0
-          ? ` Efectivo: ${descuentoNegocio(negocio.configuracion)}% de descuento en servicios. Tarjeta y Mercado Pago: precio base.`
-          : ""}
       </p>
       <SitioPublico datos={datos} profesionalInicial={profesionalInicial} />
     </>

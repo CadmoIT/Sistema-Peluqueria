@@ -1,8 +1,6 @@
 /** Presenta un catálogo simple con los datos necesarios para ofrecer y reservar servicios. */
 import { Plus } from "lucide-react";
-import { FormularioAccion } from "@/componentes/panel/formulario-accion";
-import { guardarDescuento } from "./precios-acciones";
-import { descuentoNegocio } from "@/lib/precios-medios";
+import { validarMediosServicio } from "@/lib/precios-medios";
 import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 import { FormularioServicio } from "@/componentes/panel/formulario-servicio";
 import { ListadoServicios } from "@/componentes/panel/listado-servicios";
@@ -69,35 +67,6 @@ export default async function PaginaServicios({
           </details>
         </div>
       </header>
-      {(await requerirContextoPanel()).membresia.rol === "DUENO" && (
-        <details className="precios-config">
-          <summary>
-            Precios por medio de pago · Efectivo −
-            {descuentoNegocio(datos.negocio.configuracion)}%
-          </summary>
-          <FormularioAccion
-            accion={guardarDescuento}
-            className="formulario-apilado"
-          >
-            <label>
-              Descuento de efectivo (%)
-              <input
-                name="descuento"
-                type="number"
-                min="0"
-                max="99"
-                step="0.01"
-                required
-                defaultValue={descuentoNegocio(datos.negocio.configuracion)}
-              />
-            </label>
-            <small>
-              Para todos los servicios. Tarjeta y Mercado Pago mantienen el
-              precio base. Se aplica al cobrar, no al reservar.
-            </small>
-          </FormularioAccion>
-        </details>
-      )}
       {datos.servicios.length ? (
         <ListadoServicios
           profesionales={profesionales}
@@ -107,6 +76,7 @@ export default async function PaginaServicios({
             nombre: servicio.nombre,
             categoria: servicio.categoria?.nombre ?? "General",
             precio: Number(servicio.precio),
+            mediosPago: validarMediosServicio(servicio.mediosPago ?? {}),
             duracionMinutos: servicio.duracionMinutos,
             activo: servicio.activo,
             profesionalIds: servicio.profesionales.map((p) => p.profesionalId),

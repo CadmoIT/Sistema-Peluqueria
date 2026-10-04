@@ -4,7 +4,7 @@ import { chromium } from "@playwright/test";
 async function verificar() {
   const password = process.env.CARLA_DEMO_PASSWORD;
   if (!password) throw new Error("Falta la contraseña de la demo a verificar.");
-  const origin = "https://turnosrapidos.com.ar";
+  const origin = process.env.CARLA_BASE_URL || "https://turnosrapidos.com.ar";
   const browser = await chromium.launch();
   try {
     for (const email of [
@@ -45,7 +45,7 @@ async function verificar() {
           if (
             !response?.ok() ||
             !new URL(page.url()).pathname.startsWith("/panel/") ||
-            /Application error:|server-side exception/.test(texto)
+            /Application error:|server-side exception|No pudimos cargar esta pantalla|Preparando tu agenda/.test(texto)
           )
             throw new Error(
               `Panel ${email} ${ruta}: respuesta inesperada ${response?.status()}`,
@@ -68,7 +68,7 @@ async function verificar() {
     try {
       const page = await context.newPage();
       const response = await page.goto(
-        "https://carla-cicero-demo.turnosrapidos.com.ar",
+        process.env.CARLA_SITIO_URL || "https://carla-cicero-demo.turnosrapidos.com.ar",
         { waitUntil: "networkidle", timeout: 60000 },
       );
       const texto = await page.locator("body").innerText();

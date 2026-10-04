@@ -1,6 +1,10 @@
 /** Lee saldo de un turno sin permitir consultar reservas de compañeros u otros negocios. */
 import { Prisma } from "@prisma/client";
-import { descuentoNegocio } from "@/lib/precios-medios";
+import {
+  descuentoNegocio,
+  MEDIOS,
+  precioReservaMedio,
+} from "@/lib/precios-medios";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerContextoApi } from "@/servicios/contexto-api.service";
@@ -29,6 +33,7 @@ export async function GET(
     include: {
       pagos: { where: { estado: "APROBADO" } },
       cobros: { where: { anuladoEn: null } },
+      servicios: { include: { servicio: true } },
     },
   });
   if (!r)
@@ -49,6 +54,19 @@ export async function GET(
       total: total.toString(),
       precioBase: (primero?.precioBase ?? r.total).toString(),
       medioFijado: primero?.medio ?? null,
+      preciosPorMedio: Object.fromEntries(
+        MEDIOS.map((medio) => [
+          medio,
+          primero
+            ? total.toString()
+            : precioReservaMedio(
+                r.total,
+                r.servicios,
+                medio,
+                descuentoNegocio(c.negocio.configuracion),
+              ).toString(),
+        ]),
+      ),
       descuentoEfectivo: primero
         ? Number(primero.descuentoEfectivo ?? 0)
         : descuentoNegocio(c.negocio.configuracion),

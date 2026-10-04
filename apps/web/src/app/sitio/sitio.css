@@ -1111,6 +1111,38 @@
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
   pointer-events: none;
 }
+.publico-identidad__equipo-grupo > [role="listitem"] {
+  margin-left: -14px;
+}
+.publico-identidad__equipo-grupo > [role="listitem"]:first-child {
+  margin-left: 0;
+}
+button.publico-identidad__profesional {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+button.publico-identidad__profesional:focus-visible {
+  outline: 2px solid var(--sitio-principal, #126783);
+  outline-offset: 3px;
+}
+.profesional-tooltip-portal {
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 9px;
+  color: white;
+  display: grid;
+  gap: 4px;
+  box-shadow: 0 8px 22px #0003;
+  pointer-events: none;
+  font:
+    13px system-ui,
+    sans-serif;
+}
+.profesional-tooltip-portal small {
+  color: #ffffffe0;
+}
 .publico-identidad__profesional:first-child
   .publico-identidad__profesional-tooltip {
   left: 0;

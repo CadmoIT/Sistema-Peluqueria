@@ -86,11 +86,19 @@
   margin: 20px 0;
 }
 .actividad-dia form {
+  flex-wrap: wrap;
   display: flex;
   gap: 8px;
   align-items: center;
 }
-.actividad-dia input {
+.actividad-dia label {
+  display: grid;
+  gap: 6px;
+  color: #526873;
+  font-size: 14px;
+}
+.actividad-dia input,
+.actividad-dia select {
   padding: 10px;
   border: 1px solid #d7e7ec;
   border-radius: 10px;

@@ -1,6 +1,6 @@
 /** Registra movimientos operativos y resume el movimiento del día. */
 import { Plus } from "lucide-react";
-import { descuentoNegocio } from "@/lib/precios-medios";
+import { descuentoNegocio, validarMediosServicio } from "@/lib/precios-medios";
 import { VistaPanelLista } from "@/componentes/panel/navegacion-carga-panel";
 import { registrarMovimientoCaja } from "./acciones";
 import { PuntoVenta } from "@/componentes/panel/punto-venta";
@@ -143,6 +143,7 @@ export default async function PaginaCaja({
             tipo: "servicio" as const,
             nombre: servicio.nombre,
             precio: Number(servicio.precio),
+            mediosPago: validarMediosServicio(servicio.mediosPago ?? {}),
             sedesIds: servicio.sedes.map((s) => s.sedeId),
           })),
           ...datos.productos.map((producto) => ({

@@ -1,9 +1,8 @@
-/* eslint-disable @next/next/no-img-element -- Las fotos pueden estar alojadas en distintos proveedores. */
+/** Muestra información accesible fuera de las tarjetas, anclada al avatar seleccionado. */
+/* eslint-disable @next/next/no-img-element -- Fotos configuradas por el negocio. */
 "use client";
-
-import { useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-
+import { useEffect, useId, useState } from "react";
+import { createPortal } from "react-dom";
 type ProfesionalAvatar = {
   id: string;
   nombre: string;
@@ -11,99 +10,117 @@ type ProfesionalAvatar = {
   especialidad: string | null;
   foto: string | null;
 };
-
 export function GrupoProfesionales({
   profesionales,
 }: {
   profesionales: ProfesionalAvatar[];
 }) {
-  const [activo, setActivo] = useState<string | null>(null);
-  const reducirMovimiento = useReducedMotion();
-
+  const id = useId();
+  const [activo, cambiar] = useState<{
+    profesional: ProfesionalAvatar;
+    x: number;
+    y: number;
+    color: string;
+  } | null>(null);
+  useEffect(() => {
+    const cerrar = () => cambiar(null);
+    window.addEventListener("scroll", cerrar, true);
+    window.addEventListener("resize", cerrar);
+    return () => {
+      window.removeEventListener("scroll", cerrar, true);
+      window.removeEventListener("resize", cerrar);
+    };
+  }, []);
+  function mostrar(p: ProfesionalAvatar, elemento: HTMLElement) {
+    const rect = elemento.getBoundingClientRect();
+    cambiar({
+      profesional: p,
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+      color:
+        getComputedStyle(elemento)
+          .getPropertyValue("--sitio-principal")
+          .trim() || "#126783",
+    });
+  }
+  const ancho =
+    typeof window === "undefined" ? 240 : Math.min(240, window.innerWidth - 24);
+  const izquierda = activo
+    ? Math.max(
+        12,
+        Math.min(activo.x - ancho / 2, window.innerWidth - ancho - 12),
+      )
+    : 0;
   return (
-    <motion.div
+    <div
       className="publico-identidad__equipo-grupo"
       role="list"
       aria-label="Equipo de profesionales"
-      onMouseLeave={() => setActivo(null)}
     >
-      {profesionales.map((profesional, indice) => {
-        const seleccionado = activo === profesional.id;
-        const alineacionTooltip =
-          indice === 0
-            ? "inicio"
-            : indice === profesionales.length - 1
-              ? "fin"
-              : "centro";
-        const nombreCompleto = `${profesional.nombre} ${profesional.apellido ?? ""}`.trim();
-
-        return (
-          <motion.div
+      {profesionales.map((p) => (
+        <div role="listitem" key={p.id}>
+          <button
+            type="button"
             className="publico-identidad__profesional"
-            key={profesional.id}
-            role="listitem"
-            tabIndex={0}
-            aria-label={`${nombreCompleto}, ${profesional.especialidad ?? "Profesional"}`}
-            animate={{
-              y: seleccionado ? (reducirMovimiento ? -10 : -24) : 0,
-              scale: seleccionado ? (reducirMovimiento ? 1.04 : 1.12) : 1,
+            aria-label={`${p.nombre} ${p.apellido ?? ""}, ${p.especialidad ?? "Profesional"}`}
+            aria-describedby={activo?.profesional.id === p.id ? id : undefined}
+            onMouseEnter={(e) => mostrar(p, e.currentTarget)}
+            onMouseLeave={() => cambiar(null)}
+            onFocus={(e) => mostrar(p, e.currentTarget)}
+            onBlur={() => cambiar(null)}
+            onClick={(e) => mostrar(p, e.currentTarget)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") cambiar(null);
             }}
-            transition={
-              reducirMovimiento
-                ? { duration: 0.12, ease: "easeOut" }
-                : { type: "spring", stiffness: 300, damping: 17 }
-            }
-            style={{ zIndex: seleccionado ? profesionales.length + 1 : profesionales.length - indice }}
-            onMouseEnter={() => setActivo(profesional.id)}
-            onFocus={() => setActivo(profesional.id)}
-            onBlur={() => setActivo(null)}
           >
-            {profesional.foto ? (
-              <img src={profesional.foto} alt="" />
+            {p.foto ? (
+              <img src={p.foto} alt="" />
             ) : (
-              <i>{iniciales(profesional.nombre, profesional.apellido)}</i>
+              <i>
+                {`${p.nombre[0] ?? ""}${p.apellido?.[0] ?? ""}`.toUpperCase()}
+              </i>
             )}
-            <AnimatePresence>
-              {seleccionado && (
-                <motion.span
-                  className="publico-identidad__profesional-tooltip"
-                  aria-hidden="true"
-                  initial={{
-                    opacity: 0,
-                    x: alineacionTooltip === "centro" ? "-50%" : 0,
-                    y: 8,
-                    scale: 0.92,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    x: alineacionTooltip === "centro" ? "-50%" : 0,
-                    y: 0,
-                    scale: 1,
-                  }}
-                  exit={{
-                    opacity: 0,
-                    x: alineacionTooltip === "centro" ? "-50%" : 0,
-                    y: 5,
-                    scale: 0.96,
-                  }}
-                  transition={
-                    reducirMovimiento
-                      ? { duration: 0 }
-                      : { type: "spring", stiffness: 300, damping: 35 }
-                  }
-                >
-                  <strong>{nombreCompleto}</strong>
-                  <small>{profesional.especialidad ?? "Profesional"}</small>
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        );
-      })}
-    </motion.div>
+          </button>
+        </div>
+      ))}
+      {activo &&
+        createPortal(
+          <span
+            id={id}
+            role="tooltip"
+            className="profesional-tooltip-portal"
+            style={{
+              position: "fixed",
+              zIndex: 10000,
+              left: izquierda,
+              top: activo.y < 90 ? activo.y + 58 : activo.y - 10,
+              transform: activo.y < 90 ? undefined : "translateY(-100%)",
+              width: ancho,
+              background: activo.color,
+            }}
+          >
+            <strong>
+              {activo.profesional.nombre} {activo.profesional.apellido}
+            </strong>
+            <small>{activo.profesional.especialidad ?? "Profesional"}</small>
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                left: Math.max(
+                  8,
+                  Math.min(ancho - 18, activo.x - izquierda - 5),
+                ),
+                width: 10,
+                height: 10,
+                background: activo.color,
+                transform: "rotate(45deg)",
+                ...(activo.y < 90 ? { top: -5 } : { bottom: -5 }),
+              }}
+            />
+          </span>,
+          document.body,
+        )}
+    </div>
   );
-}
-
-function iniciales(nombre: string, apellido: string | null) {
-  return `${nombre[0] ?? ""}${apellido?.[0] ?? ""}`.toUpperCase();
 }

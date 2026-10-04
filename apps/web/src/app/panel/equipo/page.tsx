@@ -9,6 +9,7 @@ import {
   enviarInvitacion,
   cancelarInvitacion,
   quitarAcceso,
+  habilitarAgendaDueno,
 } from "./acciones";
 import { BotonEliminar } from "@/componentes/panel/boton-eliminar";
 import { FormularioAccion } from "@/componentes/panel/formulario-accion";
@@ -58,6 +59,39 @@ export default async function PaginaEquipo({
           <h1>Equipo</h1>
         </div>
         <div className="acciones-seccion">
+          {c.membresia.rol === "DUENO" && !c.identidad.profesionalId && (
+            <details className="desplegable-accion">
+              <summary className="boton boton--secundario">
+                Yo también atiendo
+              </summary>
+              <FormularioAccion
+                accion={habilitarAgendaDueno}
+                texto="Habilitar mi agenda"
+                className="formulario-flotante formulario-apilado"
+              >
+                <h2>Tu agenda profesional</h2>
+                <label>
+                  Ficha profesional
+                  <select name="profesionalId">
+                    <option value="">Crear mi ficha</option>
+                    {profesionales
+                      .filter(
+                        (p) => !accesos.find((a) => a.id === p.id)?.membresia,
+                      )
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre} {p.apellido}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <p>
+                  Seguís siendo dueño. Luego podrás configurar tus servicios y
+                  horarios desde tu ficha.
+                </p>
+              </FormularioAccion>
+            </details>
+          )}
           {sedes.length > 1 && (
             <FiltroLocalUrl
               className="filtro-discreto"
@@ -83,22 +117,26 @@ export default async function PaginaEquipo({
           {profesionales.map((profesional) => {
             const acceso = accesos.find((a) => a.id === profesional.id);
             const invitacion = acceso?.invitaciones[0];
+            const esDueno = acceso?.membresia?.rol === "DUENO";
             const vinculada = Boolean(
-              acceso?.membresia?.activo && acceso.membresia.aceptadaEn,
+              acceso?.membresia?.activo &&
+              (esDueno || acceso.membresia.aceptadaEn),
             );
-            const etiqueta = vinculada
-              ? "Cuenta vinculada"
-              : invitacion?.estado === "PENDIENTE"
-                ? invitacion.expiraEn < new Date()
-                  ? "Invitación vencida"
-                  : correos.find(
-                        (c) => c.claveIdempotencia === invitacion.correoClave,
-                      )?.estado === "FALLIDO"
-                    ? "Envío fallido"
-                    : "Invitación pendiente"
-                : acceso?.membresia && !acceso.membresia.activo
-                  ? "Acceso revocado"
-                  : "Sin cuenta";
+            const etiqueta = esDueno
+              ? "Dueño · Agenda propia"
+              : vinculada
+                ? "Cuenta vinculada"
+                : invitacion?.estado === "PENDIENTE"
+                  ? invitacion.expiraEn < new Date()
+                    ? "Invitación vencida"
+                    : correos.find(
+                          (c) => c.claveIdempotencia === invitacion.correoClave,
+                        )?.estado === "FALLIDO"
+                      ? "Envío fallido"
+                      : "Invitación pendiente"
+                  : acceso?.membresia && !acceso.membresia.activo
+                    ? "Acceso revocado"
+                    : "Sin cuenta";
             const google = conexiones.find(
               (conexion) => conexion.profesionalId === profesional.id,
             );
@@ -129,12 +167,13 @@ export default async function PaginaEquipo({
                   <span className={vinculada ? "equipo-insignia" : ""}>
                     {etiqueta}
                   </span>
-                  {vinculada && !profesional.activo && (
+                  {vinculada && !esDueno && !profesional.activo && (
                     <p>
                       Acceso suspendido mientras el profesional esté inactivo.
                     </p>
                   )}
                   {puedeInvitar &&
+                    !esDueno &&
                     (vinculada ? (
                       <details>
                         <summary>Administrar acceso</summary>

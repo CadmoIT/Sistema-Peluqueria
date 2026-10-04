@@ -5,6 +5,7 @@ import {
   descuentoNegocio,
   medioValido,
   acuerdoCobro,
+  precioReservaMedio,
 } from "@/lib/precios-medios";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import {
@@ -297,6 +298,7 @@ export async function cobrarTurnoEquipo(
       include: {
         pagos: { where: { estado: "APROBADO" } },
         cobros: { where: { anuladoEn: null } },
+        servicios: { include: { servicio: true } },
       },
     });
     if (!r || !["CONFIRMADA", "COMPLETADA", "AUSENTE"].includes(r.estado))
@@ -306,10 +308,7 @@ export async function cobrarTurnoEquipo(
     const primerCobro = [...r.cobros].sort(
       (a, b) => a.creadoEn.getTime() - b.creadoEn.getTime(),
     )[0];
-    if (
-      primerCobro &&
-      (primerCobro.medio === "EFECTIVO") !== (e.medio === "EFECTIVO")
-    )
+    if (primerCobro && primerCobro.medio !== e.medio)
       throw new Error(
         "Este turno ya tiene cobros con otro precio. El dueño debe corregirlos antes de cambiar el medio.",
       );
@@ -317,12 +316,21 @@ export async function cobrarTurnoEquipo(
       where: { id: c.negocio.id },
       select: { configuracion: true },
     });
-    const { base, total, descuento } = acuerdoCobro(
+    const acuerdo = acuerdoCobro(
       r.total,
       e.medio,
       descuentoNegocio(configuracion.configuracion),
       primerCobro,
     );
+    const { base, descuento } = acuerdo;
+    const total = primerCobro
+      ? acuerdo.total
+      : precioReservaMedio(
+          r.total,
+          r.servicios,
+          e.medio,
+          descuentoNegocio(configuracion.configuracion),
+        );
     const abonado = [...r.pagos, ...r.cobros].reduce(
       (s, p) => s.plus(p.monto),
       new Prisma.Decimal(0),

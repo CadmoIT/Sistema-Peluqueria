@@ -35,16 +35,20 @@
 }
 .agenda-diaria {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 250px;
   gap: 40px;
   column-gap: 56px;
   min-width: 0;
 }
 .agenda-lateral {
   padding-top: 3px;
+  grid-column: 2;
+  grid-row: 1;
 }
 .agenda-principal {
   min-width: 0;
+  grid-column: 1;
+  grid-row: 1;
 }
 .agenda-mini header {
   display: flex;

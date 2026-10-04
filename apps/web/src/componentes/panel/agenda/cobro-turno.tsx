@@ -11,15 +11,21 @@ export function CobroTurno({ reservaId }: { reservaId: string }) {
     precioBase: string;
     medioFijado: string | null;
     descuentoEfectivo: number;
+    preciosPorMedio: Record<string, string>;
   } | null>(null);
   const [idempotencia, setId] = useState("");
   const [medio, setMedio] = useState("TARJETA_EXTERNA");
   const [error, setError] = useState(false);
   useEffect(() => {
     let cerrado = false;
+    const controlador = new AbortController();
+    const limite = setTimeout(() => controlador.abort(), 15000);
+    setSaldo(null);
+    setError(false);
     setId(crypto.randomUUID());
     void fetch(`/api/panel/turnos/${encodeURIComponent(reservaId)}/saldo`, {
       cache: "no-store",
+      signal: controlador.signal,
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -34,6 +40,8 @@ export function CobroTurno({ reservaId }: { reservaId: string }) {
       });
     return () => {
       cerrado = true;
+      clearTimeout(limite);
+      controlador.abort();
     };
   }, [reservaId]);
   if (!saldo)
@@ -46,11 +54,7 @@ export function CobroTurno({ reservaId }: { reservaId: string }) {
     );
   const total = saldo.medioFijado
     ? Number(saldo.total)
-    : Math.round(
-        Number(saldo.precioBase) *
-          (medio === "EFECTIVO" ? 1 - saldo.descuentoEfectivo / 100 : 1) *
-          100,
-      ) / 100;
+    : Number(saldo.preciosPorMedio[medio] ?? saldo.precioBase);
   const pendiente = Math.max(
     0,
     Math.round((total - Number(saldo.abonado)) * 100) / 100,
@@ -73,7 +77,11 @@ export function CobroTurno({ reservaId }: { reservaId: string }) {
               cache: "no-store",
             })
               .then((r) => r.json())
-              .then(setSaldo);
+              .then(setSaldo)
+              .catch(() => {
+                setSaldo(null);
+                setError(true);
+              });
           }}
         >
           <input type="hidden" name="reservaId" value={reservaId} />
@@ -102,23 +110,29 @@ export function CobroTurno({ reservaId }: { reservaId: string }) {
                   !!saldo.medioFijado && saldo.medioFijado !== "EFECTIVO"
                 }
               >
-                Efectivo · −{saldo.descuentoEfectivo}%
+                Efectivo
               </option>
               <option
                 value="TRANSFERENCIA"
-                disabled={saldo.medioFijado === "EFECTIVO"}
+                disabled={
+                  !!saldo.medioFijado && saldo.medioFijado !== "TRANSFERENCIA"
+                }
               >
                 Transferencia recibida
               </option>
               <option
                 value="TARJETA_EXTERNA"
-                disabled={saldo.medioFijado === "EFECTIVO"}
+                disabled={
+                  !!saldo.medioFijado && saldo.medioFijado !== "TARJETA_EXTERNA"
+                }
               >
                 Tarjeta
               </option>
               <option
                 value="MERCADO_PAGO"
-                disabled={saldo.medioFijado === "EFECTIVO"}
+                disabled={
+                  !!saldo.medioFijado && saldo.medioFijado !== "MERCADO_PAGO"
+                }
               >
                 Mercado Pago
               </option>

@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { leerTexto } from "@/lib/formularios";
 import { prisma } from "@/lib/prisma";
+import { validarMediosServicio, precioServicio } from "@/lib/precios-medios";
 import { requerirContextoPanelEditable as requerirContextoPanel } from "@/servicios/panel-datos.service";
 import {
   eliminarFicha,
@@ -48,6 +49,11 @@ export async function guardarServicio(
       mensaje: "Revisá el precio y la duración del servicio.",
     };
   try {
+    const mediosPago = validarMediosServicio(
+      JSON.parse(String(datos.get("mediosPago") || "{}")),
+    );
+    for (const medio of Object.keys(mediosPago))
+      precioServicio(precio, medio, mediosPago);
     await prisma.$transaction(async (tx) => {
       if (
         id &&
@@ -91,6 +97,7 @@ export async function guardarServicio(
         create: { negocioId: negocio.id, nombre: categoriaNombre },
       });
       const campos = {
+        mediosPago,
         nombre,
         categoriaId: categoria.id,
         precio: new Prisma.Decimal(precio),

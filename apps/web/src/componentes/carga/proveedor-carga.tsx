@@ -200,7 +200,10 @@ export function ProveedorCarga({ children }: { children: ReactNode }) {
     if (inicio === undefined || esperandoDestino || tipo !== "landing") return;
     let vigente = true;
     const listo = async () => {
-      await document.fonts.ready;
+      await Promise.race([
+        document.fonts.ready,
+        new Promise((resolve) => window.setTimeout(resolve, 1500)),
+      ]);
       if (vigente)
         cambiarCarga((actual) =>
           actual?.inicio === inicio ? { ...actual, listo: true } : actual,

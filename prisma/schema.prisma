@@ -314,6 +314,7 @@ model Servicio {
   duracionMinutos Int
   bufferMinutos   Int                   @default(0)
   porcentajeSena  Decimal?              @db.Decimal(5, 2)
+  mediosPago      Json?
   imagen          String?
   activo          Boolean               @default(true)
   negocio         Negocio               @relation(fields: [negocioId], references: [id], onDelete: Cascade)

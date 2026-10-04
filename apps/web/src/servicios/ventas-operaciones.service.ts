@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import {
   descuentoNegocio,
   medioValido,
-  precioMedio,
+  precioServicio,
 } from "@/lib/precios-medios";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { exigirPermisoEquipo, exigirSedeEquipo } from "@/lib/permisos-equipo";
@@ -175,7 +175,12 @@ export async function vender(
           cantidad: item.cantidad,
           precio:
             item.tipo === "servicio"
-              ? precioMedio(recurso.precio, medio, descuentoAplicable)
+              ? precioServicio(
+                  recurso.precio,
+                  medio,
+                  "mediosPago" in recurso ? recurso.mediosPago : null,
+                  descuentoAplicable,
+                )
               : recurso.precio,
           precioBase: recurso.precio,
         };
