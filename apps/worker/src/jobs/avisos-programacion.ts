@@ -2,7 +2,7 @@
 import type { CanalAviso, TipoAviso } from "@prisma/client";
 import { tieneAccesoOperativo } from "@turnos/config";
 import { prisma } from "../lib/prisma.js";
-import { correspondeRecordatorio, hayConsentimientoWhatsapp, UN_DIA_MS } from "./avisos-reglas.js";
+import { correspondeRecordatorio, hayConsentimientoWhatsapp, permiteCorreoDemo, UN_DIA_MS } from "./avisos-reglas.js";
 
 export async function programarAvisos() {
   const ahora = new Date();
@@ -55,7 +55,7 @@ export async function programarAvisos() {
     };
 
     if (reserva.creadoEn.getTime() >= ahora.getTime() - 3_600_000) {
-      if (reserva.cliente.email && (ajustes?.emailConfirmacionActivo ?? true))
+      if (reserva.cliente.email && (ajustes?.emailConfirmacionActivo ?? true) && permiteCorreoDemo(reserva.negocio.configuracion, reserva.creadoEn, reserva.cliente.email))
         agregar("EMAIL", "CONFIRMACION", reserva.creadoEn);
       if (permiteWhatsapp && ajustes?.whatsappConfirmacionActivo)
         agregar("WHATSAPP", "CONFIRMACION", reserva.creadoEn);
@@ -63,7 +63,7 @@ export async function programarAvisos() {
 
     if (correspondeRecordatorio(reserva.creadoEn, reserva.inicio)) {
       const momento = new Date(reserva.inicio.getTime() - UN_DIA_MS);
-      if (reserva.cliente.email && (ajustes?.emailRecordatorioActivo ?? true))
+      if (reserva.cliente.email && (ajustes?.emailRecordatorioActivo ?? true) && permiteCorreoDemo(reserva.negocio.configuracion, reserva.creadoEn, reserva.cliente.email))
         agregar("EMAIL", "RECORDATORIO", momento);
       if (permiteWhatsapp && ajustes?.whatsappRecordatorioActivo)
         agregar("WHATSAPP", "RECORDATORIO", momento);

@@ -120,11 +120,6 @@ export default async function PaginaPanel({
           href="/panel/reportes"
         />
       </section>
-      <p className="equipo-operacion">
-        Pendiente de cobro: {pesos(datos.saldoPendiente)}
-        {datos.esEmpleado &&
-          " · Son cobros atribuidos a vos, no sueldo ni comisión."}
-      </p>
       <div className="panel-grilla">
         <section className="agenda-modulo">
           <div className="modulo__titulo">

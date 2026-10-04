@@ -188,23 +188,7 @@ export default async function PaginaSitio({
         ),
       })),
   };
-  return (
-    <>
-      <p
-        style={{
-          maxWidth: 1280,
-          margin: "24px auto 0",
-          padding: "0 24px",
-          color: "#527080",
-          fontSize: 13,
-        }}
-      >
-        Los precios publicados son de referencia. Elegís cómo pagar al llegar al
-        local.
-      </p>
-      <SitioPublico datos={datos} profesionalInicial={profesionalInicial} />
-    </>
-  );
+  return <SitioPublico datos={datos} profesionalInicial={profesionalInicial} />;
 }
 
 function esMapa(

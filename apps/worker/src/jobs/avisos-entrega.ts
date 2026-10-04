@@ -9,6 +9,7 @@ import {
 import {
   hayConsentimientoWhatsapp,
   turnoSigueVigente,
+  permiteCorreoDemo,
 } from "./avisos-reglas.js";
 import { MAX_INTENTOS_ENTREGA, proximoIntento } from "../lib/reintentos.js";
 
@@ -109,7 +110,7 @@ export async function entregarAvisos() {
       ahora,
     );
     const emailHabilitado = Boolean(
-      cliente.email &&
+      cliente.email && permiteCorreoDemo(negocio.configuracion, reserva.creadoEn, cliente.email) &&
       (aviso.tipo === "CONFIRMACION"
         ? (ajustes?.emailConfirmacionActivo ?? true)
         : (ajustes?.emailRecordatorioActivo ?? true)),

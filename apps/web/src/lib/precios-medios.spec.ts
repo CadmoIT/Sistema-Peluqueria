@@ -9,8 +9,23 @@ import {
   precioServicio,
   validarMediosServicio,
   precioReservaMedio,
+  ajusteFirmado,
 } from "./precios-medios";
 
+test("ajuste firmado convierte signos, porcentajes y pesos sin cambiar el precio base", () => {
+  for (const unidad of ["PORCENTAJE", "PESOS"] as const) {
+    assert.equal(ajusteFirmado(-10, unidad).tipo, "DESCUENTO");
+    assert.equal(ajusteFirmado(10, unidad).tipo, "RECARGO");
+    assert.equal(ajusteFirmado(0, unidad).tipo, "SIN_AJUSTE");
+    assert.equal(
+      precioServicio(1000, "EFECTIVO", {
+        EFECTIVO: ajusteFirmado(-10, unidad),
+      }).toNumber(),
+      unidad === "PESOS" ? 990 : 900,
+    );
+  }
+  assert.throws(() => ajusteFirmado(NaN, "PESOS"));
+});
 test("cada medio conserva su descuento o recargo independiente en porcentaje o pesos", () => {
   const reglas = validarMediosServicio({
     EFECTIVO: { tipo: "DESCUENTO", unidad: "PORCENTAJE", valor: 10 },

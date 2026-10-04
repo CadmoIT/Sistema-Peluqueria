@@ -6,6 +6,17 @@ export type AjustePago = {
   valor: number;
 };
 export type MediosPagoServicio = Record<string, AjustePago>;
+export function ajusteFirmado(
+  valor: number,
+  unidad: AjustePago["unidad"],
+): AjustePago {
+  if (!Number.isFinite(valor)) throw new Error("Ajuste inválido.");
+  return {
+    tipo: valor < 0 ? "DESCUENTO" : valor > 0 ? "RECARGO" : "SIN_AJUSTE",
+    unidad,
+    valor: Math.abs(valor),
+  };
+}
 export function validarMediosServicio(entrada: unknown): MediosPagoServicio {
   if (!entrada || typeof entrada !== "object" || Array.isArray(entrada))
     throw new Error("Medios de pago inválidos.");

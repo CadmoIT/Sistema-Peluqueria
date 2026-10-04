@@ -36,14 +36,10 @@ export default async function Actividad({
   const c = await requerirContextoPanel(),
     p = await searchParams;
   const empleado = c.identidad.rol === "PROFESIONAL";
-  const [sedes, integrantes, profesionales] = await Promise.all([
+  const [sedes, profesionales] = await Promise.all([
     lecturasEquipo(c).sede.findMany({
       where: { negocioId: c.negocio.id, activa: true },
       select: { id: true, nombre: true },
-    }),
-    prisma.membresia.findMany({
-      where: { negocioId: c.negocio.id },
-      select: { usuarioId: true, usuario: { select: { nombre: true } } },
     }),
     lecturasEquipo(c).profesional.findMany({
       where: { negocioId: c.negocio.id },
@@ -112,14 +108,7 @@ export default async function Actividad({
       ...(p.integrante
         ? [
             {
-              OR: [
-                {
-                  usuarioId:
-                    profesionales.find((i) => i.id === p.integrante)?.membresia
-                      ?.usuarioId ?? p.integrante,
-                },
-                { profesionalId: p.integrante },
-              ],
+              profesionalId: p.integrante,
             },
           ]
         : []),
@@ -170,15 +159,13 @@ export default async function Actividad({
       <VistaPanelLista ruta="/panel/actividad" />
       <h1>Actividad</h1>
       <nav className="actividad-dia" aria-label="Día de actividad">
-        <Link href={enlaceDia(sumarDias(dia, -1))} aria-label="Día anterior">
-          ←
-        </Link>
         <form method="get">
           <label>
             Fecha
             <input
               type="date"
               name="dia"
+              key={dia}
               defaultValue={dia}
               aria-label="Fecha de actividad"
               required
@@ -186,33 +173,21 @@ export default async function Actividad({
           </label>
           <label>
             Persona
-            <select name="integrante" defaultValue={p.integrante ?? ""}>
+            <select
+              key={p.integrante ?? ""}
+              name="integrante"
+              defaultValue={p.integrante ?? ""}
+            >
               <option value="">Todos</option>
               {profesionales.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.nombre} {i.apellido}
                 </option>
               ))}
-              {integrantes
-                .filter(
-                  (i) =>
-                    !profesionales.some(
-                      (p) => p.membresia?.usuarioId === i.usuarioId,
-                    ),
-                )
-                .map((i) => (
-                  <option key={i.usuarioId} value={i.usuarioId}>
-                    {i.usuario.nombre}
-                  </option>
-                ))}
             </select>
           </label>
           <button className="boton">Ver día</button>
         </form>
-        <Link href={enlaceDia(sumarDias(dia, 1))} aria-label="Día siguiente">
-          →
-        </Link>
-        <Link href={enlaceDia(hoy)}>Hoy</Link>
       </nav>
       <div className="actividad-lista">
         {filas.slice(0, 50).map((f) => (

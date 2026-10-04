@@ -1,17 +1,38 @@
 /* Identifica cuentas aceptadas sin confundirlas con invitaciones pendientes. */
 .lista-equipo > .equipo-cuenta-vinculada {
-  border: 1px solid #8ac9b2;
-  box-shadow: inset 4px 0 #248660;
-  background: #f7fcfa;
+  background: #fff;
 }
-.equipo-insignia {
-  display: inline-flex;
-  border-radius: 99px;
-  padding: 5px 10px;
-  background: #e4f5ec;
-  color: #176448;
-  font-size: 12px;
-  font-weight: 600;
+.equipo-insignia,
+.equipo-estado > span {
+  display: block;
+  color: #111;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+.equipo-estado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.equipo-estado > details {
+  flex-basis: 100%;
+  text-align: center;
+}
+.equipo-estado form {
+  margin: 0;
+}
+.lista-equipo article.inactivo {
+  opacity: 1;
+}
+.lista-equipo article.inactivo .avatar-profesional {
+  filter: grayscale(1);
+}
+.lista-equipo .formulario-flotante {
+  background: #fff;
+  opacity: 1;
 }
 .equipo-actividad {
   width: 100%;
@@ -89,7 +110,7 @@
   flex-wrap: wrap;
   display: flex;
   gap: 8px;
-  align-items: center;
+  align-items: flex-end;
 }
 .actividad-dia label {
   display: grid;
@@ -145,7 +166,7 @@
 }
 .carrito-descuento {
   font-size: 13px;
-  color: #177188;
+  color: #111;
 }
 @media (max-width: 700px) {
   .lista-equipo > article {

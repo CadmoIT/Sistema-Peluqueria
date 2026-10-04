@@ -1,8 +1,9 @@
-/** Configura descuentos y recargos por servicio con el precio final a la vista. */
+/** Edita ajustes firmados por medio sin perder reglas guardadas ni importes históricos. */
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   precioServicio,
+  ajusteFirmado,
   type AjustePago,
   type MediosPagoServicio as Config,
 } from "@/lib/precios-medios";
@@ -19,20 +20,22 @@ export function MediosPagoServicio({
   inicial?: Config;
 }) {
   const [reglas, cambiar] = useState<Config>(inicial ?? {});
-  function actualizar(medio: string, cambio: Partial<AjustePago>) {
-    cambiar((actual) => ({
-      ...actual,
-      [medio]: {
-        tipo: "SIN_AJUSTE",
-        unidad: "PORCENTAJE",
-        valor: 0,
-        ...actual[medio],
-        ...cambio,
-      },
-    }));
+  const [textos, setTextos] = useState<Record<string, string>>({});
+  function actualizar(
+    medio: string,
+    valor: number,
+    unidad: AjustePago["unidad"],
+  ) {
+    cambiar((actual) => ({ ...actual, [medio]: ajusteFirmado(valor, unidad) }));
+  }
+  let error = "";
+  try {
+    for (const [medio] of medios) precioServicio(precio || 0, medio, reglas);
+  } catch {
+    error = "El descuento no puede superar el precio.";
   }
   return (
-    <fieldset className="selector-multiple medios-pago-servicio">
+    <fieldset className="medios-pago-servicio">
       <legend>Medios de pago</legend>
       <input type="hidden" name="mediosPago" value={JSON.stringify(reglas)} />
       {medios.map(([medio, nombre]) => {
@@ -41,88 +44,48 @@ export function MediosPagoServicio({
           unidad: "PORCENTAJE",
           valor: 0,
         };
-        let final = "Revisá el descuento";
-        try {
-          final = new Intl.NumberFormat("es-AR", {
-            style: "currency",
-            currency: "ARS",
-          }).format(Number(precioServicio(precio || 0, medio, reglas)));
-        } catch {
-          /* El servidor valida antes de guardar. */
-        }
+        const valor =
+          regla.tipo === "DESCUENTO"
+            ? -regla.valor
+            : regla.tipo === "RECARGO"
+              ? regla.valor
+              : 0;
         return (
           <div className="medio-pago-servicio" key={medio}>
-            <header>
-              <strong>{nombre}</strong>
-              <output>{final}</output>
-            </header>
+            <strong>{nombre}</strong>
             <label>
               Ajuste
-              <select
+              <input
                 aria-label={`Ajuste ${nombre}`}
-                value={regla.tipo}
-                onChange={(e) =>
-                  actualizar(medio, {
-                    tipo: e.target.value as AjustePago["tipo"],
-                  })
-                }
-              >
-                <option value="SIN_AJUSTE">Sin ajuste</option>
-                <option value="DESCUENTO">Descuento</option>
-                <option value="RECARGO">Recargo</option>
-              </select>
+                type="text"
+                inputMode="decimal"
+                pattern="(\+|-)?([0-9]+([.,][0-9]+)?|[.,][0-9]+)"
+                required
+                value={textos[medio] ?? String(valor)}
+                onChange={(e) => {
+                  const texto = e.target.value;
+                  setTextos((actual) => ({ ...actual, [medio]: texto }));
+                  const numero = Number(texto.replace(",", "."));
+                  if (texto.trim() && Number.isFinite(numero))
+                    actualizar(medio, numero, regla.unidad);
+                }}
+              />
             </label>
-            {regla.tipo !== "SIN_AJUSTE" && (
-              <>
-                <div className="form-grid">
-                  <label>
-                    Valor
-                    <input
-                      aria-label={`Valor ${nombre}`}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={regla.valor}
-                      onChange={(e) =>
-                        actualizar(medio, { valor: Number(e.target.value) })
-                      }
-                    />
-                  </label>
-                  <label>
-                    Unidad
-                    <select
-                      aria-label={`Unidad ${nombre}`}
-                      value={regla.unidad}
-                      onChange={(e) =>
-                        actualizar(medio, {
-                          unidad: e.target.value as AjustePago["unidad"],
-                        })
-                      }
-                    >
-                      <option value="PORCENTAJE">Porcentaje (%)</option>
-                      <option value="PESOS">Pesos ($)</option>
-                    </select>
-                  </label>
-                </div>
-                <div className="acciones-seccion">
-                  {[5, 10].map((valor) => (
-                    <button
-                      type="button"
-                      className="boton boton--secundario"
-                      key={valor}
-                      onClick={() =>
-                        actualizar(medio, { valor, unidad: "PORCENTAJE" })
-                      }
-                    >
-                      {valor}%
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            <select
+              aria-label={`Unidad ${nombre}`}
+              value={regla.unidad}
+              onChange={(e) =>
+                actualizar(medio, valor, e.target.value as AjustePago["unidad"])
+              }
+            >
+              <option value="PORCENTAJE">%</option>
+              <option value="PESOS">$</option>
+            </select>
           </div>
         );
       })}
+      <small>− descuenta · + recarga · 0 sin ajuste</small>
+      {error && <p role="alert">{error}</p>}
     </fieldset>
   );
 }

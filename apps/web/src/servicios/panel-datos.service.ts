@@ -22,7 +22,6 @@ import type { PermisoEquipo } from "@/lib/permisos-equipo";
 import { lecturasEquipo } from "./lecturas-equipo.service";
 import {
   senasRegistradas,
-  saldoPendienteEquipo,
 } from "./ingresos-equipo.service";
 
 export const requerirContextoPanel = cache(
@@ -181,7 +180,6 @@ export async function obtenerResumenPanel(sedeSolicitada?: string) {
     servicios,
     esEmpleado: contexto.identidad.rol === "PROFESIONAL",
     esDueno: contexto.identidad.rol === "DUENO",
-    saldoPendiente: await saldoPendienteEquipo(contexto, localSeleccionado),
     ingresosHoy:
       Number(ingresos._sum.monto ?? 0) -
       Number(
@@ -808,7 +806,6 @@ export async function obtenerReportes(
     sedes,
     profesionales,
     localSeleccionado,
-    saldoPendiente: await saldoPendienteEquipo(contexto, localSeleccionado),
     atribucion: seleccion,
     periodo,
   };

@@ -3,11 +3,7 @@
 "use client";
 
 import { useRef, useState, type PointerEvent } from "react";
-import {
-  MapPin,
-  MessageCircle,
-  Palette,
-} from "lucide-react";
+import { MapPin, MessageCircle, Palette } from "lucide-react";
 import { CampoImagen } from "@/componentes/panel/campo-imagen";
 import { VistaPreviaSitio } from "@/componentes/panel/vista-previa-sitio";
 
@@ -97,8 +93,7 @@ export function EditorSitio({
   const cambiar = (
     campo: keyof BorradorSitio,
     valor: string | boolean | number,
-  ) =>
-    setDatos((actual) => ({ ...actual, [campo]: valor }));
+  ) => setDatos((actual) => ({ ...actual, [campo]: valor }));
   const cambiarHero = (
     indice: number,
     campo: "url" | "alt" | "focoX" | "focoY",
@@ -244,8 +239,16 @@ export function EditorSitio({
                 }}
               />
             )}
-            <input type="hidden" name="heroFocoX1" value={datos.hero[0]?.focoX ?? 50} />
-            <input type="hidden" name="heroFocoY1" value={datos.hero[0]?.focoY ?? 50} />
+            <input
+              type="hidden"
+              name="heroFocoX1"
+              value={datos.hero[0]?.focoX ?? 50}
+            />
+            <input
+              type="hidden"
+              name="heroFocoY1"
+              value={datos.hero[0]?.focoY ?? 50}
+            />
           </div>
         </details>
 
@@ -254,7 +257,9 @@ export function EditorSitio({
           <div>
             <fieldset className="secciones-editor">
               <legend>Secciones del sitio</legend>
-              {(Object.keys(nombresSecciones) as BorradorSitio["secciones"]).map((seccion) => {
+              {(
+                Object.keys(nombresSecciones) as BorradorSitio["secciones"]
+              ).map((seccion) => {
                 const visible = datos.secciones.includes(seccion);
                 return (
                   <div key={seccion}>
@@ -266,7 +271,9 @@ export function EditorSitio({
                       />
                       {nombresSecciones[seccion]}
                     </label>
-                    {visible && <input type="hidden" name="secciones" value={seccion} />}
+                    {visible && (
+                      <input type="hidden" name="secciones" value={seccion} />
+                    )}
                   </div>
                 );
               })}
@@ -277,11 +284,13 @@ export function EditorSitio({
         <details className="grupo-editor">
           <summary>Contacto</summary>
           <div>
-            <div className="form-grid">
+            <div className="editor-contacto-campos">
               <label>
                 WhatsApp
                 <input
                   name="whatsapp"
+                  type="tel"
+                  placeholder="+54 9 11 1234 5678"
                   value={datos.whatsapp}
                   onChange={(evento) =>
                     cambiar("whatsapp", evento.target.value)
@@ -298,6 +307,7 @@ export function EditorSitio({
                 Instagram
                 <input
                   name="instagram"
+                  placeholder="@tunegocio o enlace de Instagram"
                   value={datos.instagram}
                   onChange={(evento) =>
                     cambiar("instagram", evento.target.value)
@@ -317,7 +327,9 @@ export function EditorSitio({
                 name="googleMapsUrl"
                 type="url"
                 value={datos.googleMapsUrl}
-                onChange={(evento) => cambiar("googleMapsUrl", evento.target.value)}
+                onChange={(evento) =>
+                  cambiar("googleMapsUrl", evento.target.value)
+                }
                 placeholder="Pegá el enlace para compartir del local"
               />
             </label>
@@ -427,8 +439,24 @@ function SelectorFoco({
     const inicio = arrastre.current;
     if (!inicio || inicio.id !== evento.pointerId) return;
     alCambiar(
-      Math.max(0, Math.min(100, Math.round(inicio.focoX - ((evento.clientX - inicio.x) / inicio.ancho) * 100))),
-      Math.max(0, Math.min(100, Math.round(inicio.focoY - ((evento.clientY - inicio.y) / inicio.alto) * 100))),
+      Math.max(
+        0,
+        Math.min(
+          100,
+          Math.round(
+            inicio.focoX - ((evento.clientX - inicio.x) / inicio.ancho) * 100,
+          ),
+        ),
+      ),
+      Math.max(
+        0,
+        Math.min(
+          100,
+          Math.round(
+            inicio.focoY - ((evento.clientY - inicio.y) / inicio.alto) * 100,
+          ),
+        ),
+      ),
     );
   }
 
@@ -439,8 +467,12 @@ function SelectorFoco({
         type="button"
         onPointerDown={iniciar}
         onPointerMove={mover}
-        onPointerUp={() => { arrastre.current = null; }}
-        onPointerCancel={() => { arrastre.current = null; }}
+        onPointerUp={() => {
+          arrastre.current = null;
+        }}
+        onPointerCancel={() => {
+          arrastre.current = null;
+        }}
         style={{ backgroundImage: "url(" + imagen + ")" }}
         aria-label="Arrastrá para acomodar la foto de portada"
       />

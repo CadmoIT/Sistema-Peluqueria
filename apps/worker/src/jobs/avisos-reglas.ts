@@ -1,6 +1,13 @@
 /** Expresa reglas puras de vigencia para evitar avisos tardíos o duplicados. */
 export const UN_DIA_MS = 86_400_000;
 
+export function permiteCorreoDemo(configuracion: unknown, creadoEn: Date, email: string | null) {
+  const config = configuracion as { demoCarla?: boolean; demoCarlaConfirmacionesDesde?: string } | null;
+  if (!config?.demoCarla) return true;
+  const desde = new Date(config.demoCarlaConfirmacionesDesde ?? "");
+  return Number.isFinite(desde.getTime()) && creadoEn >= desde && Boolean(email && !/@(?:.*\.)?example\.com$/i.test(email));
+}
+
 export function correspondeRecordatorio(creadoEn: Date, inicio: Date) {
   return creadoEn.getTime() < inicio.getTime() - UN_DIA_MS;
 }

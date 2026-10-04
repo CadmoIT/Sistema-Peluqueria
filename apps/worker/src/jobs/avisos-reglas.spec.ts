@@ -6,10 +6,20 @@ import {
   hayConsentimientoWhatsapp,
   turnoSigueVigente,
   UN_DIA_MS,
+  permiteCorreoDemo,
 } from "./avisos-reglas.js";
 
 const ahora = new Date("2026-09-14T12:00:00.000Z");
 const inicio = new Date("2026-09-16T12:00:00.000Z");
+
+test("demo Carla sólo confirma reservas nuevas para correos reales", () => {
+  const config = { demoCarla: true, demoCarlaConfirmacionesDesde: ahora.toISOString() };
+  assert.equal(permiteCorreoDemo(config, new Date(ahora.getTime() - 1), "persona@correo.test"), false);
+  assert.equal(permiteCorreoDemo(config, ahora, "paciente1.carla@example.com"), false);
+  assert.equal(permiteCorreoDemo(config, ahora, "persona@correo.test"), true);
+  assert.equal(permiteCorreoDemo({ demoCarla: true }, ahora, "persona@correo.test"), false);
+  assert.equal(permiteCorreoDemo({}, ahora, "persona@correo.test"), true);
+});
 
 test("el recordatorio sólo se programa si faltaban más de 24 horas al reservar", () => {
   assert.equal(correspondeRecordatorio(ahora, inicio), true);

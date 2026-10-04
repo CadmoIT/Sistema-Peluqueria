@@ -159,11 +159,14 @@ export default async function PaginaEquipo({
                   <p>
                     {profesional.especialidad || "Especialidad sin completar"}
                   </p>
+                  {!profesional.activo && (
+                    <small>No disponible para nuevos turnos</small>
+                  )}
                   <small>
                     {acceso?.membresia?.usuario.email || invitacion?.email}
                   </small>
                 </div>
-                <div>
+                <div className="equipo-estado">
                   <span className={vinculada ? "equipo-insignia" : ""}>
                     {etiqueta}
                   </span>
@@ -192,7 +195,7 @@ export default async function PaginaEquipo({
                           </small>
                         </FormularioAccion>
                       </details>
-                    ) : (
+                    ) : invitacion?.estado !== "PENDIENTE" ? (
                       <details>
                         <summary>Invitar / reenviar</summary>
                         <FormularioAccion
@@ -219,7 +222,7 @@ export default async function PaginaEquipo({
                           </label>
                         </FormularioAccion>
                       </details>
-                    ))}
+                    ) : null)}
                   {c.membresia.rol === "DUENO" &&
                     invitacion?.estado === "PENDIENTE" && (
                       <FormularioAccion

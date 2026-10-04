@@ -55,7 +55,6 @@ export default async function PaginaReportes({
           { etiqueta: "Ingresos", valor: ingresos },
           { etiqueta: "Egresos", valor: egresos },
           { etiqueta: "Saldo", valor: ingresos - egresos },
-          { etiqueta: "Pendiente de cobro", valor: datos.saldoPendiente },
         ]}
       />
       <section className="reportes-grafico">

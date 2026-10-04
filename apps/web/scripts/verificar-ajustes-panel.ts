@@ -24,17 +24,30 @@ async function verificar() {
     await page.getByText("Nuevo servicio", { exact: true }).click();
     await page.locator('input[name="precio"]').first().fill("10000");
     await page
-      .getByRole("combobox", { name: "Ajuste Mercado Pago", exact: true })
-      .selectOption("RECARGO");
+      .getByRole("textbox", { name: "Ajuste Mercado Pago", exact: true })
+      .fill("+10");
+    const reglas = JSON.parse(
+      await page.locator('input[name="mediosPago"]').first().inputValue(),
+    );
+    if (
+      reglas.MERCADO_PAGO.tipo !== "RECARGO" ||
+      reglas.MERCADO_PAGO.valor !== 10
+    )
+      throw new Error("El ajuste firmado no aplica el recargo.");
     await page
-      .getByRole("spinbutton", { name: "Valor Mercado Pago", exact: true })
-      .fill("10");
-    const texto = await page
-      .locator(".medios-pago-servicio")
-      .first()
-      .innerText();
-    if (!texto.includes("11.000"))
-      throw new Error("La vista previa no aplica el recargo.");
+      .getByRole("textbox", { name: "Ajuste Efectivo", exact: true })
+      .fill("-500");
+    await page
+      .getByRole("combobox", { name: "Unidad Efectivo", exact: true })
+      .selectOption("PESOS");
+    const reglasPesos = JSON.parse(
+      await page.locator('input[name="mediosPago"]').first().inputValue(),
+    );
+    if (
+      reglasPesos.EFECTIVO.unidad !== "PESOS" ||
+      reglasPesos.EFECTIVO.valor !== 500
+    )
+      throw new Error("No conserva el descuento fijo.");
     await page.screenshot({ path: "test-results/ajustes-servicio.png" });
     await page.goto(`${origin}/panel/actividad`, { waitUntil: "networkidle" });
     if (
@@ -47,9 +60,12 @@ async function verificar() {
     const lateral = await page.locator(".agenda-lateral").boundingBox();
     if (!agenda || !lateral || agenda.x >= lateral.x)
       throw new Error("Agenda no está a la izquierda.");
-    await page.goto(`${origin}/sitio/carla-cicero-demo`, {
-      waitUntil: "networkidle",
-    });
+    await page.goto(
+      process.env.CARLA_SITIO_URL || `${origin}/sitio/carla-cicero-demo`,
+      {
+        waitUntil: "networkidle",
+      },
+    );
     const avatar = page
       .locator("button.publico-identidad__profesional")
       .first();

@@ -470,3 +470,26 @@
   height: 100%;
   object-fit: cover;
 }
+/* Mantiene los contactos apilados y evita que la ayuda reduzca el campo de teléfono. */
+.editor-contacto-campos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.editor-contacto-campos label {
+  display: grid;
+  gap: 8px;
+}
+.editor-contacto-campos input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  height: 44px;
+  box-sizing: border-box;
+}
+.editor-contacto-campos .aviso-ajustes {
+  margin: -8px 0 0;
+  padding: 0;
+  background: transparent;
+  font-size: 12px;
+}

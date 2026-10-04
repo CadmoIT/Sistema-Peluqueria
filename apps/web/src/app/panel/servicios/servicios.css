@@ -2,30 +2,41 @@
 .medios-pago-servicio {
   display: grid;
   gap: 16px;
+  min-width: 0;
+  border: 1px solid #d7e7ec;
+  border-radius: 12px;
+  padding: 16px;
+}
+.medios-pago-servicio legend {
+  padding: 0 6px;
 }
 .medio-pago-servicio {
   display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(60px, 100px) 54px;
   gap: 10px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid #e6ecee;
+  align-items: end;
 }
-.medio-pago-servicio:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
+.medio-pago-servicio strong {
+  align-self: center;
+  font-size: 14px;
 }
-.medio-pago-servicio header {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.medio-pago-servicio output {
-  color: var(--color-primario, #126783);
-  font-weight: 600;
-}
-.medios-pago-servicio label {
+.medio-pago-servicio label {
   display: grid;
-  gap: 5px;
+  gap: 4px;
+  font-size: 12px;
+}
+.formulario-servicio .medio-pago-servicio input,
+.formulario-servicio .medio-pago-servicio select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  height: 40px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+.medios-pago-servicio small {
+  color: #526873;
+  font-size: 12px;
 }
 .servicio-datos {
   display: grid;

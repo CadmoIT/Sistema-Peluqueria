@@ -2,8 +2,8 @@
 /* eslint-disable @next/next/no-img-element -- El origen de las imágenes pertenece a cada negocio y luego será R2. */
 "use client";
 
-import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { Clock3, Search, Star } from "lucide-react";
+import { type FormEvent, useEffect, useMemo, useState, useRef } from "react";
+import { Clock3, Search, Star, X } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa6";
 import { enlaceInstagram } from "@/lib/enlaces-redes";
 import { GrupoProfesionales } from "@/componentes/sitio/grupo-profesionales";
@@ -113,10 +113,37 @@ export function SitioPublico({
           : (nombresCategorias[0] ?? null),
     );
   }, [busqueda, nombresCategorias]);
-  const serviciosSeleccionados = datos.servicios.filter((servicio) =>
-    serviciosElegidos.includes(servicio.id),
+  const serviciosSeleccionados = useMemo(
+    () =>
+      datos.servicios.filter((servicio) =>
+        serviciosElegidos.includes(servicio.id),
+      ),
+    [datos.servicios, serviciosElegidos],
   );
   const [mostrarReserva, setMostrarReserva] = useState(false);
+  const resumenRef = useRef<HTMLElement>(null);
+  const [altoSeleccion, setAltoSeleccion] = useState(0);
+  const tieneSeleccion = serviciosElegidos.length > 0;
+  useEffect(() => {
+    if (!serviciosElegidos.length) setMostrarReserva(false);
+  }, [serviciosElegidos]);
+  useEffect(() => {
+    const nodo = resumenRef.current;
+    if (!nodo) {
+      setAltoSeleccion(0);
+      return;
+    }
+    const actualizar = () =>
+      setAltoSeleccion(nodo.getBoundingClientRect().height);
+    actualizar();
+    const observador = new ResizeObserver(actualizar);
+    observador.observe(nodo);
+    return () => observador.disconnect();
+  }, [tieneSeleccion]);
+  function quitarServicio(id: string) {
+    if (!modoVistaPrevia)
+      setServiciosElegidos((actual) => actual.filter((s) => s !== id));
+  }
   const totalSeleccionado = serviciosSeleccionados.reduce(
     (total, servicio) => total + servicio.precio,
     0,
@@ -131,11 +158,14 @@ export function SitioPublico({
     "--sitio-principal": datos.configuracion.colorPrincipal,
     "--sitio-fondo": datos.configuracion.colorFondo,
     "--sitio-texto": datos.configuracion.colorTexto,
+    "--alto-seleccion": `${altoSeleccion}px`,
   } as React.CSSProperties;
   const sedePrincipal = datos.sedes[0];
   const telefono =
     datos.configuracion.whatsapp.trim() || sedePrincipal?.telefono || "";
 
+  const numeroWhatsapp = telefono.replace(/\D/g, "");
+  const whatsappValido = /^\d{10,15}$/.test(numeroWhatsapp);
   return (
     <div
       className={`publico-sitio${modoVistaPrevia ? " editor-preview__sitio" : ""}`}
@@ -216,9 +246,9 @@ export function SitioPublico({
                         {sedePrincipal.direccion || "Dirección pendiente"}
                       </a>
                     )}
-                    {mostrarContacto && telefono && (
+                    {mostrarContacto && whatsappValido && (
                       <a
-                        href={`https://wa.me/${telefono.replace(/\D/g, "")}`}
+                        href={`https://wa.me/${numeroWhatsapp}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -288,7 +318,7 @@ export function SitioPublico({
         )}
         {datos.configuracion.secciones.includes("servicios") && (
           <section className="publico-experiencia" id="servicios">
-            <div className="publico-catalogo-col">
+            <div className="publico-catalogo-col" id="catalogo-servicios">
               <div className="publico-titulo">
                 <h2>Elegí tu próximo turno</h2>
               </div>
@@ -399,9 +429,21 @@ export function SitioPublico({
           </section>
         )}
       </main>
+      {mostrarContacto && whatsappValido && (
+        <a
+          className="publico-whatsapp-flotante"
+          href={`https://wa.me/${numeroWhatsapp}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Contactar por WhatsApp"
+        >
+          <FaWhatsapp aria-hidden="true" />
+        </a>
+      )}
       {serviciosSeleccionados.length > 0 && (
         <aside
           className="resumen-servicios"
+          ref={resumenRef}
           aria-label="Servicios seleccionados"
         >
           <div>
@@ -410,12 +452,32 @@ export function SitioPublico({
               <span key={servicio.id}>
                 {servicio.nombre}
                 <b>{pesos(servicio.precio)}</b>
+                <button
+                  type="button"
+                  className="seleccion-quitar"
+                  aria-label={`Quitar ${servicio.nombre} de tu selección`}
+                  onClick={() => quitarServicio(servicio.id)}
+                >
+                  <X size={16} aria-hidden="true" />
+                </button>
               </span>
             ))}
             <strong>
               Total <b>{pesos(totalSeleccionado)}</b>
             </strong>
           </div>
+          <button
+            type="button"
+            className="seleccion-agregar"
+            onClick={() => {
+              setMostrarReserva(false);
+              document
+                .getElementById("catalogo-servicios")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            Agregar servicios
+          </button>
           {!mostrarReserva ? (
             <button
               type="button"
@@ -426,6 +488,7 @@ export function SitioPublico({
             </button>
           ) : sedePrincipal ? (
             <ReservaIntegrada
+              key={serviciosElegidos.join("|")}
               slug={datos.slug}
               nombreNegocio={datos.configuracion.titulo}
               politicaContacto={datos.politicaContacto}
