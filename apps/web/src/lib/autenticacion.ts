@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { enviarCorreo } from "./correo";
 import { prisma } from "./prisma";
 import { obtenerSecretoAutenticacion } from "./secreto-autenticacion";
+import { politicaVerificacionGoogle } from "./google-autenticacion";
 import {
   crearOReutilizarCodigo,
   huellaEmailRecuperacion,
@@ -64,10 +65,7 @@ export const autenticacion = betterAuth({
         google: {
           clientId: process.env.GOOGLE_CLIENT_ID!,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-          requireEmailVerification: true,
-          // Turnos Rápidos exige una confirmación propia antes de habilitar cuentas nuevas.
-          // Better Auth conserva la verificación guardada para usuarios que ya existen.
-          mapProfileToUser: () => ({ emailVerified: false }),
+          ...politicaVerificacionGoogle,
         },
       }
     : {},
